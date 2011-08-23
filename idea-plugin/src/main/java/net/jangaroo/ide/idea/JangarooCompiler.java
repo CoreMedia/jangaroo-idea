@@ -35,11 +35,13 @@ import com.intellij.facet.FacetManager;
 import com.intellij.compiler.make.MakeUtil;
 import com.intellij.util.Chunk;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
+import net.jangaroo.jooc.config.DebugMode;
 import org.jetbrains.annotations.NotNull;
 import net.jangaroo.jooc.Jooc;
 import net.jangaroo.jooc.CompileLog;
 import net.jangaroo.jooc.JooSymbol;
 
+import java.io.IOException;
 import java.util.*;
 import java.io.File;
 
@@ -72,7 +74,7 @@ public class JangarooCompiler implements TranslatingCompiler {
       try {
         outputSinkItem = new OutputSinkItem(outputDirectoryPath);
         IdeaCompileLog ideaCompileLog = new IdeaCompileLog(context);
-        new Jooc(ideaCompileLog).run(joocConfig);
+        new Jooc(joocConfig, ideaCompileLog).run();
         for (final VirtualFile file : files) {
           if (ideaCompileLog.hasErrors(file)) {
             outputSinkItem.addFileToRecompile(file);
@@ -108,9 +110,7 @@ public class JangarooCompiler implements TranslatingCompiler {
     JoocConfigurationBean joocConfigurationBean = jangarooFacet.getConfiguration().getState();
     JoocConfiguration joocConfig = new JoocConfiguration();
     joocConfig.setVerbose(joocConfigurationBean.verbose);
-    joocConfig.setDebug(joocConfigurationBean.isDebug());
-    joocConfig.setDebugLines(joocConfigurationBean.isDebugLines());
-    joocConfig.setDebugSource(joocConfigurationBean.isDebugSource());
+    joocConfig.setDebugMode(joocConfigurationBean.isDebug() ? joocConfigurationBean.isDebugSource() ? DebugMode.SOURCE : DebugMode.LINES : null);
     joocConfig.setAllowDuplicateLocalVariables(joocConfigurationBean.allowDuplicateLocalVariables);
     joocConfig.setEnableAssertions(joocConfigurationBean.enableAssertions);
 
@@ -118,7 +118,11 @@ public class JangarooCompiler implements TranslatingCompiler {
     Collection<File> sourcePath = new LinkedHashSet<File>();
     addToClassOrSourcePath(module, classPath, sourcePath);
     joocConfig.setClassPath(new ArrayList<File>(classPath));
-    joocConfig.setSourcePath(new ArrayList<File>(sourcePath));
+    try {
+      joocConfig.setSourcePath(new ArrayList<File>(sourcePath));
+    } catch (IOException e) {
+      getLog().error("while constructing Jangaroo source path", e);
+    }
 
     joocConfig.setApiOutputDirectory(joocConfigurationBean.getApiOutputDirectory());
     joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
