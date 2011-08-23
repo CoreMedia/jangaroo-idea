@@ -23,7 +23,7 @@ import com.intellij.xml.XmlElementDescriptor;
 import com.intellij.xml.XmlNSDescriptor;
 import com.intellij.xml.impl.schema.XmlElementDescriptorImpl;
 import com.intellij.xml.util.XmlUtil;
-import net.jangaroo.extxml.model.ComponentType;
+import net.jangaroo.exml.ExmlConstants;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
@@ -36,8 +36,8 @@ import java.net.URL;
 public class ComponentXmlElementDescriptorProvider implements XmlElementDescriptorProvider {
   public XmlElementDescriptor getDescriptor(XmlTag xmltag) {
     String namespace = xmltag.getNamespace();
-    if (xmltag.getContainingFile().getName().endsWith("." + ComponentType.EXML.getExtension())
-        && !ExmlResourceProvider.EXML_NAMESPACE_URI.equals(namespace)) {
+    if (xmltag.getContainingFile().getName().endsWith(ExmlConstants.EXML_SUFFIX)
+        && !ExmlConstants.EXML_NAMESPACE_URI.equals(namespace)) {
       XmlNSDescriptor xmlNSDescriptor = xmltag.getNSDescriptor(namespace, false);
       XmlElementDescriptor xmlElementDescriptor = xmlNSDescriptor != null ? xmlNSDescriptor.getElementDescriptor(xmltag) : null;
       if (xmlElementDescriptor == null) {
@@ -50,6 +50,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
 
   public static class ComponentXmlElementDescriptor extends XmlElementDescriptorImpl {
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public ComponentXmlElementDescriptor() {
       super();
     }
@@ -81,7 +82,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
     }
 
     private static VirtualFile findExmlFile(Project project, String className) {
-      String exmlFileName = className.replace('.', '/') + "." + ComponentType.EXML.getExtension();
+      String exmlFileName = className.replace('.', '/') + ExmlConstants.EXML_SUFFIX;
       Module[] modules = ModuleManager.getInstance(project).getModules();
       for (Module module : modules) {
         VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getSourceRoots();

@@ -18,7 +18,6 @@ import com.intellij.facet.Facet;
 import com.intellij.facet.FacetType;
 import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
-import net.jangaroo.ide.idea.JangarooFacetConfiguration;
 
 /**
  * An IDEA Facet for Jangaroo.

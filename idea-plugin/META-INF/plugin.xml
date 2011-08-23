@@ -1,12 +1,11 @@
 <!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
 <idea-plugin url="http://www.jangaroo.net" version="2">
-  <name>Jangaroo Language</name>
-  <id>net.jangaroo.idea.language</id>
+  <name>Jangaroo</name>
+  <id>net.jangaroo.idea</id>
   <description>
-    A plugin for compiling ActionScript 3 code to JavaScript using the Jangaroo Open Source
-    Compiler jooc.
+    A plugin for using the Jangaroo Open Source tools.
   </description>
-  <version>10.0.8.3.0</version>
+  <version>10.0.8.6.0</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net"
           logo="/net/jangaroo/jooley-16x16.png">Jangaroo</vendor>
@@ -17,13 +16,15 @@
   <depends>com.intellij.javaee</depends>
 
   <application-components>
-    <!-- Add your application components here -->
+    <component>
+      <implementation-class>net.jangaroo.ide.idea.exml.ExmlApplicationComponent</implementation-class>
+    </component>
   </application-components>
 
   <project-components>
-    <!-- Add your project components here -->
     <component>
       <implementation-class>net.jangaroo.ide.idea.JoocProjectComponent</implementation-class>
+      <implementation-class>net.jangaroo.ide.idea.exml.ExmlProjectComponent</implementation-class>
     </component>
   </project-components>
 
@@ -35,10 +36,16 @@
     <facetType implementation="net.jangaroo.ide.idea.JangarooFacetType"/>
     <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
     <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
+
+    <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
+    <facetType implementation="net.jangaroo.ide.idea.exml.ExmlFacetType"/>
+    <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
+    <xml.elementDescriptorProvider implementation="net.jangaroo.ide.idea.exml.ComponentXmlElementDescriptorProvider"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
     <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
+    <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
   </extensions>
 
 </idea-plugin>

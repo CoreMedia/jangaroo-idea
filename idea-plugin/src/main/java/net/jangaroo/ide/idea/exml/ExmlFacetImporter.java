@@ -1,13 +1,6 @@
 package net.jangaroo.ide.idea.exml;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.javaee.ExternalResourceManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.OrderEntry;
-import com.intellij.openapi.roots.ModuleOrderEntry;
-import net.jangaroo.extxml.model.ComponentSuite;
-import net.jangaroo.extxml.xml.XsdScanner;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
@@ -16,17 +9,8 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 
-import javax.swing.*;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.File;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.
@@ -67,6 +51,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     exmlConfig.setNamespacePrefix(artifactId);
     exmlConfig.setXsd(artifactId + ".xsd");
 
+    /*
     final Map<String, String> resourceMap = getXsdResourcesOfModule(module);
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
@@ -77,6 +62,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         }
       }
     });
+    */
   }
 
   public void collectSourceFolders(MavenProject mavenProject, List<String> result) {
@@ -84,6 +70,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     result.add("target/generated-sources/joo");
   }
 
+  /*
   private Map<String, String> getXsdResourcesOfModule(Module module) {
     // Collect the XSD resource mappings of this modules and all its dependent component suites.
     //System.out.println("Scanning dependencies of " + moduleName + " for component suite XSDs...");
@@ -136,5 +123,5 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
       ExmlCompiler.getLog().warn("Error while scanning XSD file " + filename, e);
     }
   }
-
+*/
 }

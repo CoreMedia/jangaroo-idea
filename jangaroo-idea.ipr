@@ -268,7 +268,6 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ext-xml-idea-plugin/ext-xml-idea-plugin.iml" filepath="$PROJECT_DIR$/ext-xml-idea-plugin/ext-xml-idea-plugin.iml" />
       <module fileurl="file://$PROJECT_DIR$/idea-plugin/jangaroo-idea-plugin.iml" filepath="$PROJECT_DIR$/idea-plugin/jangaroo-idea-plugin.iml" />
     </modules>
   </component>

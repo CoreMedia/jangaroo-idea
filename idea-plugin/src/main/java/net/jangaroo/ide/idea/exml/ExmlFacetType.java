@@ -34,7 +34,7 @@ public class ExmlFacetType extends FacetType<ExmlFacet, ExmlFacetConfiguration> 
   
   public static final FacetTypeId<ExmlFacet> ID = new FacetTypeId<ExmlFacet>("exml");
   public static final ExmlFacetType INSTANCE = new ExmlFacetType();
-  static final String EXML_FACET_ICON_URL = "/net/jangaroo/EXML-logo-16x16.png";
+  static final String EXML_FACET_ICON_URL = "/net/jangaroo/ide/idea/EXML-logo-16x16.png";
 
   public ExmlFacetType() {
     super(ID, "exml", "EXML");
