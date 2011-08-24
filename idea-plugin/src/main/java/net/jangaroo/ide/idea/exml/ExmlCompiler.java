@@ -117,28 +117,31 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
         }
         outputSinkItem = createGeneratedSourcesOutputSinkItem(context, generatedSourcesDirectory);
         File exmlSourceFile = new File(file.getPath());
-        File componentClassOutputFile = exmlc.generateComponentClass(exmlSourceFile);
+        File componentClassOutputFile = null;
         File configClassOutputFile = null;
-        // TODO: compiler errors!
-        if (componentClassOutputFile != null) {
-          try {
-            configClassOutputFile = exmlc.generateConfigClass(exmlSourceFile);
-          } catch (ExmlcException e) {
-            context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file.getUrl(), e.getLine(), e.getColumn());
-          }
-          if (configClassOutputFile != null) {
-            OutputItem outputItem = new OutputItemImpl(componentClassOutputFile.getPath().replace(File.separatorChar, '/'), file);
-            if (exmlcConfigurationBean.isShowCompilerInfoMessages()) {
-              context.addMessage(CompilerMessageCategory.INFORMATION, "exml->as (" + outputItem.getOutputPath() + ")", file.getUrl(), -1, -1);
-            }
-            getLog().info("exml->as: " + file.getUrl() + " -> " + outputItem.getOutputPath());
+        try {
+          componentClassOutputFile = exmlc.generateComponentClass(exmlSourceFile);
+          // TODO: compiler errors!
+          if (componentClassOutputFile != null) {
             // TODO: the next commented line raises warning in idea.log. Still needed?
             // LocalFileSystem.getInstance().refreshIoFiles(Arrays.asList(componentClassOutputFile));
             outputSinkItem.addOutputItem(file, componentClassOutputFile);
-            outputSinkItem.addOutputItem(file, configClassOutputFile);
+
+            configClassOutputFile = exmlc.generateConfigClass(exmlSourceFile);
+            if (configClassOutputFile != null) {
+              outputSinkItem.addOutputItem(file, configClassOutputFile);
+
+              OutputItem outputItem = new OutputItemImpl(componentClassOutputFile.getPath().replace(File.separatorChar, '/'), file);
+              if (exmlcConfigurationBean.isShowCompilerInfoMessages()) {
+                context.addMessage(CompilerMessageCategory.INFORMATION, "exml->as (" + outputItem.getOutputPath() + ")", file.getUrl(), -1, -1);
+              }
+              getLog().info("exml->as: " + file.getUrl() + " -> " + outputItem.getOutputPath());
+            }
           }
+        } catch (ExmlcException e) {
+          context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file.getUrl(), e.getLine(), e.getColumn());
         }
-        if (configClassOutputFile == null) {
+        if (componentClassOutputFile == null || configClassOutputFile == null) {
           //context.addMessage(CompilerMessageCategory.INFORMATION, "exml->as compilation failed.", file.getUrl(), -1, -1);
           outputSinkItem.addFileToRecompile(file);
         }
