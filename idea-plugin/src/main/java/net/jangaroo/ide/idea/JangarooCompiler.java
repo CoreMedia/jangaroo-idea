@@ -19,6 +19,7 @@ import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.module.Module;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
+import net.jangaroo.jooc.config.JoocConfiguration;
 import org.jetbrains.annotations.NotNull;
 import net.jangaroo.jooc.Jooc;
 
@@ -61,9 +62,9 @@ public class JangarooCompiler extends AbstractCompiler {
             File outputFile = computeOutputFile(context, module, outputDirectoryPath, file);
             outputSinkItem.addOutputItem(file, outputFile);
             String fileUrl = file.getUrl();
-            if (joocConfig.showCompilerInfoMessages) {
-              context.addMessage(CompilerMessageCategory.INFORMATION, "as->js (" + outputFile.getPath() + ")", fileUrl, -1, -1);
-            }
+            //if (joocConfig.showCompilerInfoMessages) {
+            context.addMessage(CompilerMessageCategory.INFORMATION, "as->js (" + outputFile.getPath() + ")", fileUrl, -1, -1);
+            //}
             getLog().info("as->js: " + fileUrl + " -> " + outputFile.getPath());
           }
         }

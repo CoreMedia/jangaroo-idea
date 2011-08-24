@@ -24,6 +24,8 @@ import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.CompileLog;
 import net.jangaroo.jooc.JooSymbol;
 import net.jangaroo.jooc.config.DebugMode;
+import net.jangaroo.jooc.config.JoocConfiguration;
+import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -54,6 +56,21 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     return Logger.getInstance("net.jangaroo.ide.idea.JangarooCompiler");
   }
 
+  protected AbstractCompiler() {
+    getLog().debug("AbstractCompiler constructor");
+  }
+
+  private static @NotNull VirtualFile getOrCreateVirtualFile(@NotNull final String path) throws IOException {
+    LocalFileSystem localFileSystem = LocalFileSystem.getInstance();
+    VirtualFile virtualFile = localFileSystem.findFileByPath(path);
+    if (virtualFile == null) {
+      File file = new File(path);
+      VirtualFile vfParentFolder = getOrCreateVirtualFile(file.getParent());
+      virtualFile = localFileSystem.createChildDirectory(null, vfParentFolder, file.getName());
+    }
+    return virtualFile;
+  }
+
   @NotNull
   public abstract String getDescription();
 
@@ -76,24 +93,26 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     joocConfig.setDebugMode(joocConfigurationBean.isDebug() ? joocConfigurationBean.isDebugSource() ? DebugMode.SOURCE : DebugMode.LINES : null);
     joocConfig.setAllowDuplicateLocalVariables(joocConfigurationBean.allowDuplicateLocalVariables);
     joocConfig.setEnableAssertions(joocConfigurationBean.enableAssertions);
+    joocConfig.setApiOutputDirectory(joocConfigurationBean.getApiOutputDirectory());
+    updateFileLocations(joocConfig, module, virtualSourceFiles);
+    joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
+    joocConfig.setOutputDirectory(joocConfigurationBean.getOutputDirectory());
+    //joocConfig.showCompilerInfoMessages = joocConfigurationBean.showCompilerInfoMessages;
+    return joocConfig;
+  }
 
+  protected void updateFileLocations(FileLocations fileLocations, Module module, List<VirtualFile> virtualSourceFiles) {
     Collection<File> classPath = new LinkedHashSet<File>();
     Collection<File> sourcePath = new LinkedHashSet<File>();
     addToClassOrSourcePath(module, classPath, sourcePath);
-    joocConfig.setClassPath(new ArrayList<File>(classPath));
+    fileLocations.setClassPath(new ArrayList<File>(classPath));
     try {
-      joocConfig.setSourcePath(new ArrayList<File>(sourcePath));
+      fileLocations.setSourcePath(new ArrayList<File>(sourcePath));
     } catch (IOException e) {
       getLog().error("while constructing Jangaroo source path", e);
     }
-
-    joocConfig.setApiOutputDirectory(joocConfigurationBean.getApiOutputDirectory());
-    joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
-    joocConfig.setOutputDirectory(joocConfigurationBean.getOutputDirectory());
     List<File> sourceFiles = virtualToIoFiles(virtualSourceFiles);
-    joocConfig.setSourceFiles(sourceFiles);
-    joocConfig.showCompilerInfoMessages = joocConfigurationBean.showCompilerInfoMessages;
-    return joocConfig;
+    fileLocations.setSourceFiles(sourceFiles);
   }
 
   private void addToClassOrSourcePath(Module module, Collection<File> classPath, Collection<File> sourcePath) {
@@ -146,9 +165,15 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     }
   }
 
-  // a little hack so we don't need another wrapper:
-  protected static class JoocConfiguration extends net.jangaroo.jooc.config.JoocConfiguration {
-    public boolean showCompilerInfoMessages;
+  protected OutputSinkItem createGeneratedSourcesOutputSinkItem(CompileContext context, String generatedSourcesDirectory) {
+    try {
+      String generatedAs3RootDir = getOrCreateVirtualFile(generatedSourcesDirectory).getPath();
+      return new OutputSinkItem(generatedAs3RootDir);
+    } catch (IOException e) {
+      context.addMessage(CompilerMessageCategory.ERROR, "Target directory could not be created: " + generatedSourcesDirectory, null, -1, -1);
+      getLog().warn("Jangaroo: Generated sources target directory could not be created.", e);
+      return null;
+    }
   }
 
   protected static class IdeaCompileLog implements CompileLog {

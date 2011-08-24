@@ -1,7 +1,6 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.compiler.impl.javaCompiler.OutputItemImpl;
-import com.intellij.compiler.make.MakeUtil;
 import com.intellij.facet.FacetManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
@@ -15,23 +14,19 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sun.xml.internal.bind.v2.TODO;
 import net.jangaroo.exml.ExmlConstants;
+import net.jangaroo.exml.compiler.Exmlc;
+import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
-import net.jangaroo.utils.log.Log;
+import net.jangaroo.jooc.Jooc;
 import net.jangaroo.utils.log.LogHandler;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -42,13 +37,17 @@ import java.util.zip.ZipFile;
  */
 public class ExmlCompiler extends AbstractCompiler implements IntermediateOutputCompiler {
 
+  public ExmlCompiler() {
+    super();
+  }
+
   @NotNull
   public String getDescription() {
     return "EXML Compiler";
   }
 
   public boolean isCompilableFile(VirtualFile file, CompileContext context) {
-    if (ExmlConstants.EXML_SUFFIX.equals(file.getExtension())) {
+    if (ExmlConstants.EXML_SUFFIX.equals("." + file.getExtension())) {
       Module module = context.getModuleByFile(file);
       if (module != null && FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID) != null) {
         return true;
@@ -137,50 +136,61 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
 
   @Override
   protected String getOutputFileSuffix() {
-    return "exml"; // TODO: constant without "."!
+    return Jooc.AS_SUFFIX;
   }
 
   @Override
   protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files) {
-    String as3OutputDir = null;
-    boolean showCompilerInfoMessages = getExmlConfig(module).isShowCompilerInfoMessages();
+    ExmlcConfigurationBean exmlcConfigurationBean = getExmlConfig(module);
+    ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
+    updateFileLocations(exmlConfiguration, module, files);
+    String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
+    exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
+    exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
+    exmlConfiguration.setConfigClassPackage("acme.config"); // TODO: exmlcConfigurationBean.getConfigClassPackage();
+    Exmlc exmlc = new Exmlc(exmlConfiguration);
     OutputSinkItem outputSinkItem = null;
     for (final VirtualFile file : files) {
+      if (outputSinkItem == null) {
         ModuleFileIndex moduleFileIndex = ModuleRootManager.getInstance(module).getFileIndex();
         if (!moduleFileIndex.isInSourceContent(file) || moduleFileIndex.isInTestSourceContent(file)) {
           // prevent NPE in EXML generator when <file> is not under non-test source root:
           continue;
         }
-        outputSinkItem = new OutputSinkItem(findGeneratedAs3RootDir(module));
-        File outputFile = null;
-      // TODO !!! generator.generateClass(suite.getComponentClassByFullClassName(ExmlComponentSrcFileScanner.getComponentClassName(suite, new File(file.getPath()))));
-        if (outputFile == null) { // TODO: or file has any compiler errors!
+        outputSinkItem = createGeneratedSourcesOutputSinkItem(context, generatedSourcesDirectory);
+        File exmlSourceFile = new File(file.getPath());
+        File componentClassOutputFile = exmlc.generateComponentClass(exmlSourceFile);
+        File configClassOutputFile = null;
+        // TODO: compiler errors!
+        if (componentClassOutputFile != null) { 
+          configClassOutputFile = exmlc.generateConfigClass(exmlSourceFile);
+          if (configClassOutputFile != null) {
+            OutputItem outputItem = new OutputItemImpl(componentClassOutputFile.getPath().replace(File.separatorChar, '/'), file);
+            if (exmlcConfigurationBean.isShowCompilerInfoMessages()) {
+              context.addMessage(CompilerMessageCategory.INFORMATION, "exml->as (" + outputItem.getOutputPath() + ")", file.getUrl(), -1, -1);
+            }
+            getLog().info("exml->as: " + file.getUrl() + " -> " + outputItem.getOutputPath());
+            // TODO: the next commented line raises warning in idea.log. Still needed?
+            // LocalFileSystem.getInstance().refreshIoFiles(Arrays.asList(componentClassOutputFile));
+            outputSinkItem.addOutputItem(file, componentClassOutputFile);
+            outputSinkItem.addOutputItem(file, configClassOutputFile);
+          }
+        }
+        if (configClassOutputFile == null) {
           //context.addMessage(CompilerMessageCategory.INFORMATION, "exml->as compilation failed.", file.getUrl(), -1, -1);
           outputSinkItem.addFileToRecompile(file);
-        } else {
-          OutputItem outputItem = new OutputItemImpl(outputFile.getPath().replace(File.separatorChar, '/'), file);
-          if (showCompilerInfoMessages) {
-            context.addMessage(CompilerMessageCategory.INFORMATION, "exml->as (" + outputItem.getOutputPath() + ")", file.getUrl(), -1, -1);
-          }
-          getLog().info("exml->as: " + file.getUrl() + " -> " + outputItem.getOutputPath());
-          LocalFileSystem.getInstance().refreshIoFiles(Arrays.asList(outputFile));
-          outputSinkItem.addOutputItem(file, outputFile);
         }
+      }
     }
     return outputSinkItem;
   }
 
-  public static String findGeneratedAs3RootDir(Module module) {
+  public static String getOrCreateGeneratedAs3RootDir(Module module) {
     ExmlcConfigurationBean exmlConfig = getExmlConfig(module);
     return exmlConfig == null ? null : getVFPath(exmlConfig.getGeneratedSourcesDirectory());
   }
 
-  private String findSourceRootDir(Module module) {
-    ExmlcConfigurationBean exmlConfig = getExmlConfig(module);
-    return exmlConfig == null ? null : getVFPath(exmlConfig.getSourceDirectory());
-  }
-
-  private static String getVFPath(String path) {
+  public static String getVFPath(String path) {
     VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(path);
     return virtualFile == null ? null : virtualFile.getPath();
   }
@@ -236,9 +246,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     }
 
     public void info(String message) {
-      if (showCompilerInfoMessages) {
-        addMessage(CompilerMessageCategory.INFORMATION, message, -1, -1);
-      }
+      addMessage(CompilerMessageCategory.INFORMATION, message, -1, -1);
       getLog().debug("EXML Compiler Info: " + message);
     }
 

@@ -24,6 +24,8 @@
   <project-components>
     <component>
       <implementation-class>net.jangaroo.ide.idea.JoocProjectComponent</implementation-class>
+    </component>
+    <component>
       <implementation-class>net.jangaroo.ide.idea.exml.ExmlProjectComponent</implementation-class>
     </component>
   </project-components>

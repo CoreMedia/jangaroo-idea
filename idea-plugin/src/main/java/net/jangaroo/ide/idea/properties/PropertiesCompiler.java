@@ -14,51 +14,35 @@
  */
 package net.jangaroo.ide.idea.properties;
 
-import com.intellij.compiler.impl.CompilerUtil;
 import com.intellij.compiler.make.MakeUtil;
 import com.intellij.facet.FacetManager;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
-import com.intellij.openapi.compiler.CompileScope;
-import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.IntermediateOutputCompiler;
-import com.intellij.openapi.compiler.TranslatingCompiler;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Chunk;
-import freemarker.template.TemplateException;
+import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.exml.ExmlCompiler;
 import net.jangaroo.ide.idea.exml.ExmlFacetType;
+import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
-import net.jangaroo.properties.PropertiesFileScanner;
+import net.jangaroo.jooc.Jooc;
 import net.jangaroo.properties.PropertyClassGenerator;
-import net.jangaroo.properties.model.LocalizationSuite;
-import org.apache.maven.shared.model.fileset.FileSet;
+import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
  */
-public class PropertiesCompiler implements TranslatingCompiler, IntermediateOutputCompiler {
+public class PropertiesCompiler extends AbstractCompiler implements IntermediateOutputCompiler {
 
   @NotNull
   public String getDescription() {
     return "Jangaroo Properties Compiler";
-  }
-
-  public boolean validateConfiguration(CompileScope scope) {
-    return true;
   }
 
   public boolean isCompilableFile(VirtualFile file, CompileContext context) {
@@ -76,131 +60,31 @@ public class PropertiesCompiler implements TranslatingCompiler, IntermediateOutp
     return false;
   }
 
-  public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
-    final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
-    final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
+  @Override
+  protected String getOutputFileSuffix() {
+    return Jooc.AS_SUFFIX;
+  }
 
-    ApplicationManager.getApplication().runReadAction(new Runnable() {
-
-      public void run() {
-        for (Module module : filesByModule.keySet()) {
-          String generatedAs3RootDir = ExmlCompiler.findGeneratedAs3RootDir(module);
-          if (generatedAs3RootDir == null) {
-            continue; // no valid output directory configuration found, ignore module.
-          }
-          boolean showCompilerInfoMessages = ExmlCompiler.getExmlConfig(module).isShowCompilerInfoMessages();
-          try {
-            OutputSinkItem outputSinkItem = new OutputSinkItem(generatedAs3RootDir);
-
-            List<VirtualFile> filesOfModule = filesByModule.get(module);
-            getLog().info(module.getName() + ": " + filesOfModule);
-
-            Collection<FileSet> fileSets = computeSourceFileSets(context, module, filesOfModule);
-
-            compileProperties(outputSinkItem.getOutputRoot(), fileSets);
-
-            populateOutputSinkItem(context, module, outputSinkItem, showCompilerInfoMessages, filesOfModule);
-            outputs.add(outputSinkItem);
-          } catch (SecurityException e) {
-            String message = "Output directory '" + generatedAs3RootDir + "' does not exist and could not be created: " + e.getMessage();
-            context.addMessage(CompilerMessageCategory.ERROR, message, null, -1, -1);
-            getLog().error(message);
-          }
-
-        }
-
+  @Override
+  protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files) {
+    ExmlcConfigurationBean exmlcConfigurationBean = ExmlCompiler.getExmlConfig(module);
+    FileLocations exmlConfiguration = new FileLocations();
+    updateFileLocations(exmlConfiguration, module, files);
+    String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
+    exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
+    PropertyClassGenerator generator = new PropertyClassGenerator(exmlConfiguration);
+    Map<File,Set<File>> outputFileMap = generator.generate();
+    OutputSinkItem outputSinkItem = null;
+    for (Map.Entry<File, Set<File>> entry : outputFileMap.entrySet()) {
+      int sourceFileIndex = exmlConfiguration.getSourceFiles().indexOf(entry.getKey());
+      if (sourceFileIndex == -1) {
+        throw new IllegalStateException("Compiler returned mapping for unknown source file " + entry.getKey().getAbsolutePath());
       }
-    });
-    for (OutputSinkItem outputSinkItem : outputs) {
-      outputSinkItem.addTo(outputSink);
-    }
-  }
-
-  // prepare all handed-in virtual files as FileSets to give to properties compiler:
-  private static Collection<FileSet> computeSourceFileSets(CompileContext context, Module module,
-                                                           List<VirtualFile> filesOfModule) {
-    Map<String,FileSet> fileSetBySourceRootDir = new HashMap<String, FileSet>();
-    for (VirtualFile file : filesOfModule) {
-      String sourceRootDir = getSourceRootPath(context, module, file);
-      FileSet fileSet = fileSetBySourceRootDir.get(sourceRootDir);
-      if (fileSet == null) {
-        fileSet = new FileSet();
-        fileSet.setDirectory(sourceRootDir);
-        fileSetBySourceRootDir.put(sourceRootDir, fileSet);
+      if (outputSinkItem == null) {
+        outputSinkItem = createGeneratedSourcesOutputSinkItem(context, generatedSourcesDirectory);
       }
-      String path = getRelativeSourcePath(sourceRootDir, file);
-      fileSet.addInclude(path);
+      outputSinkItem.addOutputItem(files.get(sourceFileIndex), entry.getValue().iterator().next());
     }
-    return fileSetBySourceRootDir.values();
+    return outputSinkItem;
   }
-
-  private static void compileProperties(File outputDirectory, Collection<FileSet> fileSets) {
-    for (FileSet fileSet : fileSets) {
-      LocalizationSuite suite = new LocalizationSuite(fileSet, outputDirectory);
-      PropertiesFileScanner scanner = new PropertiesFileScanner(suite);
-      try {
-        scanner.scan();
-        PropertyClassGenerator generator = new PropertyClassGenerator(suite);
-        try {
-          generator.generate();
-        } catch (IOException e) {
-          e.printStackTrace();
-        } catch (TemplateException e) {
-          e.printStackTrace();
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-  private static void populateOutputSinkItem(CompileContext context, Module module, OutputSinkItem outputSinkItem, boolean showCompilerInfoMessages, List<VirtualFile> filesOfModule) {
-    String outputDirectoryPath = outputSinkItem.getOutputRootPath();
-    for (VirtualFile sourceFile : filesOfModule) {
-      String outputFilePath = computeOutputFilePath(getRelativeSourcePath(context, module, sourceFile), outputDirectoryPath);
-      File outputFile = new File(outputFilePath);
-      if (outputFile.exists()) {
-        outputSinkItem.addOutputItem(sourceFile, outputFile);
-        if (showCompilerInfoMessages) {
-          context.addMessage(CompilerMessageCategory.INFORMATION, "properties->as (" + outputFilePath + ")", sourceFile.getUrl(), -1, -1);
-        }
-      } else {
-        outputSinkItem.addFileToRecompile(sourceFile);
-        context.addMessage(CompilerMessageCategory.WARNING, "failed: properties->as (" + outputFilePath + ")", sourceFile.getUrl(), -1, -1);
-      }
-    }
-  }
-
-  private static String getRelativeSourcePath(String sourceRootDir, VirtualFile file) {
-    return file.getPath().substring(sourceRootDir.length() + 1);
-  }
-
-  private static String getSourceRootPath(CompileContext context, Module module, VirtualFile file) {
-    return VfsUtil.virtualToIoFile(MakeUtil.getSourceRoot(context, module, file)).getPath();
-  }
-
-  private static String getRelativeSourcePath(CompileContext context, Module module, VirtualFile file) {
-    return getRelativeSourcePath(getSourceRootPath(context, module, file), file);
-  }
-
-  // TODO: put the following logic as public API into Properties!
-  private static String computeOutputFilePath(String relativeSourceFilePath, String outputDirectoryPath) {
-    // cut off ".properties" extension:
-    String outputFilePath = FileUtil.getNameWithoutExtension(relativeSourceFilePath);
-    String suffix = "";
-    // find locale suffix position:
-    int firstUnderscoreInNamePos = outputFilePath.indexOf('_', outputFilePath.lastIndexOf('/'));
-    if (firstUnderscoreInNamePos != -1) {
-      // split into prefix and suffix:
-      suffix = outputFilePath.substring(firstUnderscoreInNamePos, outputFilePath.length());
-      outputFilePath = outputFilePath.substring(0, firstUnderscoreInNamePos);
-    }
-    outputFilePath = outputDirectoryPath + "/" + outputFilePath + "_properties" + suffix + ".as";
-    return outputFilePath;
-  }
-
-  private static Logger getLog() {
-    return Logger.getInstance("net.jangaroo.ide.idea.JangarooPropertiesCompiler");
-  }
-
 }
