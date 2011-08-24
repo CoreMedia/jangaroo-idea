@@ -37,6 +37,11 @@ public class ExmlcConfigurationBean {
   /**
    * The namespace of the component suite
    */
+  private String configClassPackage;
+
+  /**
+   * The namespace of the component suite
+   */
   private String namespace;
 
   /**
@@ -91,6 +96,14 @@ public class ExmlcConfigurationBean {
 
   public void setSourceDirectory(String sourceDirectory) {
     this.sourceDirectory = getIdeaUrl(sourceDirectory);
+  }
+
+  public String getConfigClassPackage() {
+    return configClassPackage;
+  }
+
+  public void setConfigClassPackage(String configClassPackage) {
+    this.configClassPackage = configClassPackage;
   }
 
   public String getNamespace() {

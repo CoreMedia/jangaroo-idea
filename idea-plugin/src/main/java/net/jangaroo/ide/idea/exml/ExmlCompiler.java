@@ -8,25 +8,21 @@ import com.intellij.openapi.compiler.IntermediateOutputCompiler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleFileIndex;
-import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.jangaroo.exml.ExmlConstants;
+import net.jangaroo.exml.ExmlcException;
 import net.jangaroo.exml.compiler.Exmlc;
 import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.Jooc;
-import net.jangaroo.utils.log.LogHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -65,48 +61,10 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     if (module != null) {
       ExmlcConfigurationBean exmlcConfig = getExmlConfig(module);
       if (exmlcConfig != null) {
-        return exmlcConfig.getGeneratedResourcesDirectory() + "/" + exmlcConfig.getXsd();
+        return exmlcConfig.getGeneratedResourcesDirectory() + "/" + exmlcConfig.getConfigClassPackage() + ".xsd";
       }
     }
     return null;
-  }
-
-  private void addModuleDependenciesToComponentSuiteRegistry(Module module) {
-    // Add all dependent component suites to component suite registry, so they are found when looking for some xtype of fullClassName:
-    //System.out.println("Scanning dependencies of " + moduleName + " for component suite XSDs...");
-    OrderEntry[] orderEntries = ModuleRootManager.getInstance(module).getOrderEntries();
-    for (OrderEntry orderEntry : orderEntries) {
-      InputStream xsdInputStream = null;
-      try {
-        if (orderEntry instanceof ModuleOrderEntry) {
-          String xsdFilename = getXsdFilename(((ModuleOrderEntry)orderEntry).getModule());
-          if (xsdFilename != null) {
-            xsdInputStream = new FileInputStream(xsdFilename);
-          }
-        } else {
-          String zipFileName = findDependentModuleZipFileName(orderEntry);
-          if (zipFileName != null) {
-            ZipFile zipFile = new ZipFile(zipFileName);
-            ZipEntry zipEntry = findXsdZipEntry(zipFile);
-            if (zipEntry != null) {
-              xsdInputStream = zipFile.getInputStream(zipEntry);
-            }
-          }
-        }
-      } catch (IOException e) {
-        // ignore
-      }
-      /*
-      if (xsdInputStream != null) {
-        //System.out.println("  found XSD " + xsdInputStream + "...");
-        try {
-          scanner.scan(xsdInputStream); // adds scan result ComponentSuite to ComponentSuiteRegistry
-        } catch (IOException e) {
-          Log.e("Error while scanning XSD file " + xsdInputStream, e);
-        }
-      }
-      */
-    }
   }
 
   static String findDependentModuleZipFileName(OrderEntry orderEntry) throws IOException {
@@ -147,7 +105,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
     exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
     exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
-    exmlConfiguration.setConfigClassPackage("acme.config"); // TODO: exmlcConfigurationBean.getConfigClassPackage();
+    exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
     Exmlc exmlc = new Exmlc(exmlConfiguration);
     OutputSinkItem outputSinkItem = null;
     for (final VirtualFile file : files) {
@@ -162,8 +120,12 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
         File componentClassOutputFile = exmlc.generateComponentClass(exmlSourceFile);
         File configClassOutputFile = null;
         // TODO: compiler errors!
-        if (componentClassOutputFile != null) { 
-          configClassOutputFile = exmlc.generateConfigClass(exmlSourceFile);
+        if (componentClassOutputFile != null) {
+          try {
+            configClassOutputFile = exmlc.generateConfigClass(exmlSourceFile);
+          } catch (ExmlcException e) {
+            context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file.getUrl(), e.getLine(), e.getColumn());
+          }
           if (configClassOutputFile != null) {
             OutputItem outputItem = new OutputItemImpl(componentClassOutputFile.getPath().replace(File.separatorChar, '/'), file);
             if (exmlcConfigurationBean.isShowCompilerInfoMessages()) {
@@ -185,75 +147,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     return outputSinkItem;
   }
 
-  public static String getOrCreateGeneratedAs3RootDir(Module module) {
-    ExmlcConfigurationBean exmlConfig = getExmlConfig(module);
-    return exmlConfig == null ? null : getVFPath(exmlConfig.getGeneratedSourcesDirectory());
-  }
-
-  public static String getVFPath(String path) {
-    VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(path);
-    return virtualFile == null ? null : virtualFile.getPath();
-  }
-
   static Logger getLog() {
     return Logger.getInstance("ExmlCompiler");
   }
-
-  private static class IdeaErrorHandler implements LogHandler {
-    private final CompileContext context;
-    private boolean showCompilerInfoMessages = true;
-    private File currentFile;
-
-    public IdeaErrorHandler(CompileContext context) {
-      this.context = context;
-    }
-
-    public void setShowCompilerInfoMessages(boolean showCompilerInfoMessages) {
-      this.showCompilerInfoMessages = showCompilerInfoMessages;
-    }
-
-    public void setCurrentFile(File file) {
-      this.currentFile = file;
-    }
-
-    private VirtualFile addMessage(CompilerMessageCategory compilerMessageCategory, String msg, int lineNumber, int columnNumber) {
-      VirtualFile file = currentFile == null ? null : LocalFileSystem.getInstance().findFileByPath(currentFile.getAbsolutePath());
-      String fileUrl = file == null ? null : file.getUrl();
-      context.addMessage(compilerMessageCategory, msg, fileUrl, lineNumber, columnNumber);
-      return file;
-    }
-
-    public void error(String message, int lineNumber, int columnNumber) {
-      addMessage(CompilerMessageCategory.ERROR, message, lineNumber, columnNumber);
-      getLog().debug("EXML Compiler Error: " + message);
-    }
-
-    public void error(String message, Exception exception) {
-      error(message + ": " + exception.getLocalizedMessage(), -1, -1);
-    }
-
-    public void error(String message) {
-      error(message, -1, -1);
-    }
-
-    public void warning(String message) {
-      warning(message, -1, -1);
-    }
-
-    public void warning(String message, int lineNumber, int columnNumber) {
-      addMessage(CompilerMessageCategory.WARNING, message, lineNumber, columnNumber);
-      getLog().debug("EXML Compiler Warning: " + message);
-    }
-
-    public void info(String message) {
-      addMessage(CompilerMessageCategory.INFORMATION, message, -1, -1);
-      getLog().debug("EXML Compiler Info: " + message);
-    }
-
-    public void debug(String message) {
-      getLog().debug(message);
-      //ignore debug messages for now
-    }
-  }
-
 }

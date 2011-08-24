@@ -1,6 +1,12 @@
 package net.jangaroo.ide.idea.exml;
 
+import com.intellij.javaee.ExternalResourceManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.roots.ModuleOrderEntry;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.OrderEntry;
+import net.jangaroo.utils.CompilerUtils;
+import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
@@ -9,8 +15,14 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 
+import javax.swing.SwingUtilities;
+import java.io.File;
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.
@@ -19,7 +31,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   // TODO: share these constants with Jangaroo Language plugin:
   private static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
-  private static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "ext-xml-maven-plugin";
+  private static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String DEFAULT_EXML_FACET_NAME = "EXML";
 
   public ExmlFacetImporter() {
@@ -35,6 +47,24 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     //System.out.println("setupFacet called!");
   }
 
+  private String getConfigurationValue(MavenProject mavenProjectModel, String configName, String defaultValue) {
+    String value = getConfigurationValue(configName, mavenProjectModel.getPluginConfiguration(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID));
+    if (value == null) {
+      value = getConfigurationValue(configName, mavenProjectModel.getPluginGoalConfiguration(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID, "exml"));
+    }
+    return value == null ? defaultValue : value;
+  }
+
+  private String getConfigurationValue(String configName, Element compileConfiguration) {
+    if (compileConfiguration != null) {
+      Element compileConfigurationChild = compileConfiguration.getChild(configName);
+      if (compileConfigurationChild != null) {
+        return compileConfigurationChild.getTextTrim();
+      }
+    }
+    return null;
+  }
+
   @Override
   protected void reimportFacet(MavenModifiableModelsProvider modelsProvider, Module module,
                                MavenRootModelAdapter rootModel, ExmlFacet exmlFacet, MavenProjectsTree mavenTree,
@@ -45,13 +75,14 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     ExmlcConfigurationBean exmlConfig = exmlFacetConfiguration.getState();
     exmlConfig.setSourceDirectory(mavenProjectModel.getSources().get(0));
     exmlConfig.setGeneratedSourcesDirectory(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo");
-    exmlConfig.setGeneratedResourcesDirectory(getTargetOutputPath(mavenProjectModel,  "generated-resources"));
+    exmlConfig.setGeneratedResourcesDirectory(getTargetOutputPath(mavenProjectModel, "generated-resources"));
     String artifactId = mavenProjectModel.getMavenId().getArtifactId();
+    String configClassPackage = getConfigurationValue(mavenProjectModel, "configClassPackage", "");
+    exmlConfig.setConfigClassPackage(configClassPackage);
     exmlConfig.setNamespace(artifactId);
     exmlConfig.setNamespacePrefix(artifactId);
     exmlConfig.setXsd(artifactId + ".xsd");
 
-    /*
     final Map<String, String> resourceMap = getXsdResourcesOfModule(module);
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
@@ -62,7 +93,6 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         }
       }
     });
-    */
   }
 
   public void collectSourceFolders(MavenProject mavenProject, List<String> result) {
@@ -70,20 +100,17 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     result.add("target/generated-sources/joo");
   }
 
-  /*
   private Map<String, String> getXsdResourcesOfModule(Module module) {
     // Collect the XSD resource mappings of this modules and all its dependent component suites.
     //System.out.println("Scanning dependencies of " + moduleName + " for component suite XSDs...");
     final Map<String, String> resourceMap = new LinkedHashMap<String, String>();
     OrderEntry[] orderEntries = ModuleRootManager.getInstance(module).getOrderEntries();
-    XsdScanner scanner = new XsdScanner();
     for (OrderEntry orderEntry : orderEntries) {
       try {
         if (orderEntry instanceof ModuleOrderEntry) {
           String xsdFilename = ExmlCompiler.getXsdFilename(((ModuleOrderEntry)orderEntry).getModule());
           if (xsdFilename != null) {
-            InputStream xsdInputStream = new FileInputStream(new File(xsdFilename));
-            addResource(resourceMap, scanner, xsdInputStream, xsdFilename);
+            addResource(resourceMap, xsdFilename, xsdFilename);
           }
         } else {
           String zipFileName = ExmlCompiler.findDependentModuleZipFileName(orderEntry);
@@ -92,8 +119,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
             ZipEntry xsdZipEntry = ExmlCompiler.findXsdZipEntry(zipFile);
             if (xsdZipEntry != null) {
               String filename = zipFileName + "!/" + xsdZipEntry.getName();
-              InputStream xsdInputStream = zipFile.getInputStream(xsdZipEntry);
-              addResource(resourceMap, scanner, xsdInputStream, filename);
+              addResource(resourceMap, filename, xsdZipEntry.getName());
             }
           }
         }
@@ -101,27 +127,20 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         // ignore
       }
     }
-    String xsdFilename = ExmlCompiler.getXsdFilename(module);
-    if (xsdFilename != null && new File(xsdFilename).exists()) {
-      try {
-        addResource(resourceMap, scanner, new FileInputStream(xsdFilename), xsdFilename);
-      } catch (FileNotFoundException e) {
-        Logger.getInstance("exml").warn("Error while scanning XSD file " + xsdFilename, e);
+    String xsdFilenameAndPath = ExmlCompiler.getXsdFilename(module);
+    if (xsdFilenameAndPath != null) {
+      File xsdFile = new File(xsdFilenameAndPath);
+      if (xsdFile.exists()) {
+        String xsdFileName = xsdFile.getName();
+        addResource(resourceMap, xsdFilenameAndPath, xsdFileName);
       }
     }
     return resourceMap;
   }
 
-  private void addResource(Map<String, String> resourceMap, XsdScanner scanner, InputStream xsdInputStream, String filename) {
-    //System.out.println("  found XSD " + xsdInputStream + "...");
-    try {
-      ComponentSuite componentSuite = scanner.scan(xsdInputStream);
-      if (componentSuite != null) {
-        resourceMap.put(componentSuite.getNamespace(), filename);
-      }
-    } catch (IOException e) {
-      ExmlCompiler.getLog().warn("Error while scanning XSD file " + filename, e);
-    }
+  private void addResource(Map<String, String> resourceMap, String xsdFilenameAndPath, String xsdFileName) {
+    //System.out.println("  found XSD " + xsdFilename.getPath() + "...");
+    resourceMap.put("exml:" + CompilerUtils.removeExtension(xsdFileName), xsdFilenameAndPath);
   }
-*/
+
 }
