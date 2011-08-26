@@ -1,6 +1,7 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.lang.javascript.index.JavaScriptIndex;
+import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -69,16 +70,29 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
           Project project = declaration.getProject();
           VirtualFile exmlFile = findExmlFile(project, className);
           if (exmlFile == null) {
-            PsiElement asClass = JSResolveUtil.findClassByQName(className, JavaScriptIndex.getInstance(project), null);
-            if (asClass != null) {
-              return asClass;
-            }
+            return getASClass(project, className);
           } else {
             return PsiManager.getInstance(project).findFile(exmlFile);
           }
         }
       }
       return declaration;
+    }
+
+    public JSClass getComponentClass() {
+      XmlTag declaration = (XmlTag)super.getDeclaration();
+      if (declaration != null) {
+        String className = declaration.getAttributeValue("id");
+        if (className != null) {
+          return getASClass(declaration.getProject(), className);
+        }
+      }
+      return null;
+    }
+
+    private JSClass getASClass(Project project, String className) {
+      PsiElement asClass = JSResolveUtil.findClassByQName(className, JavaScriptIndex.getInstance(project), null);
+      return asClass instanceof JSClass ? (JSClass)asClass : null;
     }
 
     private static VirtualFile findExmlFile(Project project, String className) {

@@ -24,7 +24,6 @@ import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -34,8 +33,11 @@ import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.XmlElementDescriptor;
+import com.intellij.xml.impl.schema.XmlElementDescriptorImpl;
 import net.jangaroo.exml.ExmlConstants;
+import net.jangaroo.exml.model.ConfigClass;
 import net.jangaroo.ide.idea.properties.PropertiesCompiler;
+import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -55,8 +57,7 @@ public class ExmlProjectComponent implements ProjectComponent {
   }
 
   private String getModuleRelativePath(VirtualFile file) {
-    ProjectFileIndex projectFileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-    final Module module = projectFileIndex.getModuleForFile(file);
+    final Module module = getModuleForFile(file);
     if (module != null) {
       for (VirtualFile sourceRoot : ModuleRootManager.getInstance(module).getSourceRoots()) {
         if (VfsUtil.isAncestor(sourceRoot, file, false)) {
@@ -65,6 +66,10 @@ public class ExmlProjectComponent implements ProjectComponent {
       }
     }
     return "";
+  }
+
+  private Module getModuleForFile(VirtualFile file) {
+    return ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(file);
   }
 
   public void initComponent() {
@@ -78,6 +83,14 @@ public class ExmlProjectComponent implements ProjectComponent {
         if (psiFile.getName().endsWith(".exml") && psiLanguageInjectionHost instanceof XmlAttributeValue) {
           VirtualFile exmlFile = psiFile.getOriginalFile().getVirtualFile();
           if (exmlFile == null) {
+            return;
+          }
+          Module module = getModuleForFile(exmlFile);
+          if (module == null) {
+            return;
+          }
+          ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
+          if (exmlConfig == null) {
             return;
           }
           XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
@@ -115,8 +128,10 @@ public class ExmlProjectComponent implements ProjectComponent {
                 }
                 codePrefix.append("{\n");
 
-                codePrefix.append("public function ").append(className).append("(config:*){\n  super({x:(");
-                String codeSuffix = ")});\n}\n}\n}\n";
+                String configClassName = CompilerUtils.qName(exmlConfig.getConfigClassPackage(), ConfigClass.createNewName(className));
+                codePrefix.append("public function ").append(className).append("(config:")
+                  .append(configClassName).append(" = null){\n  super(").append(configClassName).append("({x:(");
+                String codeSuffix = "))});\n}\n}\n}\n";
 
                 TextRange innerRange = new TextRange(2, attributeValue.getTextRange().getLength() - 2);
                 injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, innerRange, codePrefix.toString(), codeSuffix);
@@ -146,12 +161,13 @@ public class ExmlProjectComponent implements ProjectComponent {
 
   private static String findSuperClass(XmlTag xmlTag) {
     XmlElementDescriptor descriptor = xmlTag.getDescriptor();
-    String superClassName = null;
-    if (descriptor != null && descriptor.getDeclaration() instanceof JSClass) {
-      JSClass jsClass = (JSClass)descriptor.getDeclaration();
-      superClassName = jsClass.getQualifiedName();
+    if (descriptor instanceof ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor) {
+      JSClass componentClass = ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getComponentClass();
+      if (componentClass != null) {
+        return componentClass.getQualifiedName();
+      }
     }
-    return superClassName;
+    return null;
   }
 
   private static List<String> findImports(XmlTag xmlTag) {
