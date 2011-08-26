@@ -11,6 +11,7 @@ public class ExmlResourceProvider implements StandardResourceProvider {
 
   public void registerResources(ResourceRegistrar resourceRegistrar) {
     resourceRegistrar.addStdResource(ExmlConstants.EXML_NAMESPACE_URI, ExmlConstants.EXML_SCHEMA_LOCATION, getClass());
+    resourceRegistrar.addStdResource(ExmlConstants.EXML_UNTYPED_NAMESPACE_URI, ExmlConstants.EXML_UNTYPED_SCHEMA_LOCATION, getClass());
   }
 
 }
