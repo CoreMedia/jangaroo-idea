@@ -36,15 +36,17 @@ import java.net.URL;
  */
 public class ComponentXmlElementDescriptorProvider implements XmlElementDescriptorProvider {
   public XmlElementDescriptor getDescriptor(XmlTag xmltag) {
-    String namespace = xmltag.getNamespace();
-    if (xmltag.getContainingFile().getName().endsWith(ExmlConstants.EXML_SUFFIX)
+    if (xmltag.isValid()) {
+      String namespace = xmltag.getNamespace();
+      if (xmltag.getContainingFile().getName().endsWith(ExmlConstants.EXML_SUFFIX)
         && !ExmlConstants.EXML_NAMESPACE_URI.equals(namespace)) {
-      XmlNSDescriptor xmlNSDescriptor = xmltag.getNSDescriptor(namespace, false);
-      XmlElementDescriptor xmlElementDescriptor = xmlNSDescriptor != null ? xmlNSDescriptor.getElementDescriptor(xmltag) : null;
-      if (xmlElementDescriptor == null) {
-        xmlElementDescriptor = XmlUtil.findXmlDescriptorByType(xmltag);
+        XmlNSDescriptor xmlNSDescriptor = xmltag.getNSDescriptor(namespace, false);
+        XmlElementDescriptor xmlElementDescriptor = xmlNSDescriptor != null ? xmlNSDescriptor.getElementDescriptor(xmltag) : null;
+        if (xmlElementDescriptor == null) {
+          xmlElementDescriptor = XmlUtil.findXmlDescriptorByType(xmltag);
+        }
+        return xmlElementDescriptor instanceof XmlElementDescriptorImpl ? new ComponentXmlElementDescriptor((XmlElementDescriptorImpl)xmlElementDescriptor) : null;
       }
-      return xmlElementDescriptor instanceof XmlElementDescriptorImpl ? new ComponentXmlElementDescriptor((XmlElementDescriptorImpl)xmlElementDescriptor) : null;
     }
     return null;
   }
