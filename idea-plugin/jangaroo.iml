@@ -36,15 +36,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MAVEN_REPOSITORY$/org/kohsuke" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
         </CLASSES>
         <JAVADOC />
