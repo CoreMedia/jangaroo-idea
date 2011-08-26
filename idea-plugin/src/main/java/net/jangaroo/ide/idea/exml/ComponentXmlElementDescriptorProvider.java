@@ -64,15 +64,20 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
     public PsiElement getDeclaration() {
       XmlTag declaration = (XmlTag)super.getDeclaration();
       if (declaration != null) {
-        String className = declaration.getAttributeValue("type");
-        if (className != null) {
-          className = XmlUtil.findLocalNameByQualifiedName(className);
-          Project project = declaration.getProject();
-          VirtualFile exmlFile = findExmlFile(project, className);
-          if (exmlFile == null) {
-            return getASClass(project, className);
-          } else {
+        Project project = declaration.getProject();
+        String componentClassName = declaration.getAttributeValue("id");
+        if (componentClassName != null) {
+          VirtualFile exmlFile = findExmlFile(project, componentClassName);
+          if (exmlFile != null) {
             return PsiManager.getInstance(project).findFile(exmlFile);
+          }
+        }
+        String configClassName = declaration.getAttributeValue("type");
+        if (configClassName != null) {
+          configClassName = XmlUtil.findLocalNameByQualifiedName(configClassName);
+          JSClass asClass = getASClass(project, configClassName);
+          if (asClass != null) {
+            return asClass;
           }
         }
       }
