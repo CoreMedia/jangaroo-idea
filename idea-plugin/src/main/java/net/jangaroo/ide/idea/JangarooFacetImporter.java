@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
+import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenConsole;
 import org.jetbrains.idea.maven.project.MavenEmbeddersManager;
 import org.jetbrains.idea.maven.project.MavenProject;
@@ -51,7 +52,7 @@ import java.util.Set;
  * A Facet-from-Maven Importer for the Jangaroo Facet type.
  */
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
-  private static final String JANGAROO_GROUP_ID = "net.jangaroo";
+  public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
@@ -60,9 +61,18 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     super(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, JangarooFacetType.INSTANCE, DEFAULT_JANGAROO_FACET_NAME);
   }
 
+  // we cannot use MavenProject#findPlugin(), because it also searches in <pluginManagement>:
+  public static MavenPlugin findDeclaredPlugin(MavenProject mavenProject, @Nullable String groupId, @Nullable String artifactId) {
+    for (MavenPlugin each : mavenProject.getDeclaredPlugins()) {
+      if (each.getMavenId().equals(groupId, artifactId)) return each;
+    }
+    return null;
+  }
+
   public boolean isApplicable(MavenProject mavenProjectModel) {
+    // either "jangaroo" packaging type, or the plugin has to be configured explicitly:
     return JANGAROO_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging()) ||
-      mavenProjectModel.findPlugin(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID) != null;
+      findDeclaredPlugin(mavenProjectModel, JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID) != null;
   }
 
   @Override

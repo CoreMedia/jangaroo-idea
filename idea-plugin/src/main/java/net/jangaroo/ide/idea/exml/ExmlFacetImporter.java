@@ -24,13 +24,13 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static net.jangaroo.ide.idea.JangarooFacetImporter.JANGAROO_GROUP_ID;
+import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredPlugin;
+
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.
  */
 public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfiguration, ExmlFacetType> {
-  // TODO: share these constants with Jangaroo Language plugin:
-  private static final String JANGAROO_GROUP_ID = "net.jangaroo";
-  private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String DEFAULT_EXML_FACET_NAME = "EXML";
 
@@ -39,8 +39,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    return JANGAROO_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging()) ||
-      mavenProjectModel.findPlugin(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID) != null;
+    return findDeclaredPlugin(mavenProjectModel, JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID) != null;
   }
 
   protected void setupFacet(ExmlFacet exmlFacet, MavenProject mavenProjectModel) {
