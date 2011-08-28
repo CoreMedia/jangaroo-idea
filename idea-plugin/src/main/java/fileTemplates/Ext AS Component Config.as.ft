@@ -1,0 +1,19 @@
+package ${PACKAGE_NAME}#if (${PACKAGE_NAME} != "") #end{
+
+import ext.Ext;
+import ${Super_config_class_name};
+
+[ExtConfig(target="${Component_class}", xtype)]
+public class ${NAME} extends ${Super_config_class_name} {
+
+  public static native function get xtype():String;
+
+  public function ${NAME}(config:Object = null) {
+    super(config || {});
+  }
+
+  public native function get attribute():String;
+
+  public native function set attribute(value:String):void;
+}
+}
