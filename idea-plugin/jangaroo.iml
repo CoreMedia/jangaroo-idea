@@ -23,8 +23,8 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/0.8.6-SNAPSHOT/jangaroo-compiler-0.8.6-SNAPSHOT.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.8.6-SNAPSHOT/jangaroo-utils-0.8.6-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/0.8.6/jangaroo-compiler-0.8.6.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.8.6/jangaroo-utils-0.8.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
@@ -45,7 +45,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler/0.8.6-SNAPSHOT/exml-compiler-0.8.6-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler/0.8.6/exml-compiler-0.8.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
@@ -56,21 +56,12 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler/0.8.6-SNAPSHOT/properties-compiler-0.8.6-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler/0.8.6/properties-compiler-0.8.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
           <root url="file://$MODULE_DIR$/../../../../jangaroo-tools/exml/properties-compiler/src/main/java" />
         </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/apache/maven/shared/file-management/1.2.1/file-management-1.2.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library">

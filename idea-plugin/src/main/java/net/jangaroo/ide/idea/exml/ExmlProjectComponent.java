@@ -128,7 +128,7 @@ public class ExmlProjectComponent implements ProjectComponent {
                 }
                 codePrefix.append("{\n");
 
-                String configClassName = CompilerUtils.qName(exmlConfig.getConfigClassPackage(), ConfigClass.createNewName(className));
+                String configClassName = CompilerUtils.qName(exmlConfig.getConfigClassPackage(), ConfigClass.createConfigClassName(className));
                 codePrefix.append("public function ").append(className).append("(config:")
                   .append(configClassName).append(" = null){\n  super(").append(configClassName).append("({x:(");
                 String codeSuffix = "))});\n}\n}\n}\n";
