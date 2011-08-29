@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.exml;
 
+import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.index.JavaScriptIndex;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
@@ -15,6 +16,7 @@ import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.source.xml.XmlElementDescriptorProvider;
 import com.intellij.psi.xml.XmlTag;
@@ -32,7 +34,7 @@ import java.net.URL;
 
 /**
  * A custom XmlElementDescriptorProvider to support navigation from component/attribute elements to
- * the corresponding EXML, AS, or JS files.
+ * the corresponding EXML or AS files.
  */
 public class ComponentXmlElementDescriptorProvider implements XmlElementDescriptorProvider {
   public XmlElementDescriptor getDescriptor(XmlTag xmltag) {
@@ -41,7 +43,15 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       if (xmltag.getContainingFile().getName().endsWith(ExmlConstants.EXML_SUFFIX)
         && !ExmlConstants.EXML_NAMESPACE_URI.equals(namespace)) {
         XmlNSDescriptor xmlNSDescriptor = xmltag.getNSDescriptor(namespace, false);
-        XmlElementDescriptor xmlElementDescriptor = xmlNSDescriptor != null ? xmlNSDescriptor.getElementDescriptor(xmltag) : null;
+        XmlElementDescriptor xmlElementDescriptor = null;
+        if (xmlNSDescriptor != null) {
+          try {
+            xmlElementDescriptor = xmlNSDescriptor.getElementDescriptor(xmltag);
+          } catch (Exception e) {
+            // assertion isValid() sometimes fails: log & ignore!
+            IdeaLogger.getInstance(this.getClass()).warn("Cannot determine element descriptor of XML element " + xmltag.getName() + " in file " + xmltag.getContainingFile().getName(), e);
+          }
+        }
         if (xmlElementDescriptor == null) {
           xmlElementDescriptor = XmlUtil.findXmlDescriptorByType(xmltag);
         }
@@ -71,14 +81,17 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
         if (componentClassName != null) {
           VirtualFile exmlFile = findExmlFile(project, componentClassName);
           if (exmlFile != null) {
-            return PsiManager.getInstance(project).findFile(exmlFile);
+            PsiFile file = PsiManager.getInstance(project).findFile(exmlFile);
+            if (file != null && file.isValid()) {
+              return file;
+            }
           }
         }
         String configClassName = declaration.getAttributeValue("type");
         if (configClassName != null) {
           configClassName = XmlUtil.findLocalNameByQualifiedName(configClassName);
           JSClass asClass = getASClass(project, configClassName);
-          if (asClass != null) {
+          if (asClass != null && asClass.isValid()) {
             return asClass;
           }
         }
