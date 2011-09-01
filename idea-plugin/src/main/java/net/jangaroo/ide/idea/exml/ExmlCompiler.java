@@ -1,8 +1,8 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.compiler.impl.CompilerUtil;
+import com.intellij.compiler.make.MakeUtil;
 import com.intellij.facet.FacetManager;
-import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
@@ -10,6 +10,7 @@ import com.intellij.openapi.compiler.SourceGeneratingCompiler;
 import com.intellij.openapi.compiler.ValidityState;
 import com.intellij.openapi.compiler.ex.CompileContextEx;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
@@ -28,16 +29,28 @@ import net.jangaroo.exml.model.ConfigClass;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.jooc.JangarooParser;
 import net.jangaroo.jooc.Jooc;
+import net.jangaroo.properties.PropcException;
+import net.jangaroo.properties.PropertyClassGenerator;
+import net.jangaroo.properties.model.PropertiesClass;
+import net.jangaroo.properties.model.ResourceBundleClass;
 import net.jangaroo.utils.CompilerUtils;
+import net.jangaroo.utils.FileLocations;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
 import java.io.DataInput;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -57,14 +70,8 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return "EXML Compiler";
   }
 
-  public boolean isCompilableFile(VirtualFile file, CompileContext context) {
-    if (ExmlConstants.EXML_SUFFIX.equals("." + file.getExtension())) {
-      Module module = context.getModuleByFile(file);
-      if (module != null && FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID) != null) {
-        return true;
-      }
-    }
-    return false;
+  public boolean hasExmlFacet(Module module, CompileContext context) {
+    return module != null && FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID) != null;
   }
 
   public static ExmlcConfigurationBean getExmlConfig(Module module) {
@@ -140,17 +147,18 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
     exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
-    List<GenerationItem> successfullyGeneratedItems = new ArrayList<GenerationItem>(items.length); // TODO!
+    List<GenerationItem> successfullyGeneratedItems = new ArrayList<GenerationItem>(items.length);
     Exmlc exmlc = new Exmlc(exmlConfiguration);
+    PropertyClassGenerator propertyClassGenerator = new PropertyClassGenerator(exmlConfiguration);
     for (GenerationItem generationItem : items) {
       JooGenerationItem jooGenerationItem = (JooGenerationItem)generationItem;
       VirtualFile virtualSourceFile = jooGenerationItem.getSourceFile();
       File sourceFile = VfsUtil.virtualToIoFile(virtualSourceFile);
       try {
-        if (jooGenerationItem.isConfigClass()) {
-          exmlc.generateConfigClass(sourceFile);
-        } else {
-          exmlc.generateComponentClass(sourceFile);
+        switch (jooGenerationItem.getType()) {
+          case CONFIG: exmlc.generateConfigClass(sourceFile); break;
+          case COMPONENT: exmlc.generateComponentClass(sourceFile); break;
+          case PROPERTIES: generatePropertiesClass(propertyClassGenerator, exmlConfiguration, sourceFile); break;
         }
         successfullyGeneratedItems.add(generationItem);
       } catch (ExmlcException e) {
@@ -177,6 +185,28 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return Logger.getInstance("ExmlCompiler");
   }
 
+  protected List<VirtualFile> getCompilableFiles(CompileContext context) {
+    FileTypeManager fileTypeManager = FileTypeManager.getInstance();
+    VirtualFile[] files = context.getProjectCompileScope().getFiles(fileTypeManager.getFileTypeByExtension("xml"), true);
+    List<VirtualFile> compilableFiles = new ArrayList<VirtualFile>(files.length);
+    for (VirtualFile file : files) {
+      if (ExmlConstants.EXML_SUFFIX.equals("." + file.getExtension()) && hasExmlFacet(context.getModuleByFile(file), context)) {
+        compilableFiles.add(file);
+      }
+    }
+    VirtualFile[] propertiesFiles = context.getProjectCompileScope().getFiles(fileTypeManager.getFileTypeByExtension("properties"), true);
+    for (VirtualFile file : propertiesFiles) {
+      Module module = context.getModuleByFile(file);
+      if (hasExmlFacet(module, context)) {
+        VirtualFile sourceRoot = MakeUtil.getSourceRoot(context, module, file);
+        if (!(sourceRoot != null && sourceRoot.getPath().endsWith("/webapp"))) { // hack: skip all files under .../webapp
+          compilableFiles.add(file);
+        }
+      }
+    }
+    return compilableFiles;
+  }
+
   // TODO: copied from Jangaroo CompilerUtils 0.8.7-SNAPSHOT, remove when updating:
   private static String getRelativePath(File baseDirectory, File file) {
     String relativePath = null;
@@ -193,6 +223,74 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return relativePath;
   }
 
+  public static File generatePropertiesClass(PropertyClassGenerator propertyClassGenerator, FileLocations locations, File propertiesFile) {
+    PropertiesConfiguration p = new PropertiesConfiguration();
+    p.setDelimiterParsingDisabled(true);
+    Reader r = null;
+    try {
+      r = new BufferedReader(new InputStreamReader(new FileInputStream(propertiesFile), "UTF-8"));
+      p.load(r);
+    } catch (IOException e) {
+      throw new PropcException("Error while parsing properties file", propertiesFile, e);
+    } catch (ConfigurationException e) {
+      throw new PropcException("Error while parsing properties file", propertiesFile, e);
+    } finally {
+      try {
+        if (r != null) {
+          r.close();
+        }
+      } catch (IOException e) {
+        //not really
+      }
+    }
+
+    ResourceBundleClass bundle = new ResourceBundleClass(computeBaseClassName(locations, propertiesFile));
+
+    // Create properties class, which registers itself with the bundle.
+    return propertyClassGenerator.generateJangarooClass(new PropertiesClass(bundle, computeLocale(propertiesFile), p, propertiesFile));
+  }
+
+  public static File computeGeneratedPropertiesClassFile(FileLocations locations, File propertiesFile) {
+    return computeGeneratedPropertiesClassFile(locations, computeBaseClassName(locations, propertiesFile), computeLocale(propertiesFile));
+  }
+
+  private static File computeGeneratedPropertiesClassFile(FileLocations locations, String className, Locale locale) {
+    StringBuilder suffix = new StringBuilder("_properties");
+    if (locale != null) {
+      suffix.append("_").append(locale);
+    }
+    suffix.append(".as");
+    String generatedPropertiesClassFileName = CompilerUtils.fileNameFromQName(className, '/', suffix.toString());
+    return new File(locations.getOutputDirectory(), generatedPropertiesClassFileName); 
+  }
+
+  private static String computeBaseClassName(FileLocations locations, File srcFile) {
+    String className;
+    try {
+      className = CompilerUtils.qNameFromFile(locations.findSourceDir(srcFile), srcFile);
+    } catch (IOException e) {
+      throw new PropcException(e);
+    }
+    int underscorePos = className.indexOf('_');
+    if (underscorePos != -1) {
+      className = className.substring(0, underscorePos);
+    }
+    return className;
+  }
+
+  private static Locale computeLocale(File propertiesFile) {
+    String propertiesFileName = CompilerUtils.removeExtension(propertiesFile.getName());
+    String[] parts = propertiesFileName.split("_", 4);
+    switch (parts.length) {
+      case 4: return new Locale(parts[1], parts[2], parts[3]);
+      case 3: return new Locale(parts[1], parts[2]);
+      case 2: return new Locale(parts[1]);
+    }
+    return null;
+  }
+
+  // END TODO copied from Jangaroo 0.8.7-SNAPSHOT
+
   private final class PrepareAction implements Computable<GenerationItem[]> {
     private final CompileContext context;
 
@@ -204,15 +302,9 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
       if (context.getProject().isDisposed()) {
         return EMPTY_GENERATION_ITEM_ARRAY;
       }
-      VirtualFile[] files = context.getProjectCompileScope().getFiles(XmlFileType.INSTANCE, true);
-      List<VirtualFile> exmlFiles = new ArrayList<VirtualFile>(files.length);
-      for (VirtualFile file : files) {
-        if (isCompilableFile(file, context)) {
-          exmlFiles.add(file);
-        }
-      }
-      List<GenerationItem> items = new ArrayList<GenerationItem>(exmlFiles.size());
-      final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, exmlFiles.toArray(new VirtualFile[exmlFiles.size()]));
+      List<VirtualFile> compilableFiles = getCompilableFiles(context);
+      List<GenerationItem> items = new ArrayList<GenerationItem>(compilableFiles.size());
+      final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, compilableFiles.toArray(new VirtualFile[compilableFiles.size()]));
       for (Map.Entry<Module,List<VirtualFile>> entry : filesByModule.entrySet()) {
         Module module = entry.getKey();
         ExmlcConfigurationBean exmlcConfigurationBean = getExmlConfig(module);
@@ -225,15 +317,20 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         ExmlConfigClassGenerator exmlConfigClassGenerator = new ExmlConfigClassGenerator(exmlConfiguration);
         for (VirtualFile file : entry.getValue()) {
           try {
-            // TODO: make this a reusable method in ExmlConfigClassGenerator:
-            File generatedConfigClassFile = exmlConfigClassGenerator.computeConfigClassTarget(ConfigClass.createConfigClassName(file.getNameWithoutExtension()));
-            addItem(file, generatedConfigClassFile, true, module, exmlConfiguration, items);
-
-            File exmlFile = VfsUtil.virtualToIoFile(file);
-            // TODO: refactor ExmlComponentClassGenerator to make this easier and encapsulate logic:
-            String qName = CompilerUtils.qNameFromFile(exmlConfiguration.findSourceDir(exmlFile), exmlFile);
-            File generatedComponentClassFile = CompilerUtils.fileFromQName(qName, exmlConfiguration.getOutputDirectory(), JangarooParser.AS_SUFFIX);
-            addItem(file, generatedComponentClassFile, false, module, exmlConfiguration, items);
+            File ioFile = VfsUtil.virtualToIoFile(file);
+            if ("properties".equals(file.getExtension())) {
+              File generatedPropertiesClassFile = computeGeneratedPropertiesClassFile(exmlConfiguration, ioFile);
+              addItem(file, generatedPropertiesClassFile, JooGenerationItemType.PROPERTIES, module, exmlConfiguration, items);
+            } else {
+              // TODO: make this a reusable method in ExmlConfigClassGenerator:
+              File generatedConfigClassFile = exmlConfigClassGenerator.computeConfigClassTarget(ConfigClass.createConfigClassName(file.getNameWithoutExtension()));
+              addItem(file, generatedConfigClassFile, JooGenerationItemType.CONFIG, module, exmlConfiguration, items);
+  
+              // TODO: refactor ExmlComponentClassGenerator to make this easier and encapsulate logic:
+              String qName = CompilerUtils.qNameFromFile(exmlConfiguration.findSourceDir(ioFile), ioFile);
+              File generatedComponentClassFile = CompilerUtils.fileFromQName(qName, exmlConfiguration.getOutputDirectory(), JangarooParser.AS_SUFFIX);
+              addItem(file, generatedComponentClassFile, JooGenerationItemType.COMPONENT, module, exmlConfiguration, items);
+            }
           } catch (IOException e) {
             e.printStackTrace();
             // TODO
@@ -244,13 +341,12 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     }
 
     private void addItem(VirtualFile file,
-                         File generatedFile, boolean configClass, Module module, ExmlConfiguration exmlConfiguration,
+                         File generatedFile, JooGenerationItemType type, Module module, ExmlConfiguration exmlConfiguration,
                          List<GenerationItem> items) throws IOException {
       ProjectFileIndex fileIndex = ProjectRootManager.getInstance(module.getProject()).getFileIndex();
-      File sourceDir = exmlConfiguration.findSourceDir(generatedFile);
-      String generatedFilePath = getRelativePath(sourceDir, generatedFile).replace(File.separatorChar, '/');
+      String generatedFilePath = getRelativePath(exmlConfiguration.getOutputDirectory(), generatedFile).replace(File.separatorChar, '/');
       JooGenerationItem generationItem =
-        new JooGenerationItem(module, file, configClass, fileIndex.isInTestSourceContent(file), generatedFilePath);
+        new JooGenerationItem(module, file, type, fileIndex.isInTestSourceContent(file), generatedFilePath);
       if (context.isMake()) {
         if (generatedFile == null || !generatedFile.exists() || generatedFile.lastModified() <= file.getModificationCount()) {
           // TODO: createSourceRootIfNotExist(sourceRootPath, module);
@@ -263,21 +359,25 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     }
   }
 
+  private enum JooGenerationItemType {
+    PROPERTIES, CONFIG, COMPONENT
+  }
+
   private final static class JooGenerationItem implements GenerationItem {
     private final Module module;
     private final VirtualFile file;
     private final boolean testSource;
     private final String generatedFilePath;
-    private final boolean configClass;
+    private final JooGenerationItemType type;
 
     public JooGenerationItem(@NotNull Module module,
                              @NotNull VirtualFile file,
-                             boolean configClass,
+                             JooGenerationItemType type,
                              boolean testSource,
                              @NotNull String generatedFilePath) {
       this.module = module;
       this.file = file;
-      this.configClass = configClass;
+      this.type = type;
       this.testSource = testSource;
       this.generatedFilePath = generatedFilePath;
     }
@@ -291,8 +391,8 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
       return generatedFilePath;
     }
 
-    public boolean isConfigClass() {
-      return configClass;
+    public JooGenerationItemType getType() {
+      return type;
     }
 
     @Nullable

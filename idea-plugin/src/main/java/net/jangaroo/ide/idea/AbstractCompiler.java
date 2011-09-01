@@ -16,7 +16,6 @@ import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.CompileLog;
 import net.jangaroo.jooc.JooSymbol;
 import net.jangaroo.jooc.config.DebugMode;
@@ -53,17 +52,6 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
 
   protected AbstractCompiler() {
     getLog().debug("AbstractCompiler constructor");
-  }
-
-  private static @NotNull VirtualFile getOrCreateVirtualFile(@NotNull final String path) throws IOException {
-    LocalFileSystem localFileSystem = LocalFileSystem.getInstance();
-    VirtualFile virtualFile = localFileSystem.findFileByPath(path);
-    if (virtualFile == null) {
-      File file = new File(path);
-      VirtualFile vfParentFolder = getOrCreateVirtualFile(file.getParent());
-      virtualFile = localFileSystem.createChildDirectory(null, vfParentFolder, file.getName());
-    }
-    return virtualFile;
   }
 
   @NotNull
@@ -134,17 +122,6 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
   }
 
   protected abstract String getOutputFileSuffix();
-
-  protected OutputSinkItem createGeneratedSourcesOutputSinkItem(CompileContext context, String generatedSourcesDirectory) {
-    try {
-      String generatedAs3RootDir = getOrCreateVirtualFile(generatedSourcesDirectory).getPath();
-      return new OutputSinkItem(generatedAs3RootDir);
-    } catch (IOException e) {
-      context.addMessage(CompilerMessageCategory.ERROR, "Target directory could not be created: " + generatedSourcesDirectory, null, -1, -1);
-      getLog().warn("Jangaroo: Generated sources target directory could not be created.", e);
-      return null;
-    }
-  }
 
   protected static class IdeaCompileLog implements CompileLog {
     private CompileContext compileContext;

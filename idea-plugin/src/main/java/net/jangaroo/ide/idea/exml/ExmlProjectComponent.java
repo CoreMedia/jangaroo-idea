@@ -19,8 +19,6 @@ import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -28,19 +26,22 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.*;
+import com.intellij.psi.InjectedLanguagePlaces;
+import com.intellij.psi.LanguageInjector;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiLanguageInjectionHost;
+import com.intellij.psi.PsiManager;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.ExmlConstants;
 import net.jangaroo.exml.model.ConfigClass;
-import net.jangaroo.ide.idea.properties.PropertiesCompiler;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,7 +50,6 @@ import java.util.List;
 public class ExmlProjectComponent implements ProjectComponent {
   private Project project;
   private ExmlCompiler exmlc;
-  private PropertiesCompiler propc;
 
   public ExmlProjectComponent(Project project) {
     this.project = project;
@@ -73,7 +73,6 @@ public class ExmlProjectComponent implements ProjectComponent {
 
   public void initComponent() {
     exmlc = new ExmlCompiler();
-    propc = new PropertiesCompiler();
     // language injection: see http://www.jetbrains.net/devnet/message/5208687
     PsiManager.getInstance(project).registerLanguageInjector(new LanguageInjector() {
       public void getLanguagesToInject(@NotNull PsiLanguageInjectionHost psiLanguageInjectionHost, @NotNull InjectedLanguagePlaces injectedLanguagePlaces) {
@@ -196,7 +195,7 @@ public class ExmlProjectComponent implements ProjectComponent {
 
   public void disposeComponent() {
     exmlc = null;
-    propc = null;
+    //propc = null;
   }
 
   @NotNull
@@ -206,22 +205,11 @@ public class ExmlProjectComponent implements ProjectComponent {
 
   public void projectOpened() {
     CompilerManager compilerManager = CompilerManager.getInstance(project);
-    FileType exml = FileTypeManager.getInstance().getFileTypeByExtension("exml");
-    FileType properties = FileTypeManager.getInstance().getFileTypeByExtension("properties");
-    FileType actionscript = FileTypeManager.getInstance().getFileTypeByExtension("as");
-
-    compilerManager.addCompilableFileType(exml);
     compilerManager.addCompiler(exmlc);
-
-    compilerManager.addCompilableFileType(properties);
-    compilerManager.addTranslatingCompiler(propc,
-      Collections.<FileType>singleton(properties),
-      Collections.<FileType>singleton(actionscript));
   }
 
   public void projectClosed() {
     CompilerManager compilerManager = CompilerManager.getInstance(project);
     compilerManager.removeCompiler(exmlc);
-    compilerManager.removeCompiler(propc);
   }
 }
