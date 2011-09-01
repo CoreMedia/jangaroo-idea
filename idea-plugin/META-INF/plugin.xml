@@ -15,12 +15,6 @@
   <depends>org.jetbrains.idea.maven</depends>
   <depends>com.intellij.javaee</depends>
 
-  <application-components>
-    <component>
-      <implementation-class>net.jangaroo.ide.idea.exml.ExmlApplicationComponent</implementation-class>
-    </component>
-  </application-components>
-
   <project-components>
     <component>
       <implementation-class>net.jangaroo.ide.idea.JoocProjectComponent</implementation-class>
@@ -39,6 +33,7 @@
     <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
     <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
 
+    <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
     <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
     <facetType implementation="net.jangaroo.ide.idea.exml.ExmlFacetType"/>
     <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
