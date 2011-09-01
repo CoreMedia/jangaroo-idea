@@ -86,7 +86,7 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
             outputSinkItem.addOutputItem(file, outputFile);
             String fileUrl = file.getUrl();
             //if (joocConfig.showCompilerInfoMessages) {
-            context.addMessage(CompilerMessageCategory.INFORMATION, "as->js (" + outputFile.getPath() + ")", fileUrl, -1, -1);
+            //  context.addMessage(CompilerMessageCategory.INFORMATION, "as->js (" + outputFile.getPath() + ")", fileUrl, -1, -1);
             //}
             getLog().info("as->js: " + fileUrl + " -> " + outputFile.getPath());
           }
