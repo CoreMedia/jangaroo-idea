@@ -1,13 +1,10 @@
 package net.jangaroo.ide.idea;
 
-import com.intellij.compiler.impl.CompilerUtil;
 import com.intellij.compiler.make.MakeUtil;
 import com.intellij.facet.FacetManager;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
-import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.LibraryOrderEntry;
@@ -19,7 +16,6 @@ import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Chunk;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.CompileLog;
 import net.jangaroo.jooc.JooSymbol;
@@ -36,14 +32,13 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA. User: fwienber Date: 23.08.11 Time: 14:12 To change this template use File | Settings |
  * File Templates.
  */
-public abstract class AbstractCompiler implements TranslatingCompiler {
+public abstract class AbstractCompiler implements com.intellij.openapi.compiler.Compiler {
   private static List<File> virtualToIoFiles(List<VirtualFile> virtualFiles) {
     List<File> ioFiles = new ArrayList<File>(virtualFiles.size());
     for (VirtualFile virtualSourceFile : virtualFiles) {
@@ -77,10 +72,6 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
   public boolean validateConfiguration(CompileScope scope) {
     return true;
   }
-
-  public abstract boolean isCompilableFile(VirtualFile file, CompileContext context);
-
-  protected abstract OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files);
 
   protected JoocConfiguration getJoocConfiguration(Module module, List<VirtualFile> virtualSourceFiles) {
     JangarooFacet jangarooFacet = FacetManager.getInstance(module).getFacetByType(JangarooFacetType.ID);
@@ -143,27 +134,6 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
   }
 
   protected abstract String getOutputFileSuffix();
-
-  public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
-    final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
-    final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
-
-    ApplicationManager.getApplication().runReadAction(new Runnable() {
-
-      public void run() {
-        for (Map.Entry<Module, List<VirtualFile>> filesOfModuleEntry : filesByModule.entrySet()) {
-          OutputSinkItem outputSinkItem = compile(context, filesOfModuleEntry.getKey(), filesOfModuleEntry.getValue());
-          if (outputSinkItem != null) {
-            outputs.add(outputSinkItem);
-          }
-        }
-      }
-
-    });
-    for (OutputSinkItem outputSinkItem : outputs) {
-      outputSinkItem.addTo(outputSink);
-    }
-  }
 
   protected OutputSinkItem createGeneratedSourcesOutputSinkItem(CompileContext context, String generatedSourcesDirectory) {
     try {

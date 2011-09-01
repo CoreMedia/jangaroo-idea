@@ -14,12 +14,16 @@
  */
 package net.jangaroo.ide.idea.properties;
 
+import com.intellij.compiler.impl.CompilerUtil;
 import com.intellij.compiler.make.MakeUtil;
 import com.intellij.facet.FacetManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.IntermediateOutputCompiler;
+import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.Chunk;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.exml.ExmlCompiler;
 import net.jangaroo.ide.idea.exml.ExmlFacetType;
@@ -31,6 +35,8 @@ import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +44,7 @@ import java.util.Set;
 /**
  *
  */
-public class PropertiesCompiler extends AbstractCompiler implements IntermediateOutputCompiler {
+public class PropertiesCompiler extends AbstractCompiler implements TranslatingCompiler, IntermediateOutputCompiler {
 
   @NotNull
   public String getDescription() {
@@ -65,7 +71,27 @@ public class PropertiesCompiler extends AbstractCompiler implements Intermediate
     return Jooc.AS_SUFFIX;
   }
 
-  @Override
+  public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final TranslatingCompiler.OutputSink outputSink) {
+    final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
+    final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
+
+    ApplicationManager.getApplication().runReadAction(new Runnable() {
+
+      public void run() {
+        for (Map.Entry<Module, List<VirtualFile>> filesOfModuleEntry : filesByModule.entrySet()) {
+          OutputSinkItem outputSinkItem = compile(context, filesOfModuleEntry.getKey(), filesOfModuleEntry.getValue());
+          if (outputSinkItem != null) {
+            outputs.add(outputSinkItem);
+          }
+        }
+      }
+
+    });
+    for (OutputSinkItem outputSinkItem : outputs) {
+      outputSinkItem.addTo(outputSink);
+    }
+  }
+
   protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files) {
     ExmlcConfigurationBean exmlcConfigurationBean = ExmlCompiler.getExmlConfig(module);
     FileLocations exmlConfiguration = new FileLocations();

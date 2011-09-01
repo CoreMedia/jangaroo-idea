@@ -33,7 +33,6 @@ import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.XmlElementDescriptor;
-import com.intellij.xml.impl.schema.XmlElementDescriptorImpl;
 import net.jangaroo.exml.ExmlConstants;
 import net.jangaroo.exml.model.ConfigClass;
 import net.jangaroo.ide.idea.properties.PropertiesCompiler;
@@ -212,9 +211,7 @@ public class ExmlProjectComponent implements ProjectComponent {
     FileType actionscript = FileTypeManager.getInstance().getFileTypeByExtension("as");
 
     compilerManager.addCompilableFileType(exml);
-    compilerManager.addTranslatingCompiler(exmlc,
-      Collections.<FileType>singleton(exml),
-      Collections.<FileType>singleton(actionscript));
+    compilerManager.addCompiler(exmlc);
 
     compilerManager.addCompilableFileType(properties);
     compilerManager.addTranslatingCompiler(propc,

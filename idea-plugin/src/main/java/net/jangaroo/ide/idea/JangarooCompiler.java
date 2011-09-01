@@ -14,10 +14,14 @@
  */
 package net.jangaroo.ide.idea;
 
+import com.intellij.compiler.impl.CompilerUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
+import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.module.Module;
+import com.intellij.util.Chunk;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +33,7 @@ import java.io.File;
 /**
  *
  */
-public class JangarooCompiler extends AbstractCompiler {
+public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
 
   @Override
   @NotNull
@@ -37,7 +41,6 @@ public class JangarooCompiler extends AbstractCompiler {
     return "Jangaroo Compiler";
   }
 
-  @Override
   public boolean isCompilableFile(VirtualFile file, CompileContext context) {
     // Does not work due to ClassLoader problems:
     // return JavaScriptSupportLoader.ECMA_SCRIPT_L4.equals(JavaScriptSupportLoader.getLanguageDialect(file));
@@ -45,7 +48,27 @@ public class JangarooCompiler extends AbstractCompiler {
       && !file.getPath().contains("/joo-api/"); // hack: skip all files under .../joo-api
   }
 
-  @Override
+  public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
+    final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
+    final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
+
+    ApplicationManager.getApplication().runReadAction(new Runnable() {
+
+      public void run() {
+        for (Map.Entry<Module, List<VirtualFile>> filesOfModuleEntry : filesByModule.entrySet()) {
+          OutputSinkItem outputSinkItem = compile(context, filesOfModuleEntry.getKey(), filesOfModuleEntry.getValue());
+          if (outputSinkItem != null) {
+            outputs.add(outputSinkItem);
+          }
+        }
+      }
+
+    });
+    for (OutputSinkItem outputSinkItem : outputs) {
+      outputSinkItem.addTo(outputSink);
+    }
+  }
+
   protected OutputSinkItem compile(CompileContext context, Module module, final List<VirtualFile> files) {
     JoocConfiguration joocConfig = getJoocConfiguration(module, files);
     OutputSinkItem outputSinkItem = null;
