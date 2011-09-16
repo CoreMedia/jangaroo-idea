@@ -14,6 +14,7 @@
  */
 package net.jangaroo.ide.idea.exml;
 
+import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -98,6 +99,11 @@ public class ExmlProjectComponent implements ProjectComponent {
             String text = attributeValue.getText();
             if (text.startsWith("\"{") && text.endsWith("}\"")) {
 
+              String configClassPackage = exmlConfig.getConfigClassPackage();
+              if (configClassPackage == null) {
+                IdeaLogger.getInstance(this.getClass()).warn("No config class package set in module " + module.getName() + ", EXML AS3 language injection cancelled.");
+                return;
+              }
               ASTNode node = attributeValue.getParent().getNode();
               XmlTag xmlTag = findTopLevelTag(node);
               if (xmlTag != null) {
@@ -126,7 +132,7 @@ public class ExmlProjectComponent implements ProjectComponent {
                 }
                 codePrefix.append("{\n");
 
-                String configClassName = CompilerUtils.qName(exmlConfig.getConfigClassPackage(), ConfigClass.createConfigClassName(className));
+                String configClassName = CompilerUtils.qName(configClassPackage, ConfigClass.createConfigClassName(className));
                 codePrefix.append("public function ").append(className).append("(config:")
                   .append(configClassName).append(" = null){\n  super(").append(configClassName).append("({x:(");
                 String codeSuffix = "))});\n}\n}\n}\n";
