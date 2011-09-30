@@ -23,8 +23,8 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/0.8.6/jangaroo-compiler-0.8.6.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.8.6/jangaroo-utils-0.8.6.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/0.8.7/jangaroo-compiler-0.8.7.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.8.7/jangaroo-utils-0.8.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
@@ -45,7 +45,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler/0.8.6/exml-compiler-0.8.6.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler/0.8.7/exml-compiler-0.8.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
@@ -56,7 +56,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler/0.8.6/properties-compiler-0.8.6.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler/0.8.7/properties-compiler-0.8.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
