@@ -211,7 +211,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       for (PackagingElement packagingElement : libDir.getChildren()) {
         if (packagingElement instanceof LibraryPackagingElement) {
           Library library = ((LibraryPackagingElement)packagingElement).findLibrary(packagingElementResolvingContext);
-          if (library.getName().indexOf(":jangaroo:") != -1) {
+          if (library != null && library.getName().contains(":jangaroo:")) {
             toBeRemovedLibraries.add(packagingElement);
           }
         } else if (packagingElement instanceof ArchivePackagingElement) {
@@ -219,9 +219,14 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
           if (!archiveChildren.isEmpty()) {
             PackagingElement<?> modulePackagingElement = archiveChildren.get(0);
             if (modulePackagingElement instanceof ModuleOutputPackagingElement) {
-              Module module = moduleManager.findModuleByName(((ModuleOutputPackagingElement)modulePackagingElement).getModuleName());
-              if (FacetManager.getInstance(module).getFacetsByType(JangarooFacetType.ID) != null) {
-                toBeRemovedLibraries.add(packagingElement);
+              String moduleName = ((ModuleOutputPackagingElement)modulePackagingElement).getModuleName();
+              if (moduleName != null) {
+                Module module = moduleManager.findModuleByName(moduleName);
+                if (module != null) {
+                  if (FacetManager.getInstance(module).getFacetByType(JangarooFacetType.ID) != null) {
+                    toBeRemovedLibraries.add(packagingElement);
+                  }
+                }
               }
             }
           }
