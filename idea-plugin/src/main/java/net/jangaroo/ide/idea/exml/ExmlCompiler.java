@@ -29,28 +29,17 @@ import net.jangaroo.exml.model.ConfigClass;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.jooc.JangarooParser;
 import net.jangaroo.jooc.Jooc;
-import net.jangaroo.properties.PropcException;
 import net.jangaroo.properties.PropertyClassGenerator;
-import net.jangaroo.properties.model.PropertiesClass;
-import net.jangaroo.properties.model.ResourceBundleClass;
 import net.jangaroo.utils.CompilerUtils;
-import net.jangaroo.utils.FileLocations;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.DataInput;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -158,7 +147,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         switch (jooGenerationItem.getType()) {
           case CONFIG: exmlc.generateConfigClass(sourceFile); break;
           case COMPONENT: exmlc.generateComponentClass(sourceFile); break;
-          case PROPERTIES: generatePropertiesClass(propertyClassGenerator, exmlConfiguration, sourceFile); break;
+          case PROPERTIES: propertyClassGenerator.generate(sourceFile); break;
         }
         successfullyGeneratedItems.add(generationItem);
       } catch (ExmlcException e) {
@@ -207,90 +196,6 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return compilableFiles;
   }
 
-  // TODO: copied from Jangaroo CompilerUtils 0.8.7-SNAPSHOT, remove when updating:
-  private static String getRelativePath(File baseDirectory, File file) {
-    String relativePath = null;
-    try {
-      String canonicalBasePath = baseDirectory.getCanonicalPath() + File.separator;
-      String canonicalPath = file.getCanonicalPath();
-      if (canonicalPath.length() > canonicalBasePath.length() &&
-        canonicalPath.startsWith(canonicalBasePath)) {
-        relativePath = canonicalPath.substring(canonicalBasePath.length());
-      }
-    } catch (IOException e) {
-      throw new IllegalArgumentException("could not determine qualified name from file; the strange file is called " + file + " in " + baseDirectory, e);
-    }
-    return relativePath;
-  }
-
-  public static File generatePropertiesClass(PropertyClassGenerator propertyClassGenerator, FileLocations locations, File propertiesFile) {
-    PropertiesConfiguration p = new PropertiesConfiguration();
-    p.setDelimiterParsingDisabled(true);
-    Reader r = null;
-    try {
-      r = new BufferedReader(new InputStreamReader(new FileInputStream(propertiesFile), "UTF-8"));
-      p.load(r);
-    } catch (IOException e) {
-      throw new PropcException("Error while parsing properties file", propertiesFile, e);
-    } catch (ConfigurationException e) {
-      throw new PropcException("Error while parsing properties file", propertiesFile, e);
-    } finally {
-      try {
-        if (r != null) {
-          r.close();
-        }
-      } catch (IOException e) {
-        //not really
-      }
-    }
-
-    ResourceBundleClass bundle = new ResourceBundleClass(computeBaseClassName(locations, propertiesFile));
-
-    // Create properties class, which registers itself with the bundle.
-    return propertyClassGenerator.generateJangarooClass(new PropertiesClass(bundle, computeLocale(propertiesFile), p, propertiesFile));
-  }
-
-  public static File computeGeneratedPropertiesClassFile(FileLocations locations, File propertiesFile) {
-    return computeGeneratedPropertiesClassFile(locations, computeBaseClassName(locations, propertiesFile), computeLocale(propertiesFile));
-  }
-
-  private static File computeGeneratedPropertiesClassFile(FileLocations locations, String className, Locale locale) {
-    StringBuilder suffix = new StringBuilder("_properties");
-    if (locale != null) {
-      suffix.append("_").append(locale);
-    }
-    suffix.append(".as");
-    String generatedPropertiesClassFileName = CompilerUtils.fileNameFromQName(className, '/', suffix.toString());
-    return new File(locations.getOutputDirectory(), generatedPropertiesClassFileName); 
-  }
-
-  private static String computeBaseClassName(FileLocations locations, File srcFile) {
-    String className;
-    try {
-      className = CompilerUtils.qNameFromFile(locations.findSourceDir(srcFile), srcFile);
-    } catch (IOException e) {
-      throw new PropcException(e);
-    }
-    int underscorePos = className.indexOf('_');
-    if (underscorePos != -1) {
-      className = className.substring(0, underscorePos);
-    }
-    return className;
-  }
-
-  private static Locale computeLocale(File propertiesFile) {
-    String propertiesFileName = CompilerUtils.removeExtension(propertiesFile.getName());
-    String[] parts = propertiesFileName.split("_", 4);
-    switch (parts.length) {
-      case 4: return new Locale(parts[1], parts[2], parts[3]);
-      case 3: return new Locale(parts[1], parts[2]);
-      case 2: return new Locale(parts[1]);
-    }
-    return null;
-  }
-
-  // END TODO copied from Jangaroo 0.8.7-SNAPSHOT
-
   private final class PrepareAction implements Computable<GenerationItem[]> {
     private final CompileContext context;
 
@@ -315,11 +220,12 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
         exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
         ExmlConfigClassGenerator exmlConfigClassGenerator = new ExmlConfigClassGenerator(exmlConfiguration);
+        PropertyClassGenerator propertyClassGenerator = new PropertyClassGenerator(exmlConfiguration);
         for (VirtualFile file : entry.getValue()) {
           try {
             File ioFile = VfsUtil.virtualToIoFile(file);
             if ("properties".equals(file.getExtension())) {
-              File generatedPropertiesClassFile = computeGeneratedPropertiesClassFile(exmlConfiguration, ioFile);
+              File generatedPropertiesClassFile = propertyClassGenerator.computeGeneratedPropertiesClassFile(ioFile);
               addItem(file, generatedPropertiesClassFile, JooGenerationItemType.PROPERTIES, module, exmlConfiguration, items);
             } else {
               // TODO: make this a reusable method in ExmlConfigClassGenerator:
@@ -344,7 +250,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
                          File generatedFile, JooGenerationItemType type, Module module, ExmlConfiguration exmlConfiguration,
                          List<GenerationItem> items) throws IOException {
       ProjectFileIndex fileIndex = ProjectRootManager.getInstance(module.getProject()).getFileIndex();
-      String generatedFilePath = getRelativePath(exmlConfiguration.getOutputDirectory(), generatedFile).replace(File.separatorChar, '/');
+      String generatedFilePath = CompilerUtils.getRelativePath(exmlConfiguration.getOutputDirectory(), generatedFile).replace(File.separatorChar, '/');
       JooGenerationItem generationItem =
         new JooGenerationItem(module, file, type, fileIndex.isInTestSourceContent(file), generatedFilePath);
       if (context.isMake()) {
