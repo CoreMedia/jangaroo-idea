@@ -15,9 +15,11 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.facet.Facet;
+import com.intellij.facet.FacetManager;
 import com.intellij.facet.FacetType;
 import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An IDEA Facet for Jangaroo.
@@ -26,5 +28,9 @@ public class ExmlFacet extends Facet<ExmlFacetConfiguration> {
 
   public ExmlFacet(@NotNull FacetType facetType, @NotNull Module module, String s, @NotNull ExmlFacetConfiguration facetConfiguration, Facet facet) {
     super(facetType, module, s, facetConfiguration, facet);
+  }
+
+  public static ExmlFacet ofModule(@Nullable Module module) {
+    return module == null ? null : FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID);
   }
 }

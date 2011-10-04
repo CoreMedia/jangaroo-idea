@@ -1,7 +1,6 @@
 package net.jangaroo.ide.idea;
 
 import com.intellij.compiler.make.MakeUtil;
-import com.intellij.facet.FacetManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
@@ -62,7 +61,7 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
   }
 
   protected JoocConfiguration getJoocConfiguration(Module module, List<VirtualFile> virtualSourceFiles) {
-    JangarooFacet jangarooFacet = FacetManager.getInstance(module).getFacetByType(JangarooFacetType.ID);
+    JangarooFacet jangarooFacet = JangarooFacet.ofModule(module);
     if (jangarooFacet==null) {
       return null;
     }
