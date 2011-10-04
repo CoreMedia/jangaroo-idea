@@ -25,7 +25,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static net.jangaroo.ide.idea.JangarooFacetImporter.JANGAROO_GROUP_ID;
-import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredPlugin;
+import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPlugin;
 
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.
@@ -39,7 +39,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    return findDeclaredPlugin(mavenProjectModel, JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID) != null;
+    return findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID) != null;
   }
 
   protected void setupFacet(ExmlFacet exmlFacet, MavenProject mavenProjectModel) {

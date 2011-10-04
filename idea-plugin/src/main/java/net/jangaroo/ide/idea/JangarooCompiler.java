@@ -38,14 +38,15 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
   @Override
   @NotNull
   public String getDescription() {
-    return "Jangaroo Compiler";
+    return "Jangaroo Compiler " + JangarooFacetImporter.JANGAROO_VERSION;
   }
 
   public boolean isCompilableFile(VirtualFile file, CompileContext context) {
     // Does not work due to ClassLoader problems:
     // return JavaScriptSupportLoader.ECMA_SCRIPT_L4.equals(JavaScriptSupportLoader.getLanguageDialect(file));
     return Jooc.AS_SUFFIX_NO_DOT.equals(file.getExtension())
-      && !file.getPath().contains("/joo-api/"); // hack: skip all files under .../joo-api
+      && !file.getPath().contains("/joo-api/") // hack: skip all files under .../joo-api
+      && JangarooFacet.ofModule(context.getModuleByFile(file)) != null;
   }
 
   public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
@@ -77,6 +78,7 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
       try {
         outputSinkItem = new OutputSinkItem(outputDirectoryPath);
         IdeaCompileLog ideaCompileLog = new IdeaCompileLog(context);
+        getLog().info("running " + getDescription() + "...");
         new Jooc(joocConfig, ideaCompileLog).run();
         for (final VirtualFile file : files) {
           if (ideaCompileLog.hasErrors(file)) {

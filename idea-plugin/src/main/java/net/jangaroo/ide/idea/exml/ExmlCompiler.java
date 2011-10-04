@@ -59,8 +59,8 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return "EXML Compiler";
   }
 
-  public boolean hasExmlFacet(Module module, CompileContext context) {
-    return module != null && FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID) != null;
+  public boolean hasExmlFacet(Module module) {
+    return ExmlFacet.ofModule(module) != null;
   }
 
   public static ExmlcConfigurationBean getExmlConfig(Module module) {
@@ -179,14 +179,14 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     VirtualFile[] files = context.getProjectCompileScope().getFiles(fileTypeManager.getFileTypeByExtension("xml"), true);
     List<VirtualFile> compilableFiles = new ArrayList<VirtualFile>(files.length);
     for (VirtualFile file : files) {
-      if (ExmlConstants.EXML_SUFFIX.equals("." + file.getExtension()) && hasExmlFacet(context.getModuleByFile(file), context)) {
+      if (ExmlConstants.EXML_SUFFIX.equals("." + file.getExtension()) && hasExmlFacet(context.getModuleByFile(file))) {
         compilableFiles.add(file);
       }
     }
     VirtualFile[] propertiesFiles = context.getProjectCompileScope().getFiles(fileTypeManager.getFileTypeByExtension("properties"), true);
     for (VirtualFile file : propertiesFiles) {
       Module module = context.getModuleByFile(file);
-      if (hasExmlFacet(module, context)) {
+      if (hasExmlFacet(module)) {
         VirtualFile sourceRoot = MakeUtil.getSourceRoot(context, module, file);
         if (!(sourceRoot != null && sourceRoot.getPath().endsWith("/webapp"))) { // hack: skip all files under .../webapp
           compilableFiles.add(file);
