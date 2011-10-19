@@ -1,11 +1,11 @@
 <!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
 <idea-plugin url="http://www.jangaroo.net" version="2">
   <name>Jangaroo</name>
-  <id>net.jangaroo.idea.0.8.6</id>
+  <id>net.jangaroo.idea</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 0.8.6 with IDEA 10.5.
+    A plugin for using the Jangaroo Open Source tools.
   </description>
-  <version>10.5.1.0</version>
+  <version>10.0.8.6.3</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net"
           logo="/net/jangaroo/jooley-16x16.png">Jangaroo</vendor>
