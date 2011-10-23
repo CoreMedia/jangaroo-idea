@@ -41,6 +41,7 @@ public class JangarooFacetEditorTabUI {
   private JCheckBox allowDuplicateVariableCheckBox;
   private TextFieldWithBrowseButton outputDirTextField;
   private JCheckBox showCompilerInfoMessages;
+  private JTextField compilerVersionTextField;
   private ButtonGroup whiteSpaceButtonGroup;
 
   private static final FileChooserDescriptor OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
@@ -84,6 +85,7 @@ public class JangarooFacetEditorTabUI {
   */
 
   public void setData(JoocConfigurationBean data) {
+    compilerVersionTextField.setText(data.compilerVersion);
     verboseCheckBox.setSelected(data.verbose);
     enableAssertionsCheckBox.setSelected(data.enableAssertions);
     whiteSpaceButtonGroup.setSelected(
@@ -96,6 +98,7 @@ public class JangarooFacetEditorTabUI {
   }
 
   public JoocConfigurationBean getData(JoocConfigurationBean data) {
+    data.compilerVersion = compilerVersionTextField.getText();
     data.verbose = verboseCheckBox.isSelected();
     data.enableAssertions = enableAssertionsCheckBox.isSelected();
     ButtonModel debugSelection = whiteSpaceButtonGroup.getSelection();

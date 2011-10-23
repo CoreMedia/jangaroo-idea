@@ -29,6 +29,8 @@ public class ExmlcConfigurationBean {
   private static final String DEFAULT_GENERATED_SOURCES_DIRECTORY = "target/generated-sources/joo";
   private static final String DEFAULT_GENERATED_RESOURCES_DIRECTORY = "target/generated-resources/joo";
 
+  private String compilerVersion;
+
   /**
    * Source directory to scan for files to compile.
    */
@@ -80,6 +82,14 @@ public class ExmlcConfigurationBean {
       namespacePrefix = moduleName;
       xsd = moduleName + ".xsd";
     }
+  }
+
+  public String getCompilerVersion() {
+    return compilerVersion;
+  }
+
+  public void setCompilerVersion(String compilerVersion) {
+    this.compilerVersion = compilerVersion;
   }
 
   public boolean isShowCompilerInfoMessages() {

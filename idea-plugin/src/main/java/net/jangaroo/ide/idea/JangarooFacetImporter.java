@@ -54,7 +54,6 @@ import java.util.Set;
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
-  public static final String JANGAROO_VERSION = "0.8.7";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
@@ -65,7 +64,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   // we cannot use MavenProject#findPlugin(), because it also searches in <pluginManagement>:
   public static MavenPlugin findDeclaredJangarooPlugin(MavenProject mavenProject, @Nullable String artifactId) {
     for (MavenPlugin each : mavenProject.getDeclaredPlugins()) {
-      if (each.getMavenId().equals(JANGAROO_GROUP_ID, artifactId) && JANGAROO_VERSION.equals(each.getVersion())) {
+      if (each.getMavenId().equals(JANGAROO_GROUP_ID, artifactId)) {
         return each;
       }
     }
@@ -74,7 +73,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
     // the plugin has to be configured explicitly:
-    return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID) != null;
+    return findJangarooMavenPlugin(mavenProjectModel) != null;
+  }
+
+  private MavenPlugin findJangarooMavenPlugin(MavenProject mavenProjectModel) {
+    return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
   }
 
   @Override
@@ -112,6 +115,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     //System.out.println("reimportFacet called!");
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
+    jooConfig.compilerVersion = findJangarooMavenPlugin(mavenProjectModel).getVersion();
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);

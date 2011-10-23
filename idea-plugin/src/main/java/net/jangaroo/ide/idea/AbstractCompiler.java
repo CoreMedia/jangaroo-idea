@@ -15,9 +15,9 @@ import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.jangaroo.jooc.CompileLog;
-import net.jangaroo.jooc.JooSymbol;
+import net.jangaroo.jooc.api.CompileLog;
 import net.jangaroo.jooc.config.DebugMode;
+import net.jangaroo.jooc.api.FilePosition;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
@@ -61,11 +61,10 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
   }
 
   protected JoocConfiguration getJoocConfiguration(Module module, List<VirtualFile> virtualSourceFiles) {
-    JangarooFacet jangarooFacet = JangarooFacet.ofModule(module);
-    if (jangarooFacet==null) {
+    JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
+    if (joocConfigurationBean==null) {
       return null;
     }
-    JoocConfigurationBean joocConfigurationBean = jangarooFacet.getConfiguration().getState();
     JoocConfiguration joocConfig = new JoocConfiguration();
     joocConfig.setVerbose(joocConfigurationBean.verbose);
     joocConfig.setDebugMode(joocConfigurationBean.isDebug() ? joocConfigurationBean.isDebugSource() ? DebugMode.SOURCE : DebugMode.LINES : null);
@@ -77,6 +76,11 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
     joocConfig.setOutputDirectory(joocConfigurationBean.getOutputDirectory());
     //joocConfig.showCompilerInfoMessages = joocConfigurationBean.showCompilerInfoMessages;
     return joocConfig;
+  }
+
+  protected static JoocConfigurationBean getJoocConfigurationBean(Module module) {
+    JangarooFacet jangarooFacet = JangarooFacet.ofModule(module);
+    return jangarooFacet==null ? null : jangarooFacet.getConfiguration().getState();
   }
 
   protected void updateFileLocations(FileLocations fileLocations, Module module, List<VirtualFile> virtualSourceFiles) {
@@ -131,16 +135,16 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
       filesWithErrors = new HashSet<VirtualFile>();
     }
 
-    private VirtualFile addMessage(CompilerMessageCategory compilerMessageCategory, String msg, JooSymbol sym) {
-      VirtualFile file = LocalFileSystem.getInstance().findFileByPath(sym.getFileName());
+    private VirtualFile addMessage(CompilerMessageCategory compilerMessageCategory, String msg, FilePosition position) {
+      VirtualFile file = LocalFileSystem.getInstance().findFileByPath(position.getFileName());
       String fileUrl = file==null ? null : file.getUrl();
-      compileContext.addMessage(compilerMessageCategory, msg, fileUrl, sym.getLine(), sym.getColumn()-1);
+      compileContext.addMessage(compilerMessageCategory, msg, fileUrl, position.getLine(), position.getColumn()-1);
       return file;
     }
 
-    public void error(JooSymbol sym, String msg) {
-      filesWithErrors.add(addMessage(CompilerMessageCategory.ERROR, msg, sym));
-      getLog().debug(sym.getFileName() + ": Jangaroo Compile Error: " + msg);
+    public void error(FilePosition position, String msg) {
+      filesWithErrors.add(addMessage(CompilerMessageCategory.ERROR, msg, position));
+      getLog().debug(position.getFileName() + ": Jangaroo Compile Error: " + msg);
     }
 
     public void error(String msg) {
@@ -148,9 +152,9 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
       getLog().debug("Jangaroo Compile Error: " + msg);
     }
 
-    public void warning(JooSymbol sym, String msg) {
-      addMessage(CompilerMessageCategory.WARNING, msg, sym);
-      getLog().debug(sym.getFileName() + ": Jangaroo Compile Warning: " + msg);
+    public void warning(FilePosition position, String msg) {
+      addMessage(CompilerMessageCategory.WARNING, msg, position);
+      getLog().debug(position.getFileName() + ": Jangaroo Compile Warning: " + msg);
     }
 
     public void warning(String msg) {

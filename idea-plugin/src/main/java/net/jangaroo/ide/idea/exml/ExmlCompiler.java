@@ -20,22 +20,22 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.jangaroo.exml.ExmlConstants;
-import net.jangaroo.exml.ExmlcException;
-import net.jangaroo.exml.compiler.Exmlc;
+import net.jangaroo.exml.api.Exmlc;
+import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
-import net.jangaroo.exml.generator.ExmlConfigClassGenerator;
-import net.jangaroo.exml.model.ConfigClass;
 import net.jangaroo.ide.idea.AbstractCompiler;
-import net.jangaroo.jooc.JangarooParser;
-import net.jangaroo.jooc.Jooc;
-import net.jangaroo.properties.PropertyClassGenerator;
+import net.jangaroo.ide.idea.util.CompilerLoader;
+import net.jangaroo.jooc.api.Jooc;
+import net.jangaroo.properties.api.Propc;
+import net.jangaroo.properties.api.PropcHelper;
 import net.jangaroo.utils.CompilerUtils;
+import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.DataInput;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -137,8 +137,11 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
     List<GenerationItem> successfullyGeneratedItems = new ArrayList<GenerationItem>(items.length);
-    Exmlc exmlc = new Exmlc(exmlConfiguration);
-    PropertyClassGenerator propertyClassGenerator = new PropertyClassGenerator(exmlConfiguration);
+    Exmlc exmlc = getExmlc(exmlcConfigurationBean.getCompilerVersion(), exmlConfiguration, context);
+    if (exmlc == null) {
+      return new GenerationItem[0];
+    }
+    Propc propertyClassGenerator = getPropc(exmlcConfigurationBean.getCompilerVersion(), exmlConfiguration, context);
     for (GenerationItem generationItem : items) {
       JooGenerationItem jooGenerationItem = (JooGenerationItem)generationItem;
       VirtualFile virtualSourceFile = jooGenerationItem.getSourceFile();
@@ -151,7 +154,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         }
         successfullyGeneratedItems.add(generationItem);
       } catch (ExmlcException e) {
-        context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), LocalFileSystem.getInstance().findFileByIoFile(e.getSource()).getUrl(), e.getLine(), e.getColumn());
+        context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), LocalFileSystem.getInstance().findFileByIoFile(e.getFile()).getUrl(), e.getLine(), e.getColumn());
       }
     }
     for (GenerationItem item : successfullyGeneratedItems) {
@@ -170,6 +173,36 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return successfullyGeneratedItems.toArray(new GenerationItem[successfullyGeneratedItems.size()]);
   }
 
+  private Exmlc getExmlc(String compilerVersion, ExmlConfiguration exmlConfiguration, CompileContext context) {
+    Exmlc exmlc = null;
+    try {
+      exmlc = CompilerLoader.loadExmlc(compilerVersion);
+      exmlc.setConfig(exmlConfiguration);
+    } catch (FileNotFoundException e) {
+      context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
+    } catch (Exception e) {
+      context.addMessage(CompilerMessageCategory.ERROR, "EXML Compiler version " +
+        compilerVersion + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+        null, -1, -1);
+    }
+    return exmlc;
+  }
+
+  private Propc getPropc(String compilerVersion, FileLocations compilerConfiguration, CompileContext context) {
+    Propc propc = null;
+    try {
+      propc = CompilerLoader.loadPropc(compilerVersion);
+      propc.setConfig(compilerConfiguration);
+    } catch (FileNotFoundException e) {
+      context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
+    } catch (Exception e) {
+      context.addMessage(CompilerMessageCategory.ERROR, "Properties Compiler version " +
+        compilerVersion + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+        null, -1, -1);
+    }
+    return propc;
+  }
+
   static Logger getLog() {
     return Logger.getInstance("ExmlCompiler");
   }
@@ -179,7 +212,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     VirtualFile[] files = context.getProjectCompileScope().getFiles(fileTypeManager.getFileTypeByExtension("xml"), true);
     List<VirtualFile> compilableFiles = new ArrayList<VirtualFile>(files.length);
     for (VirtualFile file : files) {
-      if (ExmlConstants.EXML_SUFFIX.equals("." + file.getExtension()) && hasExmlFacet(context.getModuleByFile(file))) {
+      if (Exmlc.EXML_SUFFIX.equals("." + file.getExtension()) && hasExmlFacet(context.getModuleByFile(file))) {
         compilableFiles.add(file);
       }
     }
@@ -219,22 +252,20 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
         exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
         exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
-        ExmlConfigClassGenerator exmlConfigClassGenerator = new ExmlConfigClassGenerator(exmlConfiguration);
-        PropertyClassGenerator propertyClassGenerator = new PropertyClassGenerator(exmlConfiguration);
         for (VirtualFile file : entry.getValue()) {
           try {
             File ioFile = VfsUtil.virtualToIoFile(file);
             if ("properties".equals(file.getExtension())) {
-              File generatedPropertiesClassFile = propertyClassGenerator.computeGeneratedPropertiesClassFile(ioFile);
+              File generatedPropertiesClassFile = PropcHelper.computeGeneratedPropertiesClassFile(exmlConfiguration, ioFile);
               addItem(file, generatedPropertiesClassFile, JooGenerationItemType.PROPERTIES, module, exmlConfiguration, items);
             } else {
               // TODO: make this a reusable method in ExmlConfigClassGenerator:
-              File generatedConfigClassFile = exmlConfigClassGenerator.computeConfigClassTarget(ConfigClass.createConfigClassName(file.getNameWithoutExtension()));
+              File generatedConfigClassFile = exmlConfiguration.computeConfigClassTarget(CompilerUtils.uncapitalize(file.getNameWithoutExtension()));
               addItem(file, generatedConfigClassFile, JooGenerationItemType.CONFIG, module, exmlConfiguration, items);
   
               // TODO: refactor ExmlComponentClassGenerator to make this easier and encapsulate logic:
               String qName = CompilerUtils.qNameFromFile(exmlConfiguration.findSourceDir(ioFile), ioFile);
-              File generatedComponentClassFile = CompilerUtils.fileFromQName(qName, exmlConfiguration.getOutputDirectory(), JangarooParser.AS_SUFFIX);
+              File generatedComponentClassFile = CompilerUtils.fileFromQName(qName, exmlConfiguration.getOutputDirectory(), Jooc.AS_SUFFIX);
               addItem(file, generatedComponentClassFile, JooGenerationItemType.COMPONENT, module, exmlConfiguration, items);
             }
           } catch (IOException e) {

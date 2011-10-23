@@ -22,11 +22,14 @@ import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.module.Module;
 import com.intellij.util.Chunk;
+import net.jangaroo.ide.idea.util.CompilerLoader;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
+import net.jangaroo.jooc.api.CompileLog;
+import net.jangaroo.jooc.api.Jooc;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import org.jetbrains.annotations.NotNull;
-import net.jangaroo.jooc.Jooc;
 
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.io.File;
 
@@ -35,10 +38,33 @@ import java.io.File;
  */
 public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
 
+  public static int runJooc(CompileContext context, String compilerVersion, JoocConfiguration configuration, CompileLog log) {
+    Jooc jooc;
+    try {
+      jooc = CompilerLoader.loadJooc(compilerVersion);
+    } catch (FileNotFoundException e) {
+      context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
+      return -1;
+    } catch (Exception e) {
+      context.addMessage(CompilerMessageCategory.ERROR, "Jangaroo Compiler version " +
+        compilerVersion + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+        null, -1, -1);
+      return -1;
+    }
+    try {
+      jooc.setConfig(configuration);
+      jooc.setLog(log);
+      return jooc.run();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return Jooc.RESULT_CODE_INTERNAL_COMPILER_ERROR;
+    }
+  }
+
   @Override
   @NotNull
   public String getDescription() {
-    return "Jangaroo Compiler " + JangarooFacetImporter.JANGAROO_VERSION;
+    return "Jangaroo Compiler";
   }
 
   public boolean isCompilableFile(VirtualFile file, CompileContext context) {
@@ -79,7 +105,10 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
         outputSinkItem = new OutputSinkItem(outputDirectoryPath);
         IdeaCompileLog ideaCompileLog = new IdeaCompileLog(context);
         getLog().info("running " + getDescription() + "...");
-        new Jooc(joocConfig, ideaCompileLog).run();
+        int result = runJooc(context, getJoocConfigurationBean(module).compilerVersion, joocConfig, ideaCompileLog);
+        if (result == -1) {
+          return null;
+        }
         for (final VirtualFile file : files) {
           if (ideaCompileLog.hasErrors(file)) {
             outputSinkItem.addFileToRecompile(file);
@@ -92,6 +121,9 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
             //}
             getLog().info("as->js: " + fileUrl + " -> " + outputFile.getPath());
           }
+        }
+        if (result != 0 && !ideaCompileLog.hasErrors()) {
+          context.addMessage(CompilerMessageCategory.ERROR, "Compiler returned " + result, null, -1, -1);
         }
       } catch (SecurityException e) {
         String message = "Output directory " + outputDirectoryPath + " does not exist and could not be created: " + e.getMessage();

@@ -10,6 +10,7 @@ import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
+import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
@@ -39,7 +40,11 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    return findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID) != null;
+    return findExmlMavenPlugin(mavenProjectModel) != null;
+  }
+
+  private MavenPlugin findExmlMavenPlugin(MavenProject mavenProjectModel) {
+    return findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
   }
 
   protected void setupFacet(ExmlFacet exmlFacet, MavenProject mavenProjectModel) {
@@ -72,6 +77,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     //System.out.println("reimportFacet called!");
     ExmlFacetConfiguration exmlFacetConfiguration = exmlFacet.getConfiguration();
     ExmlcConfigurationBean exmlConfig = exmlFacetConfiguration.getState();
+    exmlConfig.setCompilerVersion(findExmlMavenPlugin(mavenProjectModel).getVersion());
     exmlConfig.setSourceDirectory(mavenProjectModel.getSources().get(0));
     exmlConfig.setGeneratedSourcesDirectory(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo");
     exmlConfig.setGeneratedResourcesDirectory(getTargetOutputPath(mavenProjectModel, "generated-resources"));

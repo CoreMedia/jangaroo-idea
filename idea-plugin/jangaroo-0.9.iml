@@ -21,16 +21,15 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library>
+      <library name="jangaroo-api-0.9.0-SNAPSHOT">
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/0.8.7/jangaroo-compiler-0.8.7.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.8.7/jangaroo-utils-0.8.7.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/0.9.0-SNAPSHOT/jangaroo-compiler-api-0.9.0-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/0.9.0-SNAPSHOT/exml-compiler-api-0.9.0-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.9.0-SNAPSHOT/jangaroo-utils-0.9.0-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/0.9.0-SNAPSHOT/properties-compiler-api-0.9.0-SNAPSHOT.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../../jangaroo-tools/jangaroo/jangaroo-compiler/src/main/java" />
-          <root url="file://$MODULE_DIR$/../../../../jangaroo-tools/jangaroo-utils/src/main/java" />
-        </SOURCES>
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -40,28 +39,6 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler/0.8.7/exml-compiler-0.8.7.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../../jangaroo-tools/exml/exml-compiler/src/main/java" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler/0.8.7/properties-compiler-0.8.7.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../../jangaroo-tools/exml/properties-compiler/src/main/java" />
-        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

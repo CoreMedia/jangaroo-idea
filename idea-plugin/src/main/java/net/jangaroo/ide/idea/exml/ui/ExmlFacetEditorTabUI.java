@@ -32,6 +32,7 @@ public class ExmlFacetEditorTabUI {
   private TextFieldWithBrowseButton generatedResourcesDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JTextField configClassesPackageTextField;
+  private JTextField compilerVersionTextField;
 
   private static final FileChooserDescriptor SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
@@ -61,6 +62,7 @@ public class ExmlFacetEditorTabUI {
   }
 
   public void setData(ExmlcConfigurationBean data) {
+    compilerVersionTextField.setText(data.getCompilerVersion());
     sourceDirTextField.setText(data.getSourceDirectory());
     generatedSourcesDirTextField.setText(data.getGeneratedSourcesDirectory());
     generatedResourcesDirTextField.setText(data.getGeneratedResourcesDirectory());
@@ -69,6 +71,7 @@ public class ExmlFacetEditorTabUI {
   }
 
   public ExmlcConfigurationBean getData(ExmlcConfigurationBean data) {
+    data.setCompilerVersion(compilerVersionTextField.getText());
     data.setSourceDirectory(sourceDirTextField.getText());
     data.setGeneratedSourcesDirectory(generatedSourcesDirTextField.getText());
     data.setGeneratedResourcesDirectory(generatedResourcesDirTextField.getText());

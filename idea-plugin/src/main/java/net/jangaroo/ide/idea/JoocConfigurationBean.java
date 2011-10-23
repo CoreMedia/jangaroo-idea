@@ -29,6 +29,7 @@ public class JoocConfigurationBean {
   public static final int DEBUG_LEVEL_LINES = 50;
   public static final int DEBUG_LEVEL_SOURCE = 100;
 
+  public String compilerVersion;
   public int debugLevel = DEBUG_LEVEL_SOURCE;
   public boolean verbose = false;
   public boolean enableAssertions = true;
@@ -80,14 +81,15 @@ public class JoocConfigurationBean {
         return false;
     }
     //noinspection StringEquality
-    return debugLevel==that.debugLevel
+    return compilerVersion==that.compilerVersion
+      && debugLevel==that.debugLevel
       && (outputPrefix==null ? that.outputPrefix==null : outputPrefix.equals(that.outputPrefix))
       && outputDirectory.equals(that.outputDirectory);
   }
 
   @Override
   public int hashCode() {
-    int result = 0;
+    int result = compilerVersion.hashCode();
     for (boolean flag : getFlags()) {
       result = 31 * result + (flag ? 1 : 0);
     }

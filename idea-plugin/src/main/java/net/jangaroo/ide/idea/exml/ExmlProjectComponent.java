@@ -37,8 +37,7 @@ import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.XmlElementDescriptor;
-import net.jangaroo.exml.ExmlConstants;
-import net.jangaroo.exml.model.ConfigClass;
+import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -132,7 +131,7 @@ public class ExmlProjectComponent implements ProjectComponent {
                 }
                 codePrefix.append("{\n");
 
-                String configClassName = CompilerUtils.qName(configClassPackage, ConfigClass.createConfigClassName(className));
+                String configClassName = CompilerUtils.qName(configClassPackage, CompilerUtils.uncapitalize(className));
                 codePrefix.append("public function ").append(className).append("(config:")
                   .append(configClassName).append(" = null){\n  super(").append(configClassName).append("({x:(");
                 String codeSuffix = "))});\n}\n}\n}\n";
@@ -154,7 +153,7 @@ public class ExmlProjectComponent implements ProjectComponent {
       ASTNode parent = node.getTreeParent();
       if (node instanceof XmlTag && parent instanceof XmlTag) {
         XmlTag tag = (XmlTag)parent;
-        if ("component".equals(tag.getLocalName()) && ExmlConstants.EXML_NAMESPACE_URI.equals(tag.getNamespace())) {
+        if ("component".equals(tag.getLocalName()) && Exmlc.EXML_NAMESPACE_URI.equals(tag.getNamespace())) {
           return (XmlTag)node;
         }
       }
@@ -194,7 +193,7 @@ public class ExmlProjectComponent implements ProjectComponent {
       "class".equals(((XmlAttribute)attributeValue.getParent()).getName())) {
       XmlTag element = (XmlTag)attributeValue.getParent().getParent();
       return "import".equals(element.getLocalName()) &&
-        ExmlConstants.EXML_NAMESPACE_URI.equals(element.getNamespace());
+        Exmlc.EXML_NAMESPACE_URI.equals(element.getNamespace());
     }
     return false;
   }

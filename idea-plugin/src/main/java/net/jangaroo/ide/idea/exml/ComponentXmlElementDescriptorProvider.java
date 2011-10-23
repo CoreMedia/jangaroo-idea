@@ -26,7 +26,7 @@ import com.intellij.xml.XmlElementDescriptor;
 import com.intellij.xml.XmlNSDescriptor;
 import com.intellij.xml.impl.schema.XmlElementDescriptorImpl;
 import com.intellij.xml.util.XmlUtil;
-import net.jangaroo.exml.ExmlConstants;
+import net.jangaroo.exml.api.Exmlc;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
@@ -40,8 +40,8 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
   public XmlElementDescriptor getDescriptor(XmlTag xmltag) {
     if (xmltag.isValid()) {
       String namespace = xmltag.getNamespace();
-      if (xmltag.getContainingFile().getName().endsWith(ExmlConstants.EXML_SUFFIX)
-        && !ExmlConstants.EXML_NAMESPACE_URI.equals(namespace)) {
+      if (xmltag.getContainingFile().getName().endsWith(Exmlc.EXML_SUFFIX)
+        && !Exmlc.EXML_NAMESPACE_URI.equals(namespace)) {
         XmlNSDescriptor xmlNSDescriptor = xmltag.getNSDescriptor(namespace, false);
         XmlElementDescriptor xmlElementDescriptor = null;
         if (xmlNSDescriptor != null) {
@@ -116,7 +116,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
     }
 
     private static VirtualFile findExmlFile(Project project, String className) {
-      String exmlFileName = className.replace('.', '/') + ExmlConstants.EXML_SUFFIX;
+      String exmlFileName = className.replace('.', '/') + Exmlc.EXML_SUFFIX;
       Module[] modules = ModuleManager.getInstance(project).getModules();
       for (Module module : modules) {
         VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getSourceRoots();
