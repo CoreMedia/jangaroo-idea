@@ -259,13 +259,10 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
               File generatedPropertiesClassFile = PropcHelper.computeGeneratedPropertiesClassFile(exmlConfiguration, ioFile);
               addItem(file, generatedPropertiesClassFile, JooGenerationItemType.PROPERTIES, module, exmlConfiguration, items);
             } else {
-              // TODO: make this a reusable method in ExmlConfigClassGenerator:
-              File generatedConfigClassFile = exmlConfiguration.computeConfigClassTarget(CompilerUtils.uncapitalize(file.getNameWithoutExtension()));
+              File generatedConfigClassFile = exmlConfiguration.computeGeneratedConfigClassFile(ioFile);
               addItem(file, generatedConfigClassFile, JooGenerationItemType.CONFIG, module, exmlConfiguration, items);
   
-              // TODO: refactor ExmlComponentClassGenerator to make this easier and encapsulate logic:
-              String qName = CompilerUtils.qNameFromFile(exmlConfiguration.findSourceDir(ioFile), ioFile);
-              File generatedComponentClassFile = CompilerUtils.fileFromQName(qName, exmlConfiguration.getOutputDirectory(), Jooc.AS_SUFFIX);
+              File generatedComponentClassFile = exmlConfiguration.computeGeneratedComponentClassFile(ioFile);
               addItem(file, generatedComponentClassFile, JooGenerationItemType.COMPONENT, module, exmlConfiguration, items);
             }
           } catch (IOException e) {
