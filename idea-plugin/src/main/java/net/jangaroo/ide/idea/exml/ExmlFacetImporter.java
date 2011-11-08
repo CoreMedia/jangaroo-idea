@@ -5,6 +5,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
+import net.jangaroo.ide.idea.JangarooFacetImporter;
 import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static net.jangaroo.ide.idea.JangarooFacetImporter.EXML_MAVEN_PLUGIN_ARTIFACT_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.JANGAROO_GROUP_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPlugin;
 
@@ -31,7 +33,6 @@ import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPl
  * A Facet-from-Maven Importer for the EXML Facet type.
  */
 public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfiguration, ExmlFacetType> {
-  private static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String DEFAULT_EXML_FACET_NAME = "EXML";
 
   public ExmlFacetImporter() {

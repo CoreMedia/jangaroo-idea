@@ -54,6 +54,7 @@ import java.util.Set;
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
+  public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   public static final String JANGAROO_VERSION = "0.8.6";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
@@ -73,8 +74,9 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    // the plugin has to be configured explicitly:
-    return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID) != null;
+    // any of the two Jangaroo Maven plugins has to be configured explicitly:
+    return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID) != null ||
+      findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID) != null;
   }
 
   @Override
