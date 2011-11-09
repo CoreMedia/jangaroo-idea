@@ -54,6 +54,7 @@ import java.util.Set;
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
+  public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
@@ -72,12 +73,22 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    // the plugin has to be configured explicitly:
+    // any of the two Jangaroo Maven plugins has to be configured explicitly:
     return findJangarooMavenPlugin(mavenProjectModel) != null;
   }
 
+  /**
+   * Find jangaroo-maven-plugin, or, if not present, exml-maven-plugin, which also activates the
+   * Jangaroo Maven lifecycle and thus the Jangaroo compiler.
+   * @param mavenProjectModel IDEA's Maven project model
+   * @return jangaroo-maven-plugin or exml-maven-plugin
+   */
   private MavenPlugin findJangarooMavenPlugin(MavenProject mavenProjectModel) {
-    return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
+    MavenPlugin jangarooPlugin = findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
+    if (jangarooPlugin == null) {
+      jangarooPlugin = findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
+    }
+    return jangarooPlugin;
   }
 
   @Override
