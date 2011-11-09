@@ -1,6 +1,5 @@
 package net.jangaroo.ide.idea;
 
-import com.intellij.compiler.make.MakeUtil;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
@@ -112,19 +111,6 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
       }
     }
   }
-
-  protected @NotNull File computeOutputFile(CompileContext context, Module module, final String outputDirectory, final VirtualFile file) {
-    VirtualFile sourceRoot = MakeUtil.getSourceRoot(context, module, file);
-    if (sourceRoot==null) {
-      throw new IllegalStateException("File not under any source root: '" + file.getPath() + "'.");
-    }
-    String filePath = file.getPath();
-    String relativePath = filePath.substring(sourceRoot.getPath().length(), filePath.lastIndexOf('.'));
-    String outputFilePath = outputDirectory + relativePath + getOutputFileSuffix();
-    return new File(outputFilePath);
-  }
-
-  protected abstract String getOutputFileSuffix();
 
   protected static class IdeaCompileLog implements CompileLog {
     private CompileContext compileContext;

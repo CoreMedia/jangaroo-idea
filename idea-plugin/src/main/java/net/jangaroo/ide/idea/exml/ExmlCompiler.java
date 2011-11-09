@@ -25,7 +25,6 @@ import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.util.CompilerLoader;
-import net.jangaroo.jooc.api.Jooc;
 import net.jangaroo.properties.api.Propc;
 import net.jangaroo.properties.api.PropcHelper;
 import net.jangaroo.utils.CompilerUtils;
@@ -101,11 +100,6 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
       }
     }
     return null;
-  }
-
-  @Override
-  protected String getOutputFileSuffix() {
-    return Jooc.AS_SUFFIX;
   }
 
   public VirtualFile getPresentableFile(CompileContext context, Module module, VirtualFile outputRoot, VirtualFile generatedFile) {
