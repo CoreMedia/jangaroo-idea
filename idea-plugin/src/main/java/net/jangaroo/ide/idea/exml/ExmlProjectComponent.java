@@ -177,12 +177,23 @@ public class ExmlProjectComponent implements ProjectComponent {
       return baseClassAttribute.getValue();
     }
     XmlTag[] subTags = exmlComponentTag.getSubTags();
-    XmlTag componentTag = subTags[subTags.length - 1]; // TODO: should we search for the first sub tag that is not from the exml namespace instead?
-    XmlElementDescriptor descriptor = componentTag.getDescriptor();
-    if (descriptor instanceof ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor) {
-      JSClass componentClass = ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getComponentClass();
-      if (componentClass != null) {
-        return componentClass.getQualifiedName();
+    XmlTag componentTag = findNonExmlNamespaceTag(subTags);
+    if (componentTag != null) {
+      XmlElementDescriptor descriptor = componentTag.getDescriptor();
+      if (descriptor instanceof ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor) {
+        JSClass componentClass = ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getComponentClass();
+        if (componentClass != null) {
+          return componentClass.getQualifiedName();
+        }
+      }
+    }
+    return null;
+  }
+
+  private static XmlTag findNonExmlNamespaceTag(XmlTag[] subTags) {
+    for (int i = subTags.length - 1; i >= 0; i--) {
+      if (!Exmlc.EXML_NAMESPACE_URI.equals(subTags[i].getNamespace())) {
+        return subTags[i];
       }
     }
     return null;
