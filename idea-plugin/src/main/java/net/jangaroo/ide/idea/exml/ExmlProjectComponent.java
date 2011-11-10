@@ -15,7 +15,6 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.idea.IdeaLogger;
-import com.intellij.lang.ASTNode;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.compiler.CompilerManager;
@@ -29,12 +28,12 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.InjectedLanguagePlaces;
 import com.intellij.psi.LanguageInjector;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.api.Exmlc;
@@ -95,75 +94,91 @@ public class ExmlProjectComponent implements ProjectComponent {
           if (isImportClassAttribute(attributeValue)) {
             injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, new TextRange(1, attributeValue.getTextRange().getLength()-1), "import ", ";");
           } else {
+            boolean baseClassAttribute = getBaseClassAttribute(attributeValue) != null;
             String text = attributeValue.getText();
-            if (text.startsWith("\"{") && text.endsWith("}\"")) {
-
-              String configClassPackage = exmlConfig.getConfigClassPackage();
-              if (configClassPackage == null) {
-                IdeaLogger.getInstance(this.getClass()).warn("No config class package set in module " + module.getName() + ", EXML AS3 language injection cancelled.");
-                return;
-              }
-              ASTNode node = attributeValue.getParent().getNode();
-              XmlTag xmlTag = findTopLevelTag(node);
-              if (xmlTag != null) {
-
-                // find relative path to source root to determine package name:
-                VirtualFile packageDir = exmlFile.getParent();
-                String packageName = packageDir == null ? "" : getModuleRelativePath(packageDir);
-                String className = exmlFile.getNameWithoutExtension();
-
-                StringBuilder codePrefix = new StringBuilder("package ").append(packageName).append("{\n");
-
-                String superClassName = findSuperClass(xmlTag);
-
-                // find and append imports:
-                List<String> imports = findImports(xmlTag);
-                if (superClassName != null) {
-                  imports.add(superClassName);
-                }
-                for (String importName : imports) {
-                  codePrefix.append("import ").append(importName).append(";\n");
-                }
-
-                codePrefix.append("public class ").append(className);
-                if (superClassName != null) {
-                  codePrefix.append(" extends ").append(superClassName);
-                }
-                codePrefix.append("{\n");
-
-                String configClassName = CompilerUtils.qName(configClassPackage, CompilerUtils.uncapitalize(className));
-                codePrefix.append("public function ").append(className).append("(config:")
-                  .append(configClassName).append(" = null){\n  super(").append(configClassName).append("({x:(");
-                String codeSuffix = "))});\n}\n}\n}\n";
-
-                TextRange innerRange = new TextRange(2, attributeValue.getTextRange().getLength() - 2);
-                injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, innerRange, codePrefix.toString(), codeSuffix);
-                // to inject JavaScript, we'd use
-                //injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.JAVASCRIPT.getLanguage(), innerRange, "", "");
-              }
+            if (baseClassAttribute || text.startsWith("\"{") && text.endsWith("}\"")) {
+              injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, attributeValue, baseClassAttribute);
             }
           }
+        }
+      }
+
+      private void injectAS(InjectedLanguagePlaces injectedLanguagePlaces, VirtualFile exmlFile, Module module, ExmlcConfigurationBean exmlConfig, XmlAttributeValue attributeValue, boolean baseClassAttribute) {
+        String configClassPackage = exmlConfig.getConfigClassPackage();
+        if (configClassPackage == null) {
+          IdeaLogger.getInstance(this.getClass()).warn("No config class package set in module " + module.getName() + ", EXML AS3 language injection cancelled.");
+          return;
+        }
+        XmlTag exmlComponentTag = ((XmlFile)attributeValue.getContainingFile()).getRootTag();
+        if (exmlComponentTag != null) {
+
+          // find relative path to source root to determine package name:
+          VirtualFile packageDir = exmlFile.getParent();
+          String packageName = packageDir == null ? "" : getModuleRelativePath(packageDir);
+          String className = exmlFile.getNameWithoutExtension();
+
+          StringBuilder codePrefix = new StringBuilder();
+          codePrefix.append(String.format("package %s {\n", packageName));
+
+          String superClassName = baseClassAttribute ? null : findSuperClass(exmlComponentTag);
+
+          // find and append imports:
+          List<String> imports = findImports(exmlComponentTag);
+          if (superClassName != null) {
+            imports.add(superClassName);
+          }
+          for (String importName : imports) {
+            codePrefix.append(String.format("import %s;\n", importName));
+          }
+
+          codePrefix.append(String.format("public class %s", className));
+
+          String configClassName = CompilerUtils.qName(configClassPackage, CompilerUtils.uncapitalize(className));
+          String constructorPrefix = String.format("public function %s(config:%s = null){\n  super(", className, configClassName);
+          String constructorSuffix = ");\n}\n";
+          StringBuilder codeSuffix = new StringBuilder();
+
+          TextRange textRange;
+          if (baseClassAttribute) {
+            codePrefix
+              .append(" extends ");
+            //textRange = attributeValue.getTextRange();
+            textRange = new TextRange(1, attributeValue.getTextRange().getLength() - 1);
+            codeSuffix
+              .append("{")
+              .append(constructorPrefix)
+              .append("config");
+          } else {
+            if (superClassName != null) {
+              codePrefix.append(String.format(" extends %s", superClassName));
+            }
+            codePrefix
+              .append(" {\n")
+              .append(constructorPrefix)
+              .append(String.format("%s({x:(", configClassName));
+            textRange = new TextRange(2, attributeValue.getTextRange().getLength() - 2);
+            codeSuffix
+              .append(")})");
+          }
+          codeSuffix
+            .append(constructorSuffix)
+            .append("\n}")
+            .append("\n}\n");
+
+          injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix.toString(), codeSuffix.toString());
         }
       }
     });
   }
 
-  private static XmlTag findTopLevelTag(ASTNode node) {
-    while (node != null) {
-      ASTNode parent = node.getTreeParent();
-      if (node instanceof XmlTag && parent instanceof XmlTag) {
-        XmlTag tag = (XmlTag)parent;
-        if ("component".equals(tag.getLocalName()) && Exmlc.EXML_NAMESPACE_URI.equals(tag.getNamespace())) {
-          return (XmlTag)node;
-        }
-      }
-      node = parent;
+  private static String findSuperClass(XmlTag exmlComponentTag) {
+    XmlAttribute baseClassAttribute = exmlComponentTag.getAttribute("baseClass");
+    if (baseClassAttribute != null) {
+      return baseClassAttribute.getValue();
     }
-    return null;
-  }
-
-  private static String findSuperClass(XmlTag xmlTag) {
-    XmlElementDescriptor descriptor = xmlTag.getDescriptor();
+    XmlTag[] subTags = exmlComponentTag.getSubTags();
+    XmlTag componentTag = subTags[subTags.length - 1]; // TODO: should we search for the first sub tag that is not from the exml namespace instead?
+    XmlElementDescriptor descriptor = componentTag.getDescriptor();
     if (descriptor instanceof ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor) {
       JSClass componentClass = ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getComponentClass();
       if (componentClass != null) {
@@ -173,17 +188,12 @@ public class ExmlProjectComponent implements ProjectComponent {
     return null;
   }
 
-  private static List<String> findImports(XmlTag xmlTag) {
+  private static List<String> findImports(XmlTag exmlComponentTag) {
     List<String> imports = new ArrayList<String>();
-    PsiElement sibling = xmlTag.getParent().getFirstChild();
-    while (sibling != null) {
-      if (sibling instanceof XmlTag) {
-        XmlTag topLevelXmlTag = (XmlTag)sibling;
-        if ("import".equals(topLevelXmlTag.getLocalName())) {
-          imports.add(topLevelXmlTag .getAttributeValue("class"));
-        }
+    for (XmlTag topLevelXmlTag : exmlComponentTag.getSubTags()) {
+      if ("import".equals(topLevelXmlTag.getLocalName())) {
+        imports.add(topLevelXmlTag.getAttributeValue("class"));
       }
-      sibling = sibling.getNextSibling();
     }
     return imports;
   }
@@ -196,6 +206,17 @@ public class ExmlProjectComponent implements ProjectComponent {
         Exmlc.EXML_NAMESPACE_URI.equals(element.getNamespace());
     }
     return false;
+  }
+
+  private static String getBaseClassAttribute(XmlAttributeValue attributeValue) {
+    if (attributeValue.getParent() instanceof XmlAttribute) {
+      XmlAttribute attribute = (XmlAttribute)attributeValue.getParent();
+      if ("baseClass".equals(attribute.getName()) &&
+        Exmlc.EXML_NAMESPACE_URI.equals(attribute.getParent().getNamespace())) {
+        return attributeValue.getValue();
+      }
+    }
+    return null;
   }
 
   public void disposeComponent() {
