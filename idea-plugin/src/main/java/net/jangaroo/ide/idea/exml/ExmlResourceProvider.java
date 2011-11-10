@@ -5,7 +5,7 @@ import com.intellij.javaee.StandardResourceProvider;
 import net.jangaroo.exml.api.Exmlc;
 
 /**
- * Adds XML Schema for EXML 0.1.
+ * Adds XML Schema for EXML 0.9.
  */
 public class ExmlResourceProvider implements StandardResourceProvider {
 
