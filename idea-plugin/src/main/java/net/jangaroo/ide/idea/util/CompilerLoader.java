@@ -48,6 +48,12 @@ public class CompilerLoader {
 
   private synchronized static ClassLoader getClassLoaderForArtifact(String groupId, String artifactId, String version, ClassLoader parentClassLoader) throws FileNotFoundException {
     MavenId mavenId = new MavenId(groupId, artifactId, version);
+    return artifactId.endsWith("-SNAPSHOT")
+      ? createClassLoaderForArtifact(mavenId, parentClassLoader)
+      : getCachedClassLoaderForArtifact(mavenId, parentClassLoader);
+  }
+
+  private synchronized static ClassLoader getCachedClassLoaderForArtifact(MavenId mavenId, ClassLoader parentClassLoader) throws FileNotFoundException {
     ClassLoader classLoader = CLASS_LOADER_BY_ARTIFACT_CACHE.get(mavenId);
     if (classLoader == null) {
       classLoader = createClassLoaderForArtifact(mavenId, parentClassLoader);
