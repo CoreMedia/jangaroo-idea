@@ -77,7 +77,7 @@ public class ExmlProjectComponent implements ProjectComponent {
       public void getLanguagesToInject(@NotNull PsiLanguageInjectionHost psiLanguageInjectionHost, @NotNull InjectedLanguagePlaces injectedLanguagePlaces) {
         //System.out.println("psiLanguageInjectionHost: "+psiLanguageInjectionHost);
         PsiFile psiFile = psiLanguageInjectionHost.getContainingFile();
-        if (psiFile.getName().endsWith(".exml") && psiLanguageInjectionHost instanceof XmlAttributeValue) {
+        if (psiFile.getName().endsWith(Exmlc.EXML_SUFFIX) && psiLanguageInjectionHost instanceof XmlAttributeValue) {
           VirtualFile exmlFile = psiFile.getOriginalFile().getVirtualFile();
           if (exmlFile == null) {
             return;
@@ -142,7 +142,6 @@ public class ExmlProjectComponent implements ProjectComponent {
           if (baseClassAttribute) {
             codePrefix
               .append(" extends ");
-            //textRange = attributeValue.getTextRange();
             textRange = new TextRange(1, attributeValue.getTextRange().getLength() - 1);
             codeSuffix
               .append("{")
@@ -153,7 +152,16 @@ public class ExmlProjectComponent implements ProjectComponent {
               codePrefix.append(String.format(" extends %s", superClassName));
             }
             codePrefix
-              .append(" {\n")
+              .append(" {\n");
+
+            // find and append constants:
+            List<String[]> constants = findConstants(exmlComponentTag);
+            for (String[] constantNameTypeValue : constants) {
+              codePrefix.append(String.format("public static const %s:%s = %s;\n",
+                constantNameTypeValue[0], constantNameTypeValue[1], constantNameTypeValue[2]));
+            }
+  
+            codePrefix
               .append(constructorPrefix)
               .append(String.format("%s({x:(", configClassName));
             textRange = new TextRange(2, attributeValue.getTextRange().getLength() - 2);
@@ -172,7 +180,7 @@ public class ExmlProjectComponent implements ProjectComponent {
   }
 
   private static String findSuperClass(XmlTag exmlComponentTag) {
-    XmlAttribute baseClassAttribute = exmlComponentTag.getAttribute("baseClass");
+    XmlAttribute baseClassAttribute = exmlComponentTag.getAttribute(Exmlc.EXML_BASE_CLASS_ATTRIBUTE);
     if (baseClassAttribute != null) {
       return baseClassAttribute.getValue();
     }
@@ -202,18 +210,36 @@ public class ExmlProjectComponent implements ProjectComponent {
   private static List<String> findImports(XmlTag exmlComponentTag) {
     List<String> imports = new ArrayList<String>();
     for (XmlTag topLevelXmlTag : exmlComponentTag.getSubTags()) {
-      if ("import".equals(topLevelXmlTag.getLocalName())) {
-        imports.add(topLevelXmlTag.getAttributeValue("class"));
+      if (Exmlc.EXML_IMPORT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
+        imports.add(topLevelXmlTag.getAttributeValue(Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE));
       }
     }
     return imports;
   }
 
+  private static List<String[]> findConstants(XmlTag exmlComponentTag) {
+    List<String[]> constants = new ArrayList<String[]>();
+    for (XmlTag topLevelXmlTag : exmlComponentTag.getSubTags()) {
+      if (Exmlc.EXML_CONSTANT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
+        String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
+        if (type == null) {
+          type = "String";
+        }
+        constants.add(new String[]{
+          topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_NAME_ATTRIBUTE),
+          type,
+          '"' + topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_VALUE_ATTRIBUTE) + '"' // TODO: escaping?
+        });
+      }
+    }
+    return constants;
+  }
+
   private static boolean isImportClassAttribute(XmlAttributeValue attributeValue) {
     if (attributeValue.getParent() instanceof XmlAttribute &&
-      "class".equals(((XmlAttribute)attributeValue.getParent()).getName())) {
+      Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE.equals(((XmlAttribute)attributeValue.getParent()).getName())) {
       XmlTag element = (XmlTag)attributeValue.getParent().getParent();
-      return "import".equals(element.getLocalName()) &&
+      return Exmlc.EXML_IMPORT_NODE_NAME.equals(element.getLocalName()) &&
         Exmlc.EXML_NAMESPACE_URI.equals(element.getNamespace());
     }
     return false;
@@ -222,7 +248,7 @@ public class ExmlProjectComponent implements ProjectComponent {
   private static String getBaseClassAttribute(XmlAttributeValue attributeValue) {
     if (attributeValue.getParent() instanceof XmlAttribute) {
       XmlAttribute attribute = (XmlAttribute)attributeValue.getParent();
-      if ("baseClass".equals(attribute.getName()) &&
+      if (Exmlc.EXML_BASE_CLASS_ATTRIBUTE.equals(attribute.getName()) &&
         Exmlc.EXML_NAMESPACE_URI.equals(attribute.getParent().getNamespace())) {
         return attributeValue.getValue();
       }
