@@ -91,7 +91,8 @@ public class ExmlProjectComponent implements ProjectComponent {
             return;
           }
           XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
-          if (isImportClassAttribute(attributeValue)) {
+          if (isImportClassAttribute(attributeValue) || isCfgTypeAttribute(attributeValue)) {
+            // <exml:cfg type="..."/> is also treated like import, as we just want completion for fully qualified types!
             injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, new TextRange(1, attributeValue.getTextRange().getLength()-1), "import ", ";");
           } else {
             boolean baseClassAttribute = getBaseClassAttribute(attributeValue) != null;
@@ -236,10 +237,18 @@ public class ExmlProjectComponent implements ProjectComponent {
   }
 
   private static boolean isImportClassAttribute(XmlAttributeValue attributeValue) {
+    return isAttribute(attributeValue, Exmlc.EXML_IMPORT_NODE_NAME, Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE);
+  }
+
+  private static boolean isCfgTypeAttribute(XmlAttributeValue attributeValue) {
+    return isAttribute(attributeValue, Exmlc.EXML_CFG_NODE_NAME, Exmlc.EXML_CFG_TYPE_ATTRIBUTE);
+  }
+
+  private static boolean isAttribute(XmlAttributeValue attributeValue, String exmlNodeName, String exmlAttribute) {
     if (attributeValue.getParent() instanceof XmlAttribute &&
-      Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE.equals(((XmlAttribute)attributeValue.getParent()).getName())) {
+      exmlAttribute.equals(((XmlAttribute)attributeValue.getParent()).getName())) {
       XmlTag element = (XmlTag)attributeValue.getParent().getParent();
-      return Exmlc.EXML_IMPORT_NODE_NAME.equals(element.getLocalName()) &&
+      return exmlNodeName.equals(element.getLocalName()) &&
         Exmlc.EXML_NAMESPACE_URI.equals(element.getNamespace());
     }
     return false;
