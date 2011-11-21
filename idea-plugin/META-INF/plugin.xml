@@ -15,28 +15,18 @@
   <depends>org.jetbrains.idea.maven</depends>
   <depends>com.intellij.javaee</depends>
 
-  <project-components>
-    <component>
-      <implementation-class>net.jangaroo.ide.idea.JoocProjectComponent</implementation-class>
-    </component>
-    <component>
-      <implementation-class>net.jangaroo.ide.idea.exml.ExmlProjectComponent</implementation-class>
-    </component>
-  </project-components>
-
-  <actions>
-    <!-- Add your actions here -->
-  </actions>
-
   <extensions defaultExtensionNs="com.intellij">
+    <compilerFactory implementation="net.jangaroo.ide.idea.JoocCompilerFactory"/>
     <facetType implementation="net.jangaroo.ide.idea.JangarooFacetType"/>
     <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
     <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
 
+    <compiler implementation="net.jangaroo.ide.idea.exml.ExmlCompiler"/>
     <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
     <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
     <facetType implementation="net.jangaroo.ide.idea.exml.ExmlFacetType"/>
     <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
+    <languageInjector implementation="net.jangaroo.ide.idea.exml.ExmlLanguageInjector"/>
     <xml.elementDescriptorProvider implementation="net.jangaroo.ide.idea.exml.ComponentXmlElementDescriptorProvider"/>
   </extensions>
 
