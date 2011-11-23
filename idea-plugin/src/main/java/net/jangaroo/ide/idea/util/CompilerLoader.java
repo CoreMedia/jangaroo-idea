@@ -3,9 +3,6 @@ package net.jangaroo.ide.idea.util;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.jooc.api.Jooc;
 import net.jangaroo.properties.api.Propc;
-import org.jetbrains.idea.maven.model.MavenId;
-import org.jetbrains.idea.maven.utils.MavenArtifactUtil;
-import org.jetbrains.idea.maven.utils.MavenUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,72 +12,64 @@ import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 
-import static net.jangaroo.ide.idea.JangarooFacetImporter.*;
-
 /**
  * Load Jangaroo compilers of a specified version, using a custom class loader.
  */
 public class CompilerLoader {
 
-  private static final Map<MavenId,ClassLoader> CLASS_LOADER_BY_ARTIFACT_CACHE = new HashMap<MavenId, ClassLoader>();
+  private static final Map<String,ClassLoader> CLASS_LOADER_BY_JAR_FILE_NAME_CACHE = new HashMap<String, ClassLoader>();
 
-  public static Jooc loadJooc(String version) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    ClassLoader jooClassLoader = getJoocClassLoader(version);
+  public static Jooc loadJooc(String compilerJarFileName) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    ClassLoader jooClassLoader = getJoocClassLoader(compilerJarFileName);
     Class<?> joocClass = jooClassLoader.loadClass("net.jangaroo.jooc.Jooc");
     return (Jooc)joocClass.newInstance();
   }
 
-  public static Exmlc loadExmlc(String version) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    ClassLoader jooClassLoader = getClassLoaderForArtifact(JANGAROO_GROUP_ID, "exml-compiler", version, getJoocClassLoader(version));
+  public static Exmlc loadExmlc(String exmlcJarFileName, String joocJarFileName) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    ClassLoader jooClassLoader = getClassLoaderForJarFile(exmlcJarFileName, getJoocClassLoader(joocJarFileName));
     Class<?> exmlcClass = jooClassLoader.loadClass("net.jangaroo.exml.compiler.Exmlc");
     return (Exmlc)exmlcClass.newInstance();
   }
 
-  public static Propc loadPropc(String version) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    ClassLoader jooClassLoader = getClassLoaderForArtifact(JANGAROO_GROUP_ID, "properties-compiler", version, CompilerLoader.class.getClassLoader());
+  public static Propc loadPropc(String propcJarFileName) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    ClassLoader jooClassLoader = getClassLoaderForJarFile(propcJarFileName, CompilerLoader.class.getClassLoader());
     Class<?> propcClass = jooClassLoader.loadClass("net.jangaroo.properties.PropertyClassGenerator");
     return (Propc)propcClass.newInstance();
   }
 
-  private static ClassLoader getJoocClassLoader(String version) throws FileNotFoundException {
-    return getClassLoaderForArtifact(JANGAROO_GROUP_ID, "jangaroo-compiler", version, CompilerLoader.class.getClassLoader());
+  private static ClassLoader getJoocClassLoader(String jarFileName) throws FileNotFoundException {
+    return getClassLoaderForJarFile(jarFileName, CompilerLoader.class.getClassLoader());
   }
 
-  private synchronized static ClassLoader getClassLoaderForArtifact(String groupId, String artifactId, String version, ClassLoader parentClassLoader) throws FileNotFoundException {
-    MavenId mavenId = new MavenId(groupId, artifactId, version);
-    return artifactId.endsWith("-SNAPSHOT")
-      ? createClassLoaderForArtifact(mavenId, parentClassLoader)
-      : getCachedClassLoaderForArtifact(mavenId, parentClassLoader);
+  private synchronized static ClassLoader getClassLoaderForJarFile(String jarFileName, ClassLoader parentClassLoader) throws FileNotFoundException {
+    return jarFileName.endsWith("-SNAPSHOT.jar")
+      ? createClassLoaderForArtifact(jarFileName, parentClassLoader)
+      : getCachedClassLoaderForArtifact(jarFileName, parentClassLoader);
   }
 
-  private synchronized static ClassLoader getCachedClassLoaderForArtifact(MavenId mavenId, ClassLoader parentClassLoader) throws FileNotFoundException {
-    ClassLoader classLoader = CLASS_LOADER_BY_ARTIFACT_CACHE.get(mavenId);
+  private synchronized static ClassLoader getCachedClassLoaderForArtifact(String jarFileName, ClassLoader parentClassLoader) throws FileNotFoundException {
+    ClassLoader classLoader = CLASS_LOADER_BY_JAR_FILE_NAME_CACHE.get(jarFileName);
     if (classLoader == null) {
-      classLoader = createClassLoaderForArtifact(mavenId, parentClassLoader);
-      CLASS_LOADER_BY_ARTIFACT_CACHE.put(mavenId, classLoader);
+      classLoader = createClassLoaderForArtifact(jarFileName, parentClassLoader);
+      CLASS_LOADER_BY_JAR_FILE_NAME_CACHE.put(jarFileName, classLoader);
     }
     return classLoader;
   }
 
-  private static ClassLoader createClassLoaderForArtifact(MavenId mavenId, ClassLoader parentClassLoader) throws FileNotFoundException {
-    //File localRepository = new File(System.getenv("M2_REPO"));
-    return new URLClassLoader(new URL[]{
-      artifact(mavenId)
-    }, parentClassLoader);
-  }
-
-  private static URL artifact(MavenId mavenId) throws FileNotFoundException {
-    File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
+  private static ClassLoader createClassLoaderForArtifact(String jarFileName, ClassLoader parentClassLoader) throws FileNotFoundException {
+    File jarFile = new File(jarFileName);
+    if (!jarFile.exists()) {
+      throw new FileNotFoundException("JAR file not found: " + jarFile.getAbsolutePath());
+    }
     try {
-      @SuppressWarnings({"ConstantConditions" })
-      File jarFile = MavenArtifactUtil.getArtifactFile(localRepository, mavenId, "jar");
-      if (!jarFile.exists()) {
-        throw new FileNotFoundException("JAR for artifact " + mavenId + " not found at " + jarFile.getAbsolutePath());
-      }
-      return jarFile.toURI().toURL();
+      return new URLClassLoader(new URL[]{
+        jarFile.toURI().toURL()
+      }, parentClassLoader);
     } catch (MalformedURLException e) {
       // should not happen:
       throw new IllegalStateException(e);
+
     }
   }
+
 }

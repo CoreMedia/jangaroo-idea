@@ -14,12 +14,7 @@
  */
 package net.jangaroo.ide.idea.exml;
 
-import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.LocalFileSystem;
-
-import java.io.File;
-import java.net.URI;
+import net.jangaroo.ide.idea.util.IdeaFileUtils;
 
 /**
  * IDEA serialization adapter of JoocConfiguration. 
@@ -29,7 +24,9 @@ public class ExmlcConfigurationBean {
   private static final String DEFAULT_GENERATED_SOURCES_DIRECTORY = "target/generated-sources/joo";
   private static final String DEFAULT_GENERATED_RESOURCES_DIRECTORY = "target/generated-resources/joo";
 
-  private String compilerVersion;
+  private String compilerJarFileName;
+
+  private String propertiesCompilerJarFileName;
 
   /**
    * Source directory to scan for files to compile.
@@ -73,9 +70,9 @@ public class ExmlcConfigurationBean {
 
   public void init(String outputPrefix, String moduleName) {
     if (outputPrefix != null) {
-      sourceDirectory = getIdeaUrl(outputPrefix + "/" + DEFAULT_SOURCE_DIRECTORY);
-      generatedSourcesDirectory = getIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_SOURCES_DIRECTORY);
-      generatedResourcesDirectory = getIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_RESOURCES_DIRECTORY);
+      sourceDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_SOURCE_DIRECTORY);
+      generatedSourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_SOURCES_DIRECTORY);
+      generatedResourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_RESOURCES_DIRECTORY);
     }
     if (moduleName != null) {
       namespace = moduleName;
@@ -84,12 +81,20 @@ public class ExmlcConfigurationBean {
     }
   }
 
-  public String getCompilerVersion() {
-    return compilerVersion;
+  public String getCompilerJarFileName() {
+    return compilerJarFileName;
   }
 
-  public void setCompilerVersion(String compilerVersion) {
-    this.compilerVersion = compilerVersion;
+  public void setCompilerJarFileName(String compilerJarFileName) {
+    this.compilerJarFileName = compilerJarFileName;
+  }
+
+  public String getPropertiesCompilerJarFileName() {
+    return propertiesCompilerJarFileName;
+  }
+
+  public void setPropertiesCompilerJarFileName(String propertiesCompilerJarFileName) {
+    this.propertiesCompilerJarFileName = propertiesCompilerJarFileName;
   }
 
   public boolean isShowCompilerInfoMessages() {
@@ -101,11 +106,11 @@ public class ExmlcConfigurationBean {
   }
 
   public String getSourceDirectory() {
-    return getPath(sourceDirectory);
+    return sourceDirectory;
   }
 
   public void setSourceDirectory(String sourceDirectory) {
-    this.sourceDirectory = getIdeaUrl(sourceDirectory);
+    this.sourceDirectory = sourceDirectory;
   }
 
   public String getConfigClassPackage() {
@@ -133,11 +138,11 @@ public class ExmlcConfigurationBean {
   }
 
   public String getGeneratedSourcesDirectory() {
-    return getPath(generatedSourcesDirectory);
+    return generatedSourcesDirectory;
   }
 
   public void setGeneratedSourcesDirectory(String generatedSourcesDirectory) {
-    this.generatedSourcesDirectory = getIdeaUrl(generatedSourcesDirectory);
+    this.generatedSourcesDirectory = generatedSourcesDirectory;
   }
 
   public String getXsd() {
@@ -149,11 +154,15 @@ public class ExmlcConfigurationBean {
   }
 
   public String getGeneratedResourcesDirectory() {
-    return getPath(generatedResourcesDirectory);
+    return generatedResourcesDirectory;
   }
 
   public void setGeneratedResourcesDirectory(String generatedResourcesDirectory) {
-    this.generatedResourcesDirectory = getIdeaUrl(generatedResourcesDirectory);
+    this.generatedResourcesDirectory = generatedResourcesDirectory;
+  }
+
+  public String getXsdFilename() {
+    return getGeneratedResourcesDirectory() + "/" + getConfigClassPackage() + ".xsd";
   }
 
   @Override
@@ -191,28 +200,4 @@ public class ExmlcConfigurationBean {
     return result;
   }
 
-  private static final String IDEA_URL_PREFIX = "file://";
-
-  public static String getPath(String ideaUrl) {
-    if (ideaUrl == null) {
-      return "";
-    }
-    if (ideaUrl.startsWith(IDEA_URL_PREFIX)) {
-      try {
-        return new File(new URI(VfsUtil.fixIDEAUrl(ideaUrl))).getPath();
-      } catch (Exception e) {
-        ideaUrl = ideaUrl.substring(IDEA_URL_PREFIX.length());
-      }
-    }
-    return ideaUrl.replace('/', File.separatorChar);
-  }
-
-  public static String getIdeaUrl(String path) {
-    path = path.trim();
-    if (path.length()==0) {
-      return null;
-    }
-    VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(path);
-    return virtualFile==null ? IDEA_URL_PREFIX + path.replace(File.separatorChar, '/') : virtualFile.getUrl();
-  }
 }

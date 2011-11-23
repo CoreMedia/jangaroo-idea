@@ -23,6 +23,9 @@ import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+
 //import com.intellij.openapi.fileChooser.FileChooserFactory;
 //import com.intellij.openapi.fileChooser.FileTextField;
 //import com.intellij.openapi.Disposable;
@@ -41,17 +44,21 @@ public class JangarooFacetEditorTabUI {
   private JCheckBox allowDuplicateVariableCheckBox;
   private TextFieldWithBrowseButton outputDirTextField;
   private JCheckBox showCompilerInfoMessages;
-  private JTextField compilerVersionTextField;
+  private TextFieldWithBrowseButton compilerJarTextField;
   private ButtonGroup whiteSpaceButtonGroup;
 
+  private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
+    COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo compiler JAR location.");
+    COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the Jangaroo compiler JAR. This allows to use different versions of the Jangaroo compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo Output Directory");
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place JavaScript files containing compiled ActionScript classes.");
   }
 
   public JangarooFacetEditorTabUI() {
+    compilerJarTextField.addBrowseFolderListener(null, null, null, COMPILER_JAR_CHOOSER_DESCRIPTOR);
     outputDirTextField.addBrowseFolderListener(null,null, null, OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
   }
@@ -85,7 +92,7 @@ public class JangarooFacetEditorTabUI {
   */
 
   public void setData(JoocConfigurationBean data) {
-    compilerVersionTextField.setText(data.compilerVersion);
+    compilerJarTextField.setText(toPath(data.compilerJarFileName));
     verboseCheckBox.setSelected(data.verbose);
     enableAssertionsCheckBox.setSelected(data.enableAssertions);
     whiteSpaceButtonGroup.setSelected(
@@ -93,12 +100,12 @@ public class JangarooFacetEditorTabUI {
         : data.isDebugLines()  ? keepNewLinesOnlyRadioButton
         : suppressWhiteSpaceRadioButton).getModel(), true);
     allowDuplicateVariableCheckBox.setSelected(data.allowDuplicateLocalVariables);
-    outputDirTextField.setText(JoocConfigurationBean.getPath(data.outputDirectory));
+    outputDirTextField.setText(toPath(data.outputDirectory));
     showCompilerInfoMessages.setSelected(data.showCompilerInfoMessages);
   }
 
   public JoocConfigurationBean getData(JoocConfigurationBean data) {
-    data.compilerVersion = compilerVersionTextField.getText();
+    data.compilerJarFileName = toIdeaUrl(compilerJarTextField.getText());
     data.verbose = verboseCheckBox.isSelected();
     data.enableAssertions = enableAssertionsCheckBox.isSelected();
     ButtonModel debugSelection = whiteSpaceButtonGroup.getSelection();
@@ -107,7 +114,7 @@ public class JangarooFacetEditorTabUI {
         keepNewLinesOnlyRadioButton.getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_LINES
                                                                       : JoocConfigurationBean.DEBUG_LEVEL_NONE;
     data.allowDuplicateLocalVariables = allowDuplicateVariableCheckBox.isSelected();
-    data.outputDirectory = JoocConfigurationBean.getIdeaUrl(outputDirTextField.getText());
+    data.outputDirectory = toIdeaUrl(outputDirTextField.getText());
     data.showCompilerInfoMessages = showCompilerInfoMessages.isSelected();
     return data;
   }

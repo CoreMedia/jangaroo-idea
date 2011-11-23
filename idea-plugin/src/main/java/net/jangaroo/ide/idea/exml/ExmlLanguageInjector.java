@@ -47,7 +47,7 @@ import java.util.Set;
  */
 public class ExmlLanguageInjector implements LanguageInjector {
 
-  private static String getModuleRelativePath(Project project, VirtualFile file) {
+  static String getModuleRelativePath(Project project, VirtualFile file) {
     final Module module = getModuleForFile(project, file);
     if (module != null) {
       for (VirtualFile sourceRoot : ModuleRootManager.getInstance(module).getSourceRoots()) {

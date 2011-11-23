@@ -30,12 +30,15 @@ import java.util.zip.ZipFile;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.EXML_MAVEN_PLUGIN_ARTIFACT_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.JANGAROO_GROUP_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPlugin;
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
 
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.
  */
 public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfiguration, ExmlFacetType> {
   private static final String DEFAULT_EXML_FACET_NAME = "EXML";
+  private static final String EXML_COMPILER_ARTIFACT_ID = "exml-compiler";
+  private static final String PROPERTIES_COMPILER_ARTIFACT_ID = "properties-compiler";
 
   public ExmlFacetImporter() {
     super(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID, ExmlFacetType.INSTANCE, DEFAULT_EXML_FACET_NAME);
@@ -79,10 +82,11 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     //System.out.println("reimportFacet called!");
     ExmlFacetConfiguration exmlFacetConfiguration = exmlFacet.getConfiguration();
     ExmlcConfigurationBean exmlConfig = exmlFacetConfiguration.getState();
-    exmlConfig.setCompilerVersion(findExmlMavenPlugin(mavenProjectModel).getVersion());
-    exmlConfig.setSourceDirectory(mavenProjectModel.getSources().get(0));
-    exmlConfig.setGeneratedSourcesDirectory(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo");
-    exmlConfig.setGeneratedResourcesDirectory(getTargetOutputPath(mavenProjectModel, "generated-resources"));
+    exmlConfig.setCompilerJarFileName(JangarooFacetImporter.jooArtifactFileName(EXML_COMPILER_ARTIFACT_ID, findExmlMavenPlugin(mavenProjectModel).getVersion()));
+    exmlConfig.setPropertiesCompilerJarFileName(JangarooFacetImporter.jooArtifactFileName(PROPERTIES_COMPILER_ARTIFACT_ID, findExmlMavenPlugin(mavenProjectModel).getVersion()));
+    exmlConfig.setSourceDirectory(toIdeaUrl(mavenProjectModel.getSources().get(0)));
+    exmlConfig.setGeneratedSourcesDirectory(toIdeaUrl(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo"));
+    exmlConfig.setGeneratedResourcesDirectory(toIdeaUrl(getTargetOutputPath(mavenProjectModel, "generated-resources")));
     String artifactId = mavenProjectModel.getMavenId().getArtifactId();
     String configClassPackage = getConfigurationValue(mavenProjectModel, "configClassPackage", "");
     exmlConfig.setConfigClassPackage(configClassPackage);

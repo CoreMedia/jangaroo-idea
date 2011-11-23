@@ -35,21 +35,23 @@ import java.io.FileNotFoundException;
 import java.util.*;
 import java.io.File;
 
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+
 /**
  *
  */
 public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
 
-  public static CompilationResult runJooc(CompileContext context, String compilerVersion, JoocConfiguration configuration, CompileLog log) {
+  public static CompilationResult runJooc(CompileContext context, String compilerJarFileName, JoocConfiguration configuration, CompileLog log) {
     Jooc jooc;
     try {
-      jooc = CompilerLoader.loadJooc(compilerVersion);
+      jooc = CompilerLoader.loadJooc(compilerJarFileName);
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
       return null;
     } catch (Exception e) {
       context.addMessage(CompilerMessageCategory.ERROR, "Jangaroo Compiler version " +
-        compilerVersion + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+        compilerJarFileName + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
         null, -1, -1);
       return null;
     }
@@ -102,7 +104,7 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
         outputSinkItem = new OutputSinkItem(outputDirectoryPath);
         IdeaCompileLog ideaCompileLog = new IdeaCompileLog(context);
         getLog().info("running " + getDescription() + "...");
-        CompilationResult result = runJooc(context, getJoocConfigurationBean(module).compilerVersion, joocConfig, ideaCompileLog);
+        CompilationResult result = runJooc(context, toPath(getJoocConfigurationBean(module).compilerJarFileName), joocConfig, ideaCompileLog);
         if (result == null) {
           return null;
         }

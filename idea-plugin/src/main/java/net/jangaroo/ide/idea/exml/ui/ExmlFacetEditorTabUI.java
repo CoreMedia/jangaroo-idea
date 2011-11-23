@@ -22,6 +22,9 @@ import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
 
 import javax.swing.*;
 
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+
 /**
  * Jangaroo configuration on its Facet Tab.
  */
@@ -32,28 +35,37 @@ public class ExmlFacetEditorTabUI {
   private TextFieldWithBrowseButton generatedResourcesDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JTextField configClassesPackageTextField;
-  private JTextField compilerVersionTextField;
+  private TextFieldWithBrowseButton compilerJarTextField;
+  private TextFieldWithBrowseButton propertiesCompilerJarTextField;
 
+  private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
+  private static final FileChooserDescriptor PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
+    COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose EXML compiler JAR location.");
+    COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the EXML compiler JAR. This allows to use different versions of the EXML compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
+    PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose properties compiler JAR location.");
+    PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the properties compiler JAR. This allows to use different versions of the properties compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
     SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Source Directory");
     SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should read *.exml files containing component descriptions.");
     GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Generated Sources Directory");
     GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should store the *.as files created from *.exml. "+
       "This should be a source directory, so that the Jangaroo Language plugin finds and compiles these classes.");
     GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Schema Directory");
-    GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should store the geneated *.xsd file.");
+    GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should store the generated *.xsd file.");
   }
 
   public ExmlFacetEditorTabUI() {
+    compilerJarTextField.addBrowseFolderListener(null, null, null, COMPILER_JAR_CHOOSER_DESCRIPTOR, TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
+    propertiesCompilerJarTextField.addBrowseFolderListener(null, null, null, PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR, TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
     sourceDirTextField.addBrowseFolderListener(null,null, null, SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
-    generatedSourcesDirTextField.addBrowseFolderListener(null,null, null, SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
+    generatedSourcesDirTextField.addBrowseFolderListener(null,null, null, GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
-    generatedResourcesDirTextField.addBrowseFolderListener(null,null, null, SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
+    generatedResourcesDirTextField.addBrowseFolderListener(null,null, null, GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
   }
 
@@ -62,19 +74,21 @@ public class ExmlFacetEditorTabUI {
   }
 
   public void setData(ExmlcConfigurationBean data) {
-    compilerVersionTextField.setText(data.getCompilerVersion());
-    sourceDirTextField.setText(data.getSourceDirectory());
-    generatedSourcesDirTextField.setText(data.getGeneratedSourcesDirectory());
-    generatedResourcesDirTextField.setText(data.getGeneratedResourcesDirectory());
+    compilerJarTextField.setText(toPath(data.getCompilerJarFileName()));
+    propertiesCompilerJarTextField.setText(toPath(data.getPropertiesCompilerJarFileName()));
+    sourceDirTextField.setText(toPath(data.getSourceDirectory()));
+    generatedSourcesDirTextField.setText(toPath(data.getGeneratedSourcesDirectory()));
+    generatedResourcesDirTextField.setText(toPath(data.getGeneratedResourcesDirectory()));
     configClassesPackageTextField.setText(data.getConfigClassPackage());
     showCompilerInfoMessages.setSelected(data.isShowCompilerInfoMessages());
   }
 
   public ExmlcConfigurationBean getData(ExmlcConfigurationBean data) {
-    data.setCompilerVersion(compilerVersionTextField.getText());
-    data.setSourceDirectory(sourceDirTextField.getText());
-    data.setGeneratedSourcesDirectory(generatedSourcesDirTextField.getText());
-    data.setGeneratedResourcesDirectory(generatedResourcesDirTextField.getText());
+    data.setCompilerJarFileName(toIdeaUrl(compilerJarTextField.getText()));
+    data.setPropertiesCompilerJarFileName(toIdeaUrl(propertiesCompilerJarTextField.getText()));
+    data.setSourceDirectory(toIdeaUrl(sourceDirTextField.getText()));
+    data.setGeneratedSourcesDirectory(toIdeaUrl(generatedSourcesDirTextField.getText()));
+    data.setGeneratedResourcesDirectory(toIdeaUrl(generatedResourcesDirTextField.getText()));
     data.setConfigClassPackage(configClassesPackageTextField.getText());
     data.setShowCompilerInfoMessages(showCompilerInfoMessages.isSelected());
     return data;
@@ -90,6 +104,6 @@ public class ExmlFacetEditorTabUI {
   }
 
   private void createUIComponents() {
-    // TODO: place custom component creation code here 
+    // you can place custom component creation code here 
   }
 }

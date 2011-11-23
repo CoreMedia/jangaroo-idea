@@ -24,6 +24,8 @@ import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.AbstractCompiler;
+import net.jangaroo.ide.idea.JangarooCompiler;
+import net.jangaroo.ide.idea.JoocConfigurationBean;
 import net.jangaroo.ide.idea.util.CompilerLoader;
 import net.jangaroo.properties.api.Propc;
 import net.jangaroo.properties.api.PropcHelper;
@@ -43,6 +45,8 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+
 /**
  *
  */
@@ -58,7 +62,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return "EXML Compiler";
   }
 
-  public boolean hasExmlFacet(Module module) {
+  static boolean hasExmlFacet(Module module) {
     return ExmlFacet.ofModule(module) != null;
   }
 
@@ -71,7 +75,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     if (module != null) {
       ExmlcConfigurationBean exmlcConfig = getExmlConfig(module);
       if (exmlcConfig != null) {
-        return exmlcConfig.getGeneratedResourcesDirectory() + "/" + exmlcConfig.getConfigClassPackage() + ".xsd";
+        return exmlcConfig.getXsdFilename();
       }
     }
     return null;
@@ -118,8 +122,9 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     if (items.length == 0) {
       return EMPTY_GENERATION_ITEM_ARRAY;
     }
-    Module module = items[0].getModule();
+    Module module = items[0].getModule(); // TODO: careful: do we ever get items from different modules? Then this won't work!
     ExmlcConfigurationBean exmlcConfigurationBean = getExmlConfig(module);
+    JoocConfigurationBean joocConfigurationBean = JangarooCompiler.getJoocConfigurationBean(module);
     ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
     List<VirtualFile> files = new ArrayList<VirtualFile>(items.length);
     for (GenerationItem item : items) {
@@ -127,15 +132,16 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     }
     updateFileLocations(exmlConfiguration, module, files);
     String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
-    exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
+    exmlConfiguration.setOutputDirectory(new File(toPath(generatedSourcesDirectory)));
     exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
     List<GenerationItem> successfullyGeneratedItems = new ArrayList<GenerationItem>(items.length);
-    Exmlc exmlc = getExmlc(exmlcConfigurationBean.getCompilerVersion(), exmlConfiguration, context);
+    Exmlc exmlc = getExmlc(exmlcConfigurationBean.getCompilerJarFileName(), joocConfigurationBean.compilerJarFileName,
+      exmlConfiguration, context);
     if (exmlc == null) {
       return new GenerationItem[0];
     }
-    Propc propertyClassGenerator = getPropc(exmlcConfigurationBean.getCompilerVersion(), exmlConfiguration, context);
+    Propc propertyClassGenerator = getPropc(exmlcConfigurationBean.getPropertiesCompilerJarFileName(), exmlConfiguration, context);
     for (GenerationItem generationItem : items) {
       JooGenerationItem jooGenerationItem = (JooGenerationItem)generationItem;
       VirtualFile virtualSourceFile = jooGenerationItem.getSourceFile();
@@ -148,7 +154,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         }
         successfullyGeneratedItems.add(generationItem);
       } catch (ExmlcException e) {
-        context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), LocalFileSystem.getInstance().findFileByIoFile(e.getFile()).getUrl(), e.getLine(), e.getColumn());
+        addMessageForExmlcException(context, e);
       }
     }
     for (GenerationItem item : successfullyGeneratedItems) {
@@ -167,31 +173,36 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return successfullyGeneratedItems.toArray(new GenerationItem[successfullyGeneratedItems.size()]);
   }
 
-  private Exmlc getExmlc(String compilerVersion, ExmlConfiguration exmlConfiguration, CompileContext context) {
+  static void addMessageForExmlcException(CompileContext context, ExmlcException e) {
+    VirtualFile file = LocalFileSystem.getInstance().findFileByIoFile(e.getFile());
+    context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file==null ? null : file.getUrl(), e.getLine(), e.getColumn());
+  }
+
+  Exmlc getExmlc(String exmlcJarFileName, String joocJarFileName, ExmlConfiguration exmlConfiguration, CompileContext context) {
     Exmlc exmlc = null;
     try {
-      exmlc = CompilerLoader.loadExmlc(compilerVersion);
+      exmlc = CompilerLoader.loadExmlc(toPath(exmlcJarFileName), toPath(joocJarFileName));
       exmlc.setConfig(exmlConfiguration);
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
     } catch (Exception e) {
       context.addMessage(CompilerMessageCategory.ERROR, "EXML Compiler version " +
-        compilerVersion + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+        exmlcJarFileName + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
         null, -1, -1);
     }
     return exmlc;
   }
 
-  private Propc getPropc(String compilerVersion, FileLocations compilerConfiguration, CompileContext context) {
+  private Propc getPropc(String propertiesCompilerJarFileName, FileLocations compilerConfiguration, CompileContext context) {
     Propc propc = null;
     try {
-      propc = CompilerLoader.loadPropc(compilerVersion);
+      propc = CompilerLoader.loadPropc(toPath(propertiesCompilerJarFileName));
       propc.setConfig(compilerConfiguration);
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
     } catch (Exception e) {
       context.addMessage(CompilerMessageCategory.ERROR, "Properties Compiler version " +
-        compilerVersion + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+        propertiesCompilerJarFileName + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
         null, -1, -1);
     }
     return propc;
@@ -243,8 +254,8 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
         updateFileLocations(exmlConfiguration, module, entry.getValue());
         String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
-        exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
-        exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
+        exmlConfiguration.setOutputDirectory(new File(toPath(generatedSourcesDirectory)));
+        exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
         exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
         for (VirtualFile file : entry.getValue()) {
           try {

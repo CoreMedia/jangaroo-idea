@@ -36,9 +36,11 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 import org.jetbrains.idea.maven.project.SupportedRequestType;
+import org.jetbrains.idea.maven.utils.MavenArtifactUtil;
 import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenProcessCanceledException;
 import org.jetbrains.idea.maven.utils.MavenProgressIndicator;
+import org.jetbrains.idea.maven.utils.MavenUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,12 +50,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
+
 /**
  * A Facet-from-Maven Importer for the Jangaroo Facet type.
  */
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
+  private static final String JANGAROO_COMPILER_ARTIFACT_ID = "jangaroo-compiler";
   public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
@@ -126,7 +131,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     //System.out.println("reimportFacet called!");
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
-    jooConfig.compilerVersion = findJangarooMavenPlugin(mavenProjectModel).getVersion();
+    MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
+    jooConfig.compilerJarFileName = jooArtifactFileName(JANGAROO_COMPILER_ARTIFACT_ID, jangarooMavenPlugin.getVersion());
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
@@ -140,11 +146,17 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!outputDir.isAbsolute()) {
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
-    jooConfig.outputDirectory = new File(outputDir, "joo/classes").getAbsolutePath();
+    jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, "joo/classes").getAbsolutePath());
 
     if (isWar) {
       postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
     }
+  }
+
+  public static String jooArtifactFileName(String artifactId, String version) {
+    File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
+    File jarFile = MavenArtifactUtil.getArtifactFile(localRepository, JANGAROO_GROUP_ID, artifactId, version, "jar");
+    return toIdeaUrl(jarFile.getAbsolutePath());
   }
 
   public void collectSourceFolders(MavenProject mavenProject, List<String> result) {
