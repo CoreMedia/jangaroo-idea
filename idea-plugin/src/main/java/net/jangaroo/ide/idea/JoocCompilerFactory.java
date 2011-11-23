@@ -17,13 +17,13 @@ import java.util.Collections;
 public class JoocCompilerFactory implements CompilerFactory {
 
   public Compiler[] createCompilers(@NotNull CompilerManager compilerManager) {
-    FileType actionscript = FileTypeManager.getInstance().getFileTypeByExtension("as");
-    FileType javascript = FileTypeManager.getInstance().getFileTypeByExtension("js");
+    FileType actionScript = FileTypeManager.getInstance().getFileTypeByExtension("as");
+    FileType javaScript = FileTypeManager.getInstance().getFileTypeByExtension("js");
 
-    compilerManager.addCompilableFileType(actionscript);
+    compilerManager.addCompilableFileType(actionScript);
     compilerManager.addTranslatingCompiler(new JangarooCompiler(),
-      Collections.<FileType>singleton(actionscript),
-      Collections.<FileType>singleton(javascript));
+      Collections.<FileType>singleton(actionScript),
+      Collections.<FileType>singleton(javaScript));
     return new Compiler[0]; // already registered the compiler ourselves
   }
 
