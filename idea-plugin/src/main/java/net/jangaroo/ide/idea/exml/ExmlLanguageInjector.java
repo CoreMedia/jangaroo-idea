@@ -38,7 +38,9 @@ import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * AS3 language injection in EXML files.
@@ -111,7 +113,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
       String superClassName = baseClassAttribute ? null : findSuperClass(exmlComponentTag);
 
       // find and append imports:
-      List<String> imports = findImports(exmlComponentTag);
+      Set<String> imports = findImports(exmlComponentTag);
       if (superClassName != null) {
         imports.add(superClassName);
       }
@@ -193,14 +195,37 @@ public class ExmlLanguageInjector implements LanguageInjector {
     return null;
   }
 
-  private static List<String> findImports(XmlTag exmlComponentTag) {
-    List<String> imports = new ArrayList<String>();
+  private static Set<String> findImports(XmlTag exmlComponentTag) {
+    Set<String> imports = new LinkedHashSet<String>();
+    XmlTag componentTag = null;
     for (XmlTag topLevelXmlTag : exmlComponentTag.getSubTags()) {
-      if (Exmlc.EXML_IMPORT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
-        imports.add(topLevelXmlTag.getAttributeValue(Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE));
+      if (Exmlc.EXML_NAMESPACE_URI.equals(topLevelXmlTag.getNamespace())) {
+        if (Exmlc.EXML_IMPORT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
+          imports.add(topLevelXmlTag.getAttributeValue(Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE));
+        }
+      } else {
+        componentTag = topLevelXmlTag; // remember last non-EXML-namespace tag, which contains the view tree
       }
     }
+
+    if (componentTag != null) {
+      addComponentImports(imports, componentTag);
+    }
     return imports;
+  }
+
+  private static void addComponentImports(Set<String> imports, XmlTag componentTag) {
+    // TODO: move Exmlc.parsePackageFromNamespace() to API and use that instead!
+    String namespace = componentTag.getNamespace();
+    if (namespace.startsWith(Exmlc.EXML_CONFIG_URI_PREFIX)) {
+      String configClassName = namespace.substring(Exmlc.EXML_CONFIG_URI_PREFIX.length()) + "." + componentTag.getLocalName();
+      imports.add(configClassName);
+      for (XmlTag property : componentTag.getSubTags()) {
+        for (XmlTag subComponent : property.getSubTags()) {
+          addComponentImports(imports, subComponent);
+        }
+      }
+    }
   }
 
   private static List<String[]> findConstants(XmlTag exmlComponentTag) {
