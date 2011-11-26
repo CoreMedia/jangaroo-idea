@@ -5,6 +5,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
+import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.ide.idea.JangarooFacetImporter;
 import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
@@ -146,7 +147,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
 
   private void addResource(Map<String, String> resourceMap, String xsdFilenameAndPath, String xsdFileName) {
     //System.out.println("  found XSD " + xsdFilename.getPath() + "...");
-    resourceMap.put("exml:" + CompilerUtils.removeExtension(xsdFileName), xsdFilenameAndPath);
+    resourceMap.put(Exmlc.EXML_CONFIG_URI_PREFIX + CompilerUtils.removeExtension(xsdFileName), xsdFilenameAndPath);
   }
 
 }
