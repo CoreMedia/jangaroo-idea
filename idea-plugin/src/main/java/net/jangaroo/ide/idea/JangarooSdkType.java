@@ -10,6 +10,7 @@ import com.intellij.openapi.projectRoots.SdkType;
 import com.intellij.openapi.roots.JavadocOrderRootType;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jdom.Element;
@@ -71,7 +72,8 @@ public class JangarooSdkType extends SdkType {
     if (dir != null) {
       VirtualFile artifact = dir.findChild(artifactId + "-" + version + ".jar");
       if (artifact != null) {
-        modificator.addRoot(artifact, OrderRootType.CLASSES);
+        VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(artifact);
+        modificator.addRoot(jarRoot, OrderRootType.CLASSES);
       }
     }
   }

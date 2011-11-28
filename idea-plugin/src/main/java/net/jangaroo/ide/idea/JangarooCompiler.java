@@ -51,7 +51,8 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
     VirtualFile[] files = jangarooSdk.getRootProvider().getFiles(OrderRootType.CLASSES);
     for (VirtualFile file : files) {
       if (file.getName().startsWith(jarNamePrefix)) {
-        return file.getPath();
+        String filename = file.getPath();
+        return filename.endsWith("!/") ? filename.substring(0, filename.length() - "!/".length()) : filename;
       }
     }
     throw new IllegalStateException("Jangaroo SDK: compiler JAR not found with prefix '" + jarNamePrefix + "'.");
