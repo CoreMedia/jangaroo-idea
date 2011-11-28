@@ -35,8 +35,6 @@ public class ExmlFacetEditorTabUI {
   private TextFieldWithBrowseButton generatedResourcesDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JTextField configClassesPackageTextField;
-  private TextFieldWithBrowseButton compilerJarTextField;
-  private TextFieldWithBrowseButton propertiesCompilerJarTextField;
 
   private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
@@ -45,10 +43,6 @@ public class ExmlFacetEditorTabUI {
   private static final FileChooserDescriptor GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
-    COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose EXML compiler JAR location.");
-    COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the EXML compiler JAR. This allows to use different versions of the EXML compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
-    PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose properties compiler JAR location.");
-    PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the properties compiler JAR. This allows to use different versions of the properties compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
     SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Source Directory");
     SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should read *.exml files containing component descriptions.");
     GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Generated Sources Directory");
@@ -59,8 +53,6 @@ public class ExmlFacetEditorTabUI {
   }
 
   public ExmlFacetEditorTabUI() {
-    compilerJarTextField.addBrowseFolderListener(null, null, null, COMPILER_JAR_CHOOSER_DESCRIPTOR, TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
-    propertiesCompilerJarTextField.addBrowseFolderListener(null, null, null, PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR, TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
     sourceDirTextField.addBrowseFolderListener(null,null, null, SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
     generatedSourcesDirTextField.addBrowseFolderListener(null,null, null, GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
@@ -74,8 +66,6 @@ public class ExmlFacetEditorTabUI {
   }
 
   public void setData(ExmlcConfigurationBean data) {
-    compilerJarTextField.setText(toPath(data.getCompilerJarFileName()));
-    propertiesCompilerJarTextField.setText(toPath(data.getPropertiesCompilerJarFileName()));
     sourceDirTextField.setText(toPath(data.getSourceDirectory()));
     generatedSourcesDirTextField.setText(toPath(data.getGeneratedSourcesDirectory()));
     generatedResourcesDirTextField.setText(toPath(data.getGeneratedResourcesDirectory()));
@@ -84,8 +74,6 @@ public class ExmlFacetEditorTabUI {
   }
 
   public ExmlcConfigurationBean getData(ExmlcConfigurationBean data) {
-    data.setCompilerJarFileName(toIdeaUrl(compilerJarTextField.getText()));
-    data.setPropertiesCompilerJarFileName(toIdeaUrl(propertiesCompilerJarTextField.getText()));
     data.setSourceDirectory(toIdeaUrl(sourceDirTextField.getText()));
     data.setGeneratedSourcesDirectory(toIdeaUrl(generatedSourcesDirTextField.getText()));
     data.setGeneratedResourcesDirectory(toIdeaUrl(generatedResourcesDirTextField.getText()));

@@ -132,7 +132,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
-    jooConfig.compilerJarFileName = jooArtifactFileName(JANGAROO_COMPILER_ARTIFACT_ID, jangarooMavenPlugin.getVersion());
+    String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_ARTIFACT_ID, jangarooMavenPlugin.getVersion());
+    jooConfig.jangarooSdkName = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath).getName();
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
@@ -153,10 +154,10 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
   }
 
-  public static String jooArtifactFileName(String artifactId, String version) {
+  public static String jangarooSdkHomePath(String artifactId, String version) {
     File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
     File jarFile = MavenArtifactUtil.getArtifactFile(localRepository, JANGAROO_GROUP_ID, artifactId, version, "jar");
-    return toIdeaUrl(jarFile.getAbsolutePath());
+    return jarFile.getParentFile().getAbsolutePath();
   }
 
   public void collectSourceFolders(MavenProject mavenProject, List<String> result) {

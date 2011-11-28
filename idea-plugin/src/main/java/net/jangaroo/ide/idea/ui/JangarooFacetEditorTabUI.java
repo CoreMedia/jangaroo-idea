@@ -44,7 +44,7 @@ public class JangarooFacetEditorTabUI {
   private JCheckBox allowDuplicateVariableCheckBox;
   private TextFieldWithBrowseButton outputDirTextField;
   private JCheckBox showCompilerInfoMessages;
-  private TextFieldWithBrowseButton compilerJarTextField;
+  private JangarooSdkComboBoxWithBrowseButton jangarooSdkComboBoxWithBrowseButton;
   private ButtonGroup whiteSpaceButtonGroup;
 
   private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
@@ -58,7 +58,6 @@ public class JangarooFacetEditorTabUI {
   }
 
   public JangarooFacetEditorTabUI() {
-    compilerJarTextField.addBrowseFolderListener(null, null, null, COMPILER_JAR_CHOOSER_DESCRIPTOR);
     outputDirTextField.addBrowseFolderListener(null,null, null, OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
   }
@@ -92,7 +91,7 @@ public class JangarooFacetEditorTabUI {
   */
 
   public void setData(JoocConfigurationBean data) {
-    compilerJarTextField.setText(toPath(data.compilerJarFileName));
+    jangarooSdkComboBoxWithBrowseButton.setSelectedSdkRaw(data.jangarooSdkName);
     verboseCheckBox.setSelected(data.verbose);
     enableAssertionsCheckBox.setSelected(data.enableAssertions);
     whiteSpaceButtonGroup.setSelected(
@@ -105,7 +104,7 @@ public class JangarooFacetEditorTabUI {
   }
 
   public JoocConfigurationBean getData(JoocConfigurationBean data) {
-    data.compilerJarFileName = toIdeaUrl(compilerJarTextField.getText());
+    data.jangarooSdkName = jangarooSdkComboBoxWithBrowseButton.getSelectedSdkRaw();
     data.verbose = verboseCheckBox.isSelected();
     data.enableAssertions = enableAssertionsCheckBox.isSelected();
     ButtonModel debugSelection = whiteSpaceButtonGroup.getSelection();

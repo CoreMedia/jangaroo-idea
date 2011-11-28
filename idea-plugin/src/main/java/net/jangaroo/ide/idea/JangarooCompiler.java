@@ -19,6 +19,9 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.TranslatingCompiler;
+import com.intellij.openapi.projectRoots.ProjectJdkTable;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.module.Module;
@@ -35,15 +38,28 @@ import java.io.FileNotFoundException;
 import java.util.*;
 import java.io.File;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
-
 /**
  *
  */
 public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
 
-  public static CompilationResult runJooc(CompileContext context, String compilerJarFileName, JoocConfiguration configuration, CompileLog log) {
+  public static String findCompilerJar(String jangarooSdkName, String jarNamePrefix) {
+    Sdk jangarooSdk = ProjectJdkTable.getInstance().findJdk(jangarooSdkName);
+    if (jangarooSdk == null) {
+      throw new IllegalStateException("Jangaroo SDK '" + jangarooSdkName + "' not found.");
+    }
+    VirtualFile[] files = jangarooSdk.getRootProvider().getFiles(OrderRootType.CLASSES);
+    for (VirtualFile file : files) {
+      if (file.getName().startsWith(jarNamePrefix)) {
+        return file.getPath();
+      }
+    }
+    throw new IllegalStateException("Jangaroo SDK: compiler JAR not found with prefix '" + jarNamePrefix + "'.");
+  }
+
+  public static CompilationResult runJooc(CompileContext context, String jangarooSdkName, JoocConfiguration configuration, CompileLog log) {
     Jooc jooc;
+    String compilerJarFileName = findCompilerJar(jangarooSdkName, "jangaroo-compiler");
     try {
       jooc = CompilerLoader.loadJooc(compilerJarFileName);
     } catch (FileNotFoundException e) {
@@ -104,7 +120,7 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
         outputSinkItem = new OutputSinkItem(outputDirectoryPath);
         IdeaCompileLog ideaCompileLog = new IdeaCompileLog(context);
         getLog().info("running " + getDescription() + "...");
-        CompilationResult result = runJooc(context, toPath(getJoocConfigurationBean(module).compilerJarFileName), joocConfig, ideaCompileLog);
+        CompilationResult result = runJooc(context, getJoocConfigurationBean(module).jangarooSdkName, joocConfig, ideaCompileLog);
         if (result == null) {
           return null;
         }

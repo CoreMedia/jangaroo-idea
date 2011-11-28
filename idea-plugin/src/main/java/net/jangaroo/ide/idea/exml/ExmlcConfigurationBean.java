@@ -24,10 +24,6 @@ public class ExmlcConfigurationBean {
   private static final String DEFAULT_GENERATED_SOURCES_DIRECTORY = "target/generated-sources/joo";
   private static final String DEFAULT_GENERATED_RESOURCES_DIRECTORY = "target/generated-resources/joo";
 
-  private String compilerJarFileName;
-
-  private String propertiesCompilerJarFileName;
-
   /**
    * Source directory to scan for files to compile.
    */
@@ -79,22 +75,6 @@ public class ExmlcConfigurationBean {
       namespacePrefix = moduleName;
       xsd = moduleName + ".xsd";
     }
-  }
-
-  public String getCompilerJarFileName() {
-    return compilerJarFileName;
-  }
-
-  public void setCompilerJarFileName(String compilerJarFileName) {
-    this.compilerJarFileName = compilerJarFileName;
-  }
-
-  public String getPropertiesCompilerJarFileName() {
-    return propertiesCompilerJarFileName;
-  }
-
-  public void setPropertiesCompilerJarFileName(String propertiesCompilerJarFileName) {
-    this.propertiesCompilerJarFileName = propertiesCompilerJarFileName;
   }
 
   public boolean isShowCompilerInfoMessages() {

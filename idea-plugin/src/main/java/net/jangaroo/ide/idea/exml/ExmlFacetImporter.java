@@ -82,8 +82,6 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     //System.out.println("reimportFacet called!");
     ExmlFacetConfiguration exmlFacetConfiguration = exmlFacet.getConfiguration();
     ExmlcConfigurationBean exmlConfig = exmlFacetConfiguration.getState();
-    exmlConfig.setCompilerJarFileName(JangarooFacetImporter.jooArtifactFileName(EXML_COMPILER_ARTIFACT_ID, findExmlMavenPlugin(mavenProjectModel).getVersion()));
-    exmlConfig.setPropertiesCompilerJarFileName(JangarooFacetImporter.jooArtifactFileName(PROPERTIES_COMPILER_ARTIFACT_ID, findExmlMavenPlugin(mavenProjectModel).getVersion()));
     exmlConfig.setSourceDirectory(toIdeaUrl(mavenProjectModel.getSources().get(0)));
     exmlConfig.setGeneratedSourcesDirectory(toIdeaUrl(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo"));
     exmlConfig.setGeneratedResourcesDirectory(toIdeaUrl(getTargetOutputPath(mavenProjectModel, "generated-resources")));

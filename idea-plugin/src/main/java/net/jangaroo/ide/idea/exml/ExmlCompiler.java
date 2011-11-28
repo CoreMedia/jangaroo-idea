@@ -136,12 +136,12 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
     List<GenerationItem> successfullyGeneratedItems = new ArrayList<GenerationItem>(items.length);
-    Exmlc exmlc = getExmlc(exmlcConfigurationBean.getCompilerJarFileName(), joocConfigurationBean.compilerJarFileName,
+    Exmlc exmlc = getExmlc(joocConfigurationBean.jangarooSdkName,
       exmlConfiguration, context);
     if (exmlc == null) {
       return new GenerationItem[0];
     }
-    Propc propertyClassGenerator = getPropc(exmlcConfigurationBean.getPropertiesCompilerJarFileName(), exmlConfiguration, context);
+    Propc propertyClassGenerator = getPropc(joocConfigurationBean.jangarooSdkName, exmlConfiguration, context);
     for (GenerationItem generationItem : items) {
       JooGenerationItem jooGenerationItem = (JooGenerationItem)generationItem;
       VirtualFile virtualSourceFile = jooGenerationItem.getSourceFile();
@@ -178,8 +178,10 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file==null ? null : file.getUrl(), e.getLine(), e.getColumn());
   }
 
-  Exmlc getExmlc(String exmlcJarFileName, String joocJarFileName, ExmlConfiguration exmlConfiguration, CompileContext context) {
+  Exmlc getExmlc(String jangarooSdkName, ExmlConfiguration exmlConfiguration, CompileContext context) {
     Exmlc exmlc = null;
+    String joocJarFileName = JangarooCompiler.findCompilerJar(jangarooSdkName, "jangaroo-compiler");
+    String exmlcJarFileName = JangarooCompiler.findCompilerJar(jangarooSdkName, "exml-compiler");
     try {
       exmlc = CompilerLoader.loadExmlc(toPath(exmlcJarFileName), toPath(joocJarFileName));
       exmlc.setConfig(exmlConfiguration);
@@ -193,10 +195,11 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return exmlc;
   }
 
-  private Propc getPropc(String propertiesCompilerJarFileName, FileLocations compilerConfiguration, CompileContext context) {
+  private Propc getPropc(String jangarooSdkName, FileLocations compilerConfiguration, CompileContext context) {
     Propc propc = null;
+    String propertiesCompilerJarFileName = JangarooCompiler.findCompilerJar(jangarooSdkName, "properties-compiler");
     try {
-      propc = CompilerLoader.loadPropc(toPath(propertiesCompilerJarFileName));
+      propc = CompilerLoader.loadPropc(propertiesCompilerJarFileName);
       propc.setConfig(compilerConfiguration);
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);

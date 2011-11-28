@@ -26,7 +26,7 @@ public class JoocConfigurationBean {
   public static final int DEBUG_LEVEL_LINES = 50;
   public static final int DEBUG_LEVEL_SOURCE = 100;
 
-  public String compilerJarFileName;
+  public String jangarooSdkName;
   public int debugLevel = DEBUG_LEVEL_SOURCE;
   public boolean verbose = false;
   public boolean enableAssertions = true;
@@ -77,7 +77,7 @@ public class JoocConfigurationBean {
         return false;
     }
     //noinspection StringEquality
-    return compilerJarFileName ==that.compilerJarFileName
+    return jangarooSdkName == that.jangarooSdkName
       && debugLevel==that.debugLevel
       && (outputPrefix==null ? that.outputPrefix==null : outputPrefix.equals(that.outputPrefix))
       && outputDirectory.equals(that.outputDirectory);
@@ -85,7 +85,7 @@ public class JoocConfigurationBean {
 
   @Override
   public int hashCode() {
-    int result = compilerJarFileName.hashCode();
+    int result = jangarooSdkName.hashCode();
     for (boolean flag : getFlags()) {
       result = 31 * result + (flag ? 1 : 0);
     }
