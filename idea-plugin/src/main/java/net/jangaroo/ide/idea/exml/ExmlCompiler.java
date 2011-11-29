@@ -180,16 +180,14 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
 
   Exmlc getExmlc(String jangarooSdkName, ExmlConfiguration exmlConfiguration, CompileContext context) {
     Exmlc exmlc = null;
-    String joocJarFileName = findCompilerJar(jangarooSdkName, "jangaroo-compiler");
-    String exmlcJarFileName = findCompilerJar(jangarooSdkName, "exml-compiler");
     try {
-      exmlc = CompilerLoader.loadExmlc(toPath(exmlcJarFileName), toPath(joocJarFileName));
+      exmlc = CompilerLoader.loadExmlc(getJarFileNames(jangarooSdkName));
       exmlc.setConfig(exmlConfiguration);
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
     } catch (Exception e) {
-      context.addMessage(CompilerMessageCategory.ERROR, "EXML Compiler version " +
-        exmlcJarFileName + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+      context.addMessage(CompilerMessageCategory.ERROR, jangarooSdkName +
+        " not correctly set up or not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
         null, -1, -1);
     }
     return exmlc;
@@ -197,15 +195,14 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
 
   private Propc getPropc(String jangarooSdkName, FileLocations compilerConfiguration, CompileContext context) {
     Propc propc = null;
-    String propertiesCompilerJarFileName = findCompilerJar(jangarooSdkName, "properties-compiler");
     try {
-      propc = CompilerLoader.loadPropc(propertiesCompilerJarFileName);
+      propc = CompilerLoader.loadPropc(getJarFileNames(jangarooSdkName));
       propc.setConfig(compilerConfiguration);
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
     } catch (Exception e) {
-      context.addMessage(CompilerMessageCategory.ERROR, "Properties Compiler version " +
-        propertiesCompilerJarFileName + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+      context.addMessage(CompilerMessageCategory.ERROR, jangarooSdkName +
+        " not correctly set up or not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
         null, -1, -1);
     }
     return propc;

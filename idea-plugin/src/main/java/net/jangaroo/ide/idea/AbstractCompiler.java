@@ -55,19 +55,21 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
     getLog().debug("AbstractCompiler constructor");
   }
 
-  public static String findCompilerJar(String jangarooSdkName, String jarNamePrefix) {
+  public static List<String> getJarFileNames(String jangarooSdkName) {
     Sdk jangarooSdk = ProjectJdkTable.getInstance().findJdk(jangarooSdkName, "");
     if (jangarooSdk == null) {
       throw new IllegalStateException("Jangaroo SDK '" + jangarooSdkName + "' not found.");
     }
     VirtualFile[] files = jangarooSdk.getRootProvider().getFiles(OrderRootType.CLASSES);
+    List<String> jarFileNames = new ArrayList<String>(files.length);
     for (VirtualFile file : files) {
-      if (file.getName().startsWith(jarNamePrefix)) {
-        String filename = file.getPath();
-        return filename.endsWith("!/") ? filename.substring(0, filename.length() - "!/".length()) : filename;
+      String filename = file.getPath();
+      if (filename.endsWith("!/")) {
+        filename = filename.substring(0, filename.length() - "!/".length());
       }
+      jarFileNames.add(filename);
     }
-    throw new IllegalStateException("Jangaroo SDK: compiler JAR not found with prefix '" + jarNamePrefix + "'.");
+    return jarFileNames;
   }
 
   @NotNull

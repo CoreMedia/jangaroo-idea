@@ -42,15 +42,14 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
 
   public static CompilationResult runJooc(CompileContext context, String jangarooSdkName, JoocConfiguration configuration, CompileLog log) {
     Jooc jooc;
-    String compilerJarFileName = findCompilerJar(jangarooSdkName, "jangaroo-compiler");
     try {
-      jooc = CompilerLoader.loadJooc(compilerJarFileName);
+      jooc = CompilerLoader.loadJooc(getJarFileNames(jangarooSdkName));
     } catch (FileNotFoundException e) {
       context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
       return null;
     } catch (Exception e) {
-      context.addMessage(CompilerMessageCategory.ERROR, "Jangaroo Compiler version " +
-        compilerJarFileName + " not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
+      context.addMessage(CompilerMessageCategory.ERROR, jangarooSdkName +
+        " not correctly set up or not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
         null, -1, -1);
       return null;
     }
