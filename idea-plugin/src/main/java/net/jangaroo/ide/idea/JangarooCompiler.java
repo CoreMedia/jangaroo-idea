@@ -19,9 +19,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.TranslatingCompiler;
-import com.intellij.openapi.projectRoots.ProjectJdkTable;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.module.Module;
@@ -42,21 +39,6 @@ import java.io.File;
  *
  */
 public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
-
-  public static String findCompilerJar(String jangarooSdkName, String jarNamePrefix) {
-    Sdk jangarooSdk = ProjectJdkTable.getInstance().findJdk(jangarooSdkName);
-    if (jangarooSdk == null) {
-      throw new IllegalStateException("Jangaroo SDK '" + jangarooSdkName + "' not found.");
-    }
-    VirtualFile[] files = jangarooSdk.getRootProvider().getFiles(OrderRootType.CLASSES);
-    for (VirtualFile file : files) {
-      if (file.getName().startsWith(jarNamePrefix)) {
-        String filename = file.getPath();
-        return filename.endsWith("!/") ? filename.substring(0, filename.length() - "!/".length()) : filename;
-      }
-    }
-    throw new IllegalStateException("Jangaroo SDK: compiler JAR not found with prefix '" + jarNamePrefix + "'.");
-  }
 
   public static CompilationResult runJooc(CompileContext context, String jangarooSdkName, JoocConfiguration configuration, CompileLog log) {
     Jooc jooc;

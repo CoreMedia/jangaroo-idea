@@ -180,8 +180,8 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
 
   Exmlc getExmlc(String jangarooSdkName, ExmlConfiguration exmlConfiguration, CompileContext context) {
     Exmlc exmlc = null;
-    String joocJarFileName = JangarooCompiler.findCompilerJar(jangarooSdkName, "jangaroo-compiler");
-    String exmlcJarFileName = JangarooCompiler.findCompilerJar(jangarooSdkName, "exml-compiler");
+    String joocJarFileName = findCompilerJar(jangarooSdkName, "jangaroo-compiler");
+    String exmlcJarFileName = findCompilerJar(jangarooSdkName, "exml-compiler");
     try {
       exmlc = CompilerLoader.loadExmlc(toPath(exmlcJarFileName), toPath(joocJarFileName));
       exmlc.setConfig(exmlConfiguration);
@@ -197,7 +197,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
 
   private Propc getPropc(String jangarooSdkName, FileLocations compilerConfiguration, CompileContext context) {
     Propc propc = null;
-    String propertiesCompilerJarFileName = JangarooCompiler.findCompilerJar(jangarooSdkName, "properties-compiler");
+    String propertiesCompilerJarFileName = findCompilerJar(jangarooSdkName, "properties-compiler");
     try {
       propc = CompilerLoader.loadPropc(propertiesCompilerJarFileName);
       propc.setConfig(compilerConfiguration);

@@ -5,6 +5,8 @@ import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.projectRoots.ProjectJdkTable;
+import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -20,6 +22,7 @@ import net.jangaroo.jooc.api.FilePosition;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,10 +55,37 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
     getLog().debug("AbstractCompiler constructor");
   }
 
+  public static String findCompilerJar(String jangarooSdkName, String jarNamePrefix) {
+    Sdk jangarooSdk = ProjectJdkTable.getInstance().findJdk(jangarooSdkName, "");
+    if (jangarooSdk == null) {
+      throw new IllegalStateException("Jangaroo SDK '" + jangarooSdkName + "' not found.");
+    }
+    VirtualFile[] files = jangarooSdk.getRootProvider().getFiles(OrderRootType.CLASSES);
+    for (VirtualFile file : files) {
+      if (file.getName().startsWith(jarNamePrefix)) {
+        String filename = file.getPath();
+        return filename.endsWith("!/") ? filename.substring(0, filename.length() - "!/".length()) : filename;
+      }
+    }
+    throw new IllegalStateException("Jangaroo SDK: compiler JAR not found with prefix '" + jarNamePrefix + "'.");
+  }
+
   @NotNull
   public abstract String getDescription();
 
   public boolean validateConfiguration(CompileScope scope) {
+    for (Module module : scope.getAffectedModules()) {
+      JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
+      if (joocConfigurationBean != null) {
+        if (joocConfigurationBean.jangarooSdkName == null) {
+          return false;
+        }
+        Sdk jangarooSdk = ProjectJdkTable.getInstance().findJdk(joocConfigurationBean.jangarooSdkName);
+        if (jangarooSdk == null) {
+          return false;
+        }
+      }
+    }
     return true;
   }
 
@@ -77,7 +107,7 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
     return joocConfig;
   }
 
-  protected static JoocConfigurationBean getJoocConfigurationBean(Module module) {
+  protected static @Nullable JoocConfigurationBean getJoocConfigurationBean(Module module) {
     JangarooFacet jangarooFacet = JangarooFacet.ofModule(module);
     return jangarooFacet==null ? null : jangarooFacet.getConfiguration().getState();
   }
