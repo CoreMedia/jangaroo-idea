@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.packaging.artifacts.Artifact;
@@ -133,7 +134,12 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
     String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_ARTIFACT_ID, jangarooMavenPlugin.getVersion());
-    jooConfig.jangarooSdkName = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath).getName();
+    Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
+    if (jangarooSdk == null) {
+      jooConfig.jangarooSdkName = "Jangaroo SDK " + jangarooMavenPlugin.getVersion();
+    } else {
+      jooConfig.jangarooSdkName = jangarooSdk.getName();
+    }
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
