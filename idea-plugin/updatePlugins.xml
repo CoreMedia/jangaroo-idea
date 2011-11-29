@@ -7,10 +7,10 @@
                 version CDATA #IMPLIED>
         ]>
 <plugins>
-  <plugin id="net.jangaroo.idea.language"
-          url="http://repo.jangaroo.net/maven2/net/jangaroo/idea-plugins/jangaroo-idea-plugin-9.0.7.10.0.zip"
-          version="9.0.7.10.0"/>
-  <plugin id="net.jangaroo.idea.exml"
-          url="http://repo.jangaroo.net/maven2/net/jangaroo/idea-plugins/ext-xml-idea-plugin-9.0.7.10.0.zip"
-          version="9.0.7.10.0"/>
+  <plugin id="net.jangaroo.idea.0.9"
+          url="http://plugins.intellij.net/files/net.jangaroo.idea.0.9_10291.zip"
+          version="0.4"/>
+  <plugin id="net.jangaroo.idea"
+          url="http://plugins.intellij.net/files/net.jangaroo.idea_10245.zip"
+          version="10.0.8.6.4"/>
  </plugins>
