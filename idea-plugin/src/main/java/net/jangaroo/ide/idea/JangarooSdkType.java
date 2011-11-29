@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jdom.Element;
 
 import javax.swing.Icon;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,7 +74,9 @@ public class JangarooSdkType extends SdkType {
       VirtualFile artifact = dir.findChild(artifactId + "-" + version + ".jar");
       if (artifact != null) {
         VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(artifact);
-        modificator.addRoot(jarRoot, OrderRootType.CLASSES);
+        if (!Arrays.asList(modificator.getRoots(OrderRootType.CLASSES)).contains(jarRoot)) {
+          modificator.addRoot(jarRoot, OrderRootType.CLASSES);
+        }
       }
     }
   }
