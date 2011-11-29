@@ -1,12 +1,12 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.javaee.ExternalResourceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import net.jangaroo.exml.api.Exmlc;
-import net.jangaroo.ide.idea.JangarooFacetImporter;
 import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
@@ -18,7 +18,6 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 
-import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -37,8 +36,6 @@ import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
  */
 public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfiguration, ExmlFacetType> {
   private static final String DEFAULT_EXML_FACET_NAME = "EXML";
-  private static final String EXML_COMPILER_ARTIFACT_ID = "exml-compiler";
-  private static final String PROPERTIES_COMPILER_ARTIFACT_ID = "properties-compiler";
 
   public ExmlFacetImporter() {
     super(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID, ExmlFacetType.INSTANCE, DEFAULT_EXML_FACET_NAME);
@@ -93,13 +90,17 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     exmlConfig.setXsd(artifactId + ".xsd");
 
     final Map<String, String> resourceMap = getXsdResourcesOfModule(module);
-    SwingUtilities.invokeLater(new Runnable() {
+    ApplicationManager.getApplication().invokeLater(new Runnable() {
       public void run() {
-        ExternalResourceManager externalResourceManager = ExternalResourceManager.getInstance();
-        for (Map.Entry<String, String> uri2filename : resourceMap.entrySet()) {
-          externalResourceManager.removeResource(uri2filename.getKey());
-          externalResourceManager.addResource(uri2filename.getKey(), uri2filename.getValue());
-        }
+        ApplicationManager.getApplication().runWriteAction(new Runnable() {
+          public void run() {
+            ExternalResourceManager externalResourceManager = ExternalResourceManager.getInstance();
+            for (Map.Entry<String, String> uri2filename : resourceMap.entrySet()) {
+              externalResourceManager.removeResource(uri2filename.getKey());
+              externalResourceManager.addResource(uri2filename.getKey(), uri2filename.getValue());
+            }
+          }
+        });
       }
     });
   }
