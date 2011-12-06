@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  */
 public class JangarooSdkType extends SdkType {
 
-  private static final Pattern JANGAROO_COMPILER_JAR_PATTERN = Pattern.compile("^jangaroo-compiler-(0\\.9\\.[0-9]+).*\\.jar$");
+  private static final Pattern JANGAROO_COMPILER_JAR_PATTERN = Pattern.compile("^jangaroo-compiler-(0\\.9\\.[0-9]+(-SNAPSHOT)?).*\\.jar$");
 
   public JangarooSdkType() {
     super("Jangaroo SDK");
