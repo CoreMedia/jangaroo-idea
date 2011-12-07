@@ -34,6 +34,8 @@ import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.api.Exmlc;
+import net.jangaroo.exml.utils.ExmlUtils;
+import net.jangaroo.utils.AS3Type;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,13 +82,13 @@ public class ExmlLanguageInjector implements LanguageInjector {
         return;
       }
       XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
-      if (isImportClassAttribute(attributeValue) || isCfgTypeAttribute(attributeValue)) {
-        // <exml:cfg type="..."/> is also treated like import, as we just want completion for fully qualified types!
+      if (isImportClassAttribute(attributeValue) || isCfgTypeAttribute(attributeValue) || isConstantTypeAttribute(attributeValue)) {
+        // <exml:cfg type="..."/> and <exml:constant type="..."/> are also treated like import, as we just want completion for fully qualified types!
         injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, new TextRange(1, attributeValue.getTextRange().getLength() - 1), "import ", ";");
       } else {
         boolean baseClassAttribute = getBaseClassAttribute(attributeValue) != null;
-        String text = attributeValue.getText();
-        if (baseClassAttribute || text.startsWith("\"{") && text.endsWith("}\"")) {
+        String text = attributeValue.getValue();
+        if (baseClassAttribute || ExmlUtils.isCodeExpression(text)) {
           injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, attributeValue, baseClassAttribute);
         }
       }
@@ -147,6 +149,10 @@ public class ExmlLanguageInjector implements LanguageInjector {
         // find and append constants:
         List<String[]> constants = findConstants(exmlComponentTag);
         for (String[] constantNameTypeValue : constants) {
+          String description = constantNameTypeValue[3];
+          if (description != null) {
+            codePrefix.append("/** ").append(description).append(" */");
+          }
           codePrefix.append(String.format("public static const %s:%s = %s;\n",
             constantNameTypeValue[0], constantNameTypeValue[1], constantNameTypeValue[2]));
         }
@@ -202,6 +208,11 @@ public class ExmlLanguageInjector implements LanguageInjector {
       if (Exmlc.EXML_NAMESPACE_URI.equals(topLevelXmlTag.getNamespace())) {
         if (Exmlc.EXML_IMPORT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
           imports.add(topLevelXmlTag.getAttributeValue(Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE));
+        } else if (Exmlc.EXML_CONSTANT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
+          String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
+          if (type != null && type.contains(".")) {
+            imports.add(type);
+          }
         }
       } else {
         componentTag = topLevelXmlTag; // remember last non-EXML-namespace tag, which contains the view tree
@@ -215,10 +226,9 @@ public class ExmlLanguageInjector implements LanguageInjector {
   }
 
   private static void addComponentImports(Set<String> imports, XmlTag componentTag) {
-    // TODO: move Exmlc.parsePackageFromNamespace() to API and use that instead!
-    String namespace = componentTag.getNamespace();
-    if (namespace.startsWith(Exmlc.EXML_CONFIG_URI_PREFIX)) {
-      String configClassName = namespace.substring(Exmlc.EXML_CONFIG_URI_PREFIX.length()) + "." + componentTag.getLocalName();
+    String packageName = ExmlUtils.parsePackageFromNamespace(componentTag.getNamespace());
+    if (packageName != null) {
+      String configClassName = CompilerUtils.qName(packageName, componentTag.getLocalName());
       imports.add(configClassName);
       for (XmlTag property : componentTag.getSubTags()) {
         for (XmlTag subComponent : property.getSubTags()) {
@@ -232,14 +242,33 @@ public class ExmlLanguageInjector implements LanguageInjector {
     List<String[]> constants = new ArrayList<String[]>();
     for (XmlTag topLevelXmlTag : exmlComponentTag.getSubTags()) {
       if (Exmlc.EXML_CONSTANT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
-        String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
-        if (type == null) {
-          type = "String";
+        String name = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_NAME_ATTRIBUTE);
+        if (name == null) {
+          continue;
         }
+        String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
+        String attributeValue = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_VALUE_ATTRIBUTE);
+        if (type == null) {
+          AS3Type as3Type = CompilerUtils.guessType(attributeValue);
+          if (as3Type == null) {
+            as3Type = AS3Type.STRING;
+          }
+          type = as3Type.toString();
+        }
+        if (attributeValue != null) {
+          if (ExmlUtils.isCodeExpression(attributeValue)) {
+            attributeValue = ExmlUtils.getCodeExpression(attributeValue);
+          } else if (AS3Type.STRING.toString().equals(type)) {
+            attributeValue = CompilerUtils.quote(attributeValue);
+          }
+        }
+        // TODO: determine namespace name from EXML URL, does not always have to be "exml":
+        String description = topLevelXmlTag.getSubTagText("exml:" + Exmlc.EXML_DESCRIPTION_NODE_NAME);
         constants.add(new String[]{
-          topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_NAME_ATTRIBUTE),
+          name,
           type,
-          '"' + topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_VALUE_ATTRIBUTE) + '"' // TODO: escaping?
+          attributeValue,
+          description
         });
       }
     }
@@ -252,6 +281,10 @@ public class ExmlLanguageInjector implements LanguageInjector {
 
   private static boolean isCfgTypeAttribute(XmlAttributeValue attributeValue) {
     return isAttribute(attributeValue, Exmlc.EXML_CFG_NODE_NAME, Exmlc.EXML_CFG_TYPE_ATTRIBUTE);
+  }
+
+  private static boolean isConstantTypeAttribute(XmlAttributeValue attributeValue) {
+    return isAttribute(attributeValue, Exmlc.EXML_CONSTANT_NODE_NAME, Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
   }
 
   private static boolean isAttribute(XmlAttributeValue attributeValue, String exmlNodeName, String exmlAttribute) {
