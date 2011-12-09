@@ -9,7 +9,7 @@
 <plugins>
   <plugin id="net.jangaroo.idea.0.9"
           url="http://plugins.intellij.net/files/net.jangaroo.idea.0.9_10291.zip"
-          version="0.4"/>
+          version="0.5"/>
   <plugin id="net.jangaroo.idea"
           url="http://plugins.intellij.net/files/net.jangaroo.idea_10245.zip"
           version="10.0.8.6.4"/>
