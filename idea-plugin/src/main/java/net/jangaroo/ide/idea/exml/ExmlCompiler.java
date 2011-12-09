@@ -114,7 +114,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
   }
 
   public GenerationItem[] generate(CompileContext context, GenerationItem[] items, VirtualFile outputRootDirectory) {
-    if (items.length == 0) {
+    if (items.length == 0 || !validateConfiguration(context)) {
       return EMPTY_GENERATION_ITEM_ARRAY;
     }
     Module module = items[0].getModule(); // TODO: careful: do we ever get items from different modules? Then this won't work!

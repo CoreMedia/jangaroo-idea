@@ -73,6 +73,9 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
   }
 
   public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
+    if (!validateConfiguration(context)) {
+      return;
+    }
     final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
     final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
 

@@ -76,19 +76,37 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
   public abstract String getDescription();
 
   public boolean validateConfiguration(CompileScope scope) {
+    // as the user does not get any feedback if we return false here, we refrain from doing so.
+    return true;
+  }
+
+  protected boolean validateConfiguration(CompileContext context) {
+    Module invalidModule = findInvalidModule(context.getCompileScope());
+    if (invalidModule != null) {
+      String[] contentRootUrls = ModuleRootManager.getInstance(invalidModule).getContentRootUrls();
+      String invalidModuleUrl = contentRootUrls.length > 0 ? contentRootUrls[0] : null;
+      context.addMessage(CompilerMessageCategory.ERROR,
+        "Jangaroo SDK not set up correctly. Please press 'Force Reimport All Maven Projects' or manually correct your Jangaroo / EXML facets ('Project Structure').",
+        invalidModuleUrl, -1, -1);
+      return false;
+    }
+    return true;
+  }
+
+  protected Module findInvalidModule(CompileScope scope) {
     for (Module module : scope.getAffectedModules()) {
       JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
       if (joocConfigurationBean != null) {
         if (joocConfigurationBean.jangarooSdkName == null) {
-          return false;
+          return module;
         }
         Sdk jangarooSdk = ProjectJdkTable.getInstance().findJdk(joocConfigurationBean.jangarooSdkName);
         if (jangarooSdk == null) {
-          return false;
+          return module;
         }
       }
     }
-    return true;
+    return null;
   }
 
   protected JoocConfiguration getJoocConfiguration(Module module, List<VirtualFile> virtualSourceFiles) {
