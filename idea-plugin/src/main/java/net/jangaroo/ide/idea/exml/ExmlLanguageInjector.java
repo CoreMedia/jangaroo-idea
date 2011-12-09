@@ -26,6 +26,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.InjectedLanguagePlaces;
 import com.intellij.psi.LanguageInjector;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.xml.XmlAttribute;
@@ -66,7 +67,6 @@ public class ExmlLanguageInjector implements LanguageInjector {
   }
 
   public void getLanguagesToInject(@NotNull PsiLanguageInjectionHost psiLanguageInjectionHost, @NotNull InjectedLanguagePlaces injectedLanguagePlaces) {
-    //System.out.println("psiLanguageInjectionHost: "+psiLanguageInjectionHost);
     PsiFile psiFile = psiLanguageInjectionHost.getContainingFile();
     if (psiFile.getName().endsWith(Exmlc.EXML_SUFFIX) && psiLanguageInjectionHost instanceof XmlAttributeValue) {
       VirtualFile exmlFile = psiFile.getOriginalFile().getVirtualFile();
@@ -82,12 +82,12 @@ public class ExmlLanguageInjector implements LanguageInjector {
         return;
       }
       XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
+      String text = attributeValue.getValue();
       if (isImportClassAttribute(attributeValue) || isCfgTypeAttribute(attributeValue) || isConstantTypeAttribute(attributeValue)) {
         // <exml:cfg type="..."/> and <exml:constant type="..."/> are also treated like import, as we just want completion for fully qualified types!
-        injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, new TextRange(1, attributeValue.getTextRange().getLength() - 1), "import ", ";");
+        injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(1, text.length()), "import ", ";");
       } else {
         boolean baseClassAttribute = getBaseClassAttribute(attributeValue) != null;
-        String text = attributeValue.getValue();
         if (baseClassAttribute || ExmlUtils.isCodeExpression(text)) {
           injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, attributeValue, baseClassAttribute);
         }
@@ -109,8 +109,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
       String packageName = packageDir == null ? "" : getModuleRelativePath(module.getProject(), packageDir);
       String className = exmlFile.getNameWithoutExtension();
 
-      StringBuilder codePrefix = new StringBuilder();
-      codePrefix.append(String.format("package %s {\n", packageName));
+      StringBuilder code = new StringBuilder();
+      code.append(String.format("package %s {\n", packageName));
 
       String superClassName = baseClassAttribute ? null : findSuperClass(exmlComponentTag);
 
@@ -120,57 +120,99 @@ public class ExmlLanguageInjector implements LanguageInjector {
         imports.add(superClassName);
       }
       for (String importName : imports) {
-        codePrefix.append(String.format("import %s;\n", importName));
+        code.append(String.format("import %s;\n", importName));
       }
 
-      codePrefix.append(String.format("public class %s", className));
+      code.append(String.format("public class %s", className));
 
       String configClassName = CompilerUtils.qName(configClassPackage, CompilerUtils.uncapitalize(className));
-      String constructorPrefix = String.format("public function %s(config:%s = null){\n  super(", className, configClassName);
-      String constructorSuffix = ");\n}\n";
-      StringBuilder codeSuffix = new StringBuilder();
+      String codePrefix = null;
 
+      code.append(" extends ");
       TextRange textRange;
       if (baseClassAttribute) {
-        codePrefix
-          .append(" extends ");
-        textRange = new TextRange(1, attributeValue.getTextRange().getLength() - 1);
-        codeSuffix
-          .append("{")
-          .append(constructorPrefix)
-          .append("config");
+        textRange = TextRange.from(1, attributeValue.getValue().length()); // cut off quotes ("...")
+        codePrefix = flush(code);
       } else {
-        if (superClassName != null) {
-          codePrefix.append(String.format(" extends %s", superClassName));
-        }
-        codePrefix
-          .append(" {\n");
-
-        // find and append constants:
-        List<String[]> constants = findConstants(exmlComponentTag);
-        for (String[] constantNameTypeValue : constants) {
-          String description = constantNameTypeValue[3];
-          if (description != null) {
-            codePrefix.append("/** ").append(description).append(" */");
-          }
-          codePrefix.append(String.format("public static const %s:%s = %s;\n",
-            constantNameTypeValue[0], constantNameTypeValue[1], constantNameTypeValue[2]));
-        }
-
-        codePrefix
-          .append(constructorPrefix)
-          .append(String.format("%s({x:(", configClassName));
-        textRange = new TextRange(2, attributeValue.getTextRange().getLength() - 2);
-        codeSuffix
-          .append(")})");
+        textRange = TextRange.from(2, attributeValue.getValue().length() - 2); // cut off quotes and braces ("{...}")
+        code.append(superClassName != null ? superClassName : "Object");
       }
-      codeSuffix
-        .append(constructorSuffix)
-        .append("\n}")
-        .append("\n}\n");
+      code.append(" {\n");
+      XmlTag xmlTag = null;
+      XmlAttribute xmlAttribute = null;
+      if (codePrefix == null) {
+        // determine the current EXML element:
+        xmlAttribute = getXmlAttribute(attributeValue);
+        if (xmlAttribute != null) {
+          xmlTag = xmlAttribute.getParent();
+        }
+        codePrefix = renderDeclarations(exmlComponentTag, code, xmlTag, xmlAttribute,
+          Exmlc.EXML_CONSTANT_NODE_NAME, "public static const");
+      }
+      code.append(String.format("public function %s(config:%s = null){\n", className, configClassName));
+      if (codePrefix == null) {
+        codePrefix = renderDeclarations(exmlComponentTag, code, xmlTag, xmlAttribute,
+          Exmlc.EXML_VAR_NODE_NAME, "var");
+      }
+      code.append("  super(");
+      if (codePrefix == null) {
+        code.append(configClassName).append("({x:(");
+        codePrefix = flush(code);
+        code.append(")})");
+      } else {
+        code.append("config");
+      }
+      code
+        .append(");\n")    // super(
+        .append("}\n")     // constructor {
+        .append("\n}\n")   // class {
+        .append("\n}\n");  // package {
 
-      injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix.toString(), codeSuffix.toString());
+      injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix, code.toString());
     }
+  }
+
+  private String renderDeclarations(XmlTag exmlComponentTag, StringBuilder code,
+                                    XmlTag xmlTag, XmlAttribute xmlAttribute,
+                                    String nodeName, String declarationPrefix) {
+    boolean atDeclarationValue = isAtValueAttributeOf(xmlTag, xmlAttribute, nodeName);
+    // find and append declarations:
+    List<String[]> declarations = findDeclarationsUntil(exmlComponentTag, atDeclarationValue ? xmlTag : null, nodeName);
+    renderDeclarations(code, declarations, declarationPrefix);
+    if (atDeclarationValue) {
+      String codePrefix = flush(code);
+      code.append(";\n");
+      return codePrefix;
+    }
+    return null;
+  }
+
+  private void renderDeclarations(StringBuilder code, List<String[]> constants, String declarationPrefix) {
+    for (String[] constantNameTypeValue : constants) {
+      String description = constantNameTypeValue[3];
+      if (description != null) {
+        code.append("/** ").append(description).append(" */");
+      }
+      code.append(declarationPrefix).append(String.format(" %s:%s = ",
+        constantNameTypeValue[0], constantNameTypeValue[1]));
+      String value = constantNameTypeValue[2];
+      if (value != null) { // do not render the value currently being edited!
+        code.append(value).append(";\n");
+      }
+    }
+  }
+
+  private static boolean isAtValueAttributeOf(XmlTag xmlTag, XmlAttribute xmlAttribute, String nodeName) {
+    return xmlTag != null &&
+      nodeName.equals(xmlTag.getLocalName()) &&
+      Exmlc.EXML_NAMESPACE_URI.equals(xmlTag.getNamespace()) &&
+      Exmlc.EXML_DECLARATION_VALUE_ATTRIBUTE.equals(xmlAttribute.getLocalName());
+  }
+
+  private static String flush(StringBuilder sb) {
+    String current = sb.toString();
+    sb.setLength(0);
+    return current;
   }
 
   private static String findSuperClass(XmlTag exmlComponentTag) {
@@ -209,7 +251,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
         if (Exmlc.EXML_IMPORT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
           imports.add(topLevelXmlTag.getAttributeValue(Exmlc.EXML_IMPORT_CLASS_ATTRIBUTE));
         } else if (Exmlc.EXML_CONSTANT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
-          String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
+          String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_TYPE_ATTRIBUTE);
           if (type != null && type.contains(".")) {
             imports.add(type);
           }
@@ -238,16 +280,16 @@ public class ExmlLanguageInjector implements LanguageInjector {
     }
   }
 
-  private static List<String[]> findConstants(XmlTag exmlComponentTag) {
+  private static List<String[]> findDeclarationsUntil(XmlTag exmlComponentTag, XmlTag untilNode, String nodeName) {
     List<String[]> constants = new ArrayList<String[]>();
     for (XmlTag topLevelXmlTag : exmlComponentTag.getSubTags()) {
-      if (Exmlc.EXML_CONSTANT_NODE_NAME.equals(topLevelXmlTag.getLocalName())) {
-        String name = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_NAME_ATTRIBUTE);
+      if (nodeName.equals(topLevelXmlTag.getLocalName())) {
+        String name = topLevelXmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_NAME_ATTRIBUTE);
         if (name == null) {
           continue;
         }
-        String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
-        String attributeValue = topLevelXmlTag.getAttributeValue(Exmlc.EXML_CONSTANT_VALUE_ATTRIBUTE);
+        String type = topLevelXmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_TYPE_ATTRIBUTE);
+        String attributeValue = topLevelXmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_VALUE_ATTRIBUTE);
         if (type == null) {
           AS3Type as3Type = CompilerUtils.guessType(attributeValue);
           if (as3Type == null) {
@@ -255,21 +297,31 @@ public class ExmlLanguageInjector implements LanguageInjector {
           }
           type = as3Type.toString();
         }
-        if (attributeValue != null) {
-          if (ExmlUtils.isCodeExpression(attributeValue)) {
-            attributeValue = ExmlUtils.getCodeExpression(attributeValue);
-          } else if (AS3Type.STRING.toString().equals(type)) {
-            attributeValue = CompilerUtils.quote(attributeValue);
+        boolean found = topLevelXmlTag.equals(untilNode);
+        if (found) {
+          attributeValue = null;  // do not generate the value currently being edited!
+        } else {
+          if (attributeValue != null) {
+            if (ExmlUtils.isCodeExpression(attributeValue)) {
+              attributeValue = ExmlUtils.getCodeExpression(attributeValue);
+            } else if (AS3Type.STRING.toString().equals(type)) {
+              attributeValue = CompilerUtils.quote(attributeValue);
+            }
+          } else {
+            attributeValue = "undefined";
           }
         }
-        // TODO: determine namespace name from EXML URL, does not always have to be "exml":
-        String description = topLevelXmlTag.getSubTagText("exml:" + Exmlc.EXML_DESCRIPTION_NODE_NAME);
+        XmlTag[] descriptionTags = topLevelXmlTag.findSubTags(Exmlc.EXML_DESCRIPTION_NODE_NAME, Exmlc.EXML_NAMESPACE_URI);
+        String description = descriptionTags.length > 0 ? descriptionTags[0].getValue().getText() : null;
         constants.add(new String[]{
           name,
           type,
           attributeValue,
           description
         });
+        if (found) {
+          break;
+        }
       }
     }
     return constants;
@@ -284,7 +336,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
   }
 
   private static boolean isConstantTypeAttribute(XmlAttributeValue attributeValue) {
-    return isAttribute(attributeValue, Exmlc.EXML_CONSTANT_NODE_NAME, Exmlc.EXML_CONSTANT_TYPE_ATTRIBUTE);
+    return isAttribute(attributeValue, Exmlc.EXML_CONSTANT_NODE_NAME, Exmlc.EXML_DECLARATION_TYPE_ATTRIBUTE);
   }
 
   private static boolean isAttribute(XmlAttributeValue attributeValue, String exmlNodeName, String exmlAttribute) {
@@ -297,13 +349,16 @@ public class ExmlLanguageInjector implements LanguageInjector {
     return false;
   }
 
+  private static XmlAttribute getXmlAttribute(XmlAttributeValue attributeValue) {
+    PsiElement parent = attributeValue.getParent();
+    return parent instanceof XmlAttribute ? (XmlAttribute)parent : null;
+  }
+
   private static String getBaseClassAttribute(XmlAttributeValue attributeValue) {
-    if (attributeValue.getParent() instanceof XmlAttribute) {
-      XmlAttribute attribute = (XmlAttribute)attributeValue.getParent();
-      if (Exmlc.EXML_BASE_CLASS_ATTRIBUTE.equals(attribute.getName()) &&
-        Exmlc.EXML_NAMESPACE_URI.equals(attribute.getParent().getNamespace())) {
-        return attributeValue.getValue();
-      }
+    XmlAttribute attribute = getXmlAttribute(attributeValue);
+    if (attribute != null && Exmlc.EXML_BASE_CLASS_ATTRIBUTE.equals(attribute.getName()) &&
+      Exmlc.EXML_NAMESPACE_URI.equals(attribute.getParent().getNamespace())) {
+      return attributeValue.getValue();
     }
     return null;
   }

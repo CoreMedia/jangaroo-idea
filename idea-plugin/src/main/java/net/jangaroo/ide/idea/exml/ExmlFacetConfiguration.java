@@ -19,7 +19,6 @@ import com.intellij.facet.ui.FacetEditorContext;
 import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.facet.ui.FacetValidatorsManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootModel;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
@@ -40,12 +39,11 @@ public class ExmlFacetConfiguration implements FacetConfiguration, PersistentSta
   }
 
   private synchronized ExmlcConfigurationBean initExmlcConfigurationBean(@NotNull FacetEditorContext facetEditorContext) {
-    if (exmlcConfigurationBean.getXsd() == null) {
-      Module module = facetEditorContext.getModule();
+    if (exmlcConfigurationBean.getSourceDirectory() == null) {
       ModuleRootModel rootModel = facetEditorContext.getRootModel();
       VirtualFile[] contentRoots = rootModel.getContentRoots();
       if (contentRoots.length > 0) {
-        exmlcConfigurationBean.init(contentRoots[0].getPath(), module.getName());
+        exmlcConfigurationBean.init(contentRoots[0].getPath());
       }
     }
     return exmlcConfigurationBean;

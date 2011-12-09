@@ -14,6 +14,7 @@
  */
 package net.jangaroo.ide.idea.exml;
 
+import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.ide.idea.util.IdeaFileUtils;
 
 /**
@@ -35,24 +36,9 @@ public class ExmlcConfigurationBean {
   private String configClassPackage;
 
   /**
-   * The namespace of the component suite
-   */
-  private String namespace;
-
-  /**
-   * The default namespace prefix of the component suite
-   */
-  private String namespacePrefix;
-
-  /**
    * Output directory for all ActionScript3 files generated out of exml components
    */
   private String generatedSourcesDirectory;
-
-  /**
-   * The file name of the XSD Schema that will be generated for this component suite.
-   */
-  private String xsd;
 
   /**
    * The directory where to generate the XSD Schema for this component suite.
@@ -64,16 +50,11 @@ public class ExmlcConfigurationBean {
   public ExmlcConfigurationBean() {
   }
 
-  public void init(String outputPrefix, String moduleName) {
+  public void init(String outputPrefix) {
     if (outputPrefix != null) {
       sourceDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_SOURCE_DIRECTORY);
       generatedSourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_SOURCES_DIRECTORY);
       generatedResourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_RESOURCES_DIRECTORY);
-    }
-    if (moduleName != null) {
-      namespace = moduleName;
-      namespacePrefix = moduleName;
-      xsd = moduleName + ".xsd";
     }
   }
 
@@ -102,19 +83,7 @@ public class ExmlcConfigurationBean {
   }
 
   public String getNamespace() {
-    return namespace;
-  }
-
-  public void setNamespace(String namespace) {
-    this.namespace = namespace;
-  }
-
-  public String getNamespacePrefix() {
-    return namespacePrefix;
-  }
-
-  public void setNamespacePrefix(String namespacePrefix) {
-    this.namespacePrefix = namespacePrefix;
+    return Exmlc.EXML_CONFIG_URI_PREFIX + getConfigClassPackage();
   }
 
   public String getGeneratedSourcesDirectory() {
@@ -126,11 +95,7 @@ public class ExmlcConfigurationBean {
   }
 
   public String getXsd() {
-    return xsd;
-  }
-
-  public void setXsd(String xsd) {
-    this.xsd = xsd;
+    return getConfigClassPackage() + ".xsd";
   }
 
   public String getGeneratedResourcesDirectory() {
@@ -142,7 +107,7 @@ public class ExmlcConfigurationBean {
   }
 
   public String getXsdFilename() {
-    return getGeneratedResourcesDirectory() + "/" + getConfigClassPackage() + ".xsd";
+    return getGeneratedResourcesDirectory() + "/" + getXsd();
   }
 
   @Override
@@ -156,25 +121,19 @@ public class ExmlcConfigurationBean {
       return false;
     if (generatedSourcesDirectory != null ? !generatedSourcesDirectory.equals(that.generatedSourcesDirectory) : that.generatedSourcesDirectory != null)
       return false;
-    if (namespace != null ? !namespace.equals(that.namespace) : that.namespace != null)
-      return false;
-    if (namespacePrefix != null ? !namespacePrefix.equals(that.namespacePrefix) : that.namespacePrefix != null)
-      return false;
     if (sourceDirectory != null ? !sourceDirectory.equals(that.sourceDirectory) : that.sourceDirectory != null)
       return false;
+    if (configClassPackage != null ? !configClassPackage.equals(that.configClassPackage) : that.configClassPackage != null)
+      return false;
     //noinspection SimplifiableIfStatement
-    if (xsd != null ? !xsd.equals(that.xsd) : that.xsd != null) return false;
-
     return showCompilerInfoMessages == that.showCompilerInfoMessages;
   }
 
   @Override
   public int hashCode() {
     int result = sourceDirectory != null ? sourceDirectory.hashCode() : 0;
-    result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
-    result = 31 * result + (namespacePrefix != null ? namespacePrefix.hashCode() : 0);
     result = 31 * result + (generatedSourcesDirectory != null ? generatedSourcesDirectory.hashCode() : 0);
-    result = 31 * result + (xsd != null ? xsd.hashCode() : 0);
+    result = 31 * result + (configClassPackage != null ? configClassPackage.hashCode() : 0);
     result = 31 * result + (generatedResourcesDirectory != null ? generatedResourcesDirectory.hashCode() : 0);
     result = 31 * result + (showCompilerInfoMessages ? 1 : 0);
     return result;

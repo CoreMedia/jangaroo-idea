@@ -67,15 +67,10 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
   }
 
   public static ExmlcConfigurationBean getExmlConfig(Module module) {
-    ExmlFacet exmlFacet = FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID);
-    return exmlFacet == null ? null : exmlFacet.getConfiguration().getState();
-  }
-
-  static String getXsdFilename(Module module) {
     if (module != null) {
-      ExmlcConfigurationBean exmlcConfig = getExmlConfig(module);
-      if (exmlcConfig != null) {
-        return exmlcConfig.getXsdFilename();
+      ExmlFacet exmlFacet = FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID);
+      if (exmlFacet != null) {
+        return exmlFacet.getConfiguration().getState();
       }
     }
     return null;
@@ -131,13 +126,9 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
       files.add(((JooGenerationItem)item).getSourceFile());
     }
     updateFileLocations(exmlConfiguration, module, files);
-    String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
-    exmlConfiguration.setOutputDirectory(new File(toPath(generatedSourcesDirectory)));
-    exmlConfiguration.setResourceOutputDirectory(new File(exmlcConfigurationBean.getGeneratedResourcesDirectory()));
-    exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
+    copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration);
     List<GenerationItem> successfullyGeneratedItems = new ArrayList<GenerationItem>(items.length);
-    Exmlc exmlc = getExmlc(joocConfigurationBean.jangarooSdkName,
-      exmlConfiguration, context);
+    Exmlc exmlc = getExmlc(joocConfigurationBean.jangarooSdkName, exmlConfiguration, context);
     if (exmlc == null) {
       return new GenerationItem[0];
     }
@@ -253,10 +244,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         ExmlcConfigurationBean exmlcConfigurationBean = getExmlConfig(module);
         ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
         updateFileLocations(exmlConfiguration, module, entry.getValue());
-        String generatedSourcesDirectory = exmlcConfigurationBean.getGeneratedSourcesDirectory();
-        exmlConfiguration.setOutputDirectory(new File(toPath(generatedSourcesDirectory)));
-        exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
-        exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
+        copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration);
         for (VirtualFile file : entry.getValue()) {
           try {
             File ioFile = VfsUtil.virtualToIoFile(file);
@@ -296,6 +284,12 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
         items.add(generationItem);
       }
     }
+  }
+
+  private static void copyFromBeanToConfiguration(ExmlcConfigurationBean exmlcConfigurationBean, ExmlConfiguration exmlConfiguration) {
+    exmlConfiguration.setOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedSourcesDirectory())));
+    exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
+    exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
   }
 
   private enum JooGenerationItemType {

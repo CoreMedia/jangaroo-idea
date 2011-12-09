@@ -18,7 +18,6 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import static net.jangaroo.ide.idea.JangarooFacetImporter.EXML_MAVEN_PLUGIN_ARTI
 import static net.jangaroo.ide.idea.JangarooFacetImporter.JANGAROO_GROUP_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPlugin;
 import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
 
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.
@@ -82,12 +82,8 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     exmlConfig.setSourceDirectory(toIdeaUrl(mavenProjectModel.getSources().get(0)));
     exmlConfig.setGeneratedSourcesDirectory(toIdeaUrl(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo"));
     exmlConfig.setGeneratedResourcesDirectory(toIdeaUrl(getTargetOutputPath(mavenProjectModel, "generated-resources")));
-    String artifactId = mavenProjectModel.getMavenId().getArtifactId();
     String configClassPackage = getConfigurationValue(mavenProjectModel, "configClassPackage", "");
     exmlConfig.setConfigClassPackage(configClassPackage);
-    exmlConfig.setNamespace(artifactId);
-    exmlConfig.setNamespacePrefix(artifactId);
-    exmlConfig.setXsd(artifactId + ".xsd");
 
     final Map<String, String> resourceMap = getXsdResourcesOfModule(module);
     ApplicationManager.getApplication().invokeLater(new Runnable() {
@@ -118,9 +114,9 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     for (OrderEntry orderEntry : orderEntries) {
       try {
         if (orderEntry instanceof ModuleOrderEntry) {
-          String xsdFilename = ExmlCompiler.getXsdFilename(((ModuleOrderEntry)orderEntry).getModule());
-          if (xsdFilename != null) {
-            addResource(resourceMap, xsdFilename, xsdFilename);
+          ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(((ModuleOrderEntry)orderEntry).getModule());
+          if (exmlConfig != null) {
+            resourceMap.put(exmlConfig.getNamespace(), toPath(exmlConfig.getXsdFilename()));
           }
         } else {
           String zipFileName = ExmlCompiler.findDependentModuleZipFileName(orderEntry);
@@ -128,8 +124,9 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
             ZipFile zipFile = new ZipFile(zipFileName);
             ZipEntry xsdZipEntry = ExmlCompiler.findXsdZipEntry(zipFile);
             if (xsdZipEntry != null) {
+              String namespace = Exmlc.EXML_CONFIG_URI_PREFIX + CompilerUtils.removeExtension(xsdZipEntry.getName());
               String filename = zipFileName + "!/" + xsdZipEntry.getName();
-              addResource(resourceMap, filename, xsdZipEntry.getName());
+              resourceMap.put(namespace, filename);
             }
           }
         }
@@ -137,20 +134,11 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         // ignore
       }
     }
-    String xsdFilenameAndPath = ExmlCompiler.getXsdFilename(module);
-    if (xsdFilenameAndPath != null) {
-      File xsdFile = new File(xsdFilenameAndPath);
-      if (xsdFile.exists()) {
-        String xsdFileName = xsdFile.getName();
-        addResource(resourceMap, xsdFilenameAndPath, xsdFileName);
-      }
+    ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
+    if (exmlConfig != null) {
+      resourceMap.put(exmlConfig.getNamespace(), toPath(exmlConfig.getXsdFilename()));
     }
     return resourceMap;
-  }
-
-  private void addResource(Map<String, String> resourceMap, String xsdFilenameAndPath, String xsdFileName) {
-    //System.out.println("  found XSD " + xsdFilename.getPath() + "...");
-    resourceMap.put(Exmlc.EXML_CONFIG_URI_PREFIX + CompilerUtils.removeExtension(xsdFileName), xsdFilenameAndPath);
   }
 
 }

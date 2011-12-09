@@ -36,8 +36,6 @@ public class ExmlFacetEditorTabUI {
   private JCheckBox showCompilerInfoMessages;
   private JTextField configClassesPackageTextField;
 
-  private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
-  private static final FileChooserDescriptor PROPERTIES_COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
@@ -83,12 +81,7 @@ public class ExmlFacetEditorTabUI {
   }
 
   public boolean isModified(ExmlcConfigurationBean data) {
-    ExmlcConfigurationBean currentData = new ExmlcConfigurationBean();
-    // TODO: namespace, namespacePrefix and xsd not yet used by UI, so copy these:
-    currentData.setNamespace(data.getNamespace());
-    currentData.setNamespacePrefix(data.getNamespacePrefix());
-    currentData.setXsd(data.getXsd());
-    return !getData(currentData).equals(data);
+    return !getData(new ExmlcConfigurationBean()).equals(data);
   }
 
   private void createUIComponents() {
