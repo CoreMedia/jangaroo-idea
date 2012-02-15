@@ -14,6 +14,8 @@
  */
 package net.jangaroo.ide.idea;
 
+import net.jangaroo.jooc.config.PublicApiViolationsMode;
+
 import java.io.File;
 
 import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
@@ -34,6 +36,7 @@ public class JoocConfigurationBean {
   public String outputPrefix;
   public String outputDirectory = "target/jangaroo-output/joo/classes";
   public boolean showCompilerInfoMessages = false;
+  public PublicApiViolationsMode publicApiViolationsMode;
 
   public JoocConfigurationBean() {
   }
@@ -80,7 +83,8 @@ public class JoocConfigurationBean {
     return jangarooSdkName == that.jangarooSdkName
       && debugLevel==that.debugLevel
       && (outputPrefix==null ? that.outputPrefix==null : outputPrefix.equals(that.outputPrefix))
-      && outputDirectory.equals(that.outputDirectory);
+      && outputDirectory.equals(that.outputDirectory)
+      && publicApiViolationsMode == that.publicApiViolationsMode;
   }
 
   @Override
@@ -91,6 +95,7 @@ public class JoocConfigurationBean {
     }
     result = 31 * result + debugLevel;
     result = 31 * result + outputDirectory.hashCode();
+    result = 31 * result + publicApiViolationsMode.hashCode();
     return result;
   }
 

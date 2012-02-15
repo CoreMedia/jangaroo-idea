@@ -124,6 +124,7 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
     joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
     joocConfig.setOutputDirectory(joocConfigurationBean.getOutputDirectory());
     //joocConfig.showCompilerInfoMessages = joocConfigurationBean.showCompilerInfoMessages;
+    joocConfig.setPublicApiViolationsMode(joocConfigurationBean.publicApiViolationsMode);
     return joocConfig;
   }
 

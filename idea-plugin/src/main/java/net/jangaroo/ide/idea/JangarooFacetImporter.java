@@ -1,6 +1,7 @@
 package net.jangaroo.ide.idea;
 
 import com.intellij.facet.FacetManager;
+import com.intellij.idea.IdeaLogger;
 import com.intellij.javaee.facet.JavaeeFacet;
 import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
 import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
@@ -23,6 +24,7 @@ import com.intellij.packaging.impl.elements.ArtifactPackagingElement;
 import com.intellij.packaging.impl.elements.DirectoryPackagingElement;
 import com.intellij.packaging.impl.elements.LibraryPackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
+import net.jangaroo.jooc.config.PublicApiViolationsMode;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,19 +110,27 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     //System.out.println("setupFacet called!");
   }
 
-  private boolean getBooleanConfigurationValue(MavenProject mavenProjectModel, String configName, boolean defaultValue) {
+  private String getConfigurationValue(MavenProject mavenProjectModel, String configName, @Nullable String defaultValue) {
+    String value = null;
     Element compileConfiguration = mavenProjectModel.getPluginGoalConfiguration(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, "compile");
     if (compileConfiguration != null) {
       Element compileConfigurationChild = compileConfiguration.getChild(configName);
       if (compileConfigurationChild != null) {
-        return Boolean.valueOf(compileConfigurationChild.getTextTrim());
+        value = compileConfigurationChild.getTextTrim();
       }
     }
-    String value = findGoalConfigValue(mavenProjectModel, "compile", configName);
     if (value == null) {
-      value = findConfigValue(mavenProjectModel, configName);
+      value = findGoalConfigValue(mavenProjectModel, "compile", configName);
+      if (value == null) {
+        value = findConfigValue(mavenProjectModel, configName);
+      }
     }
-    return value != null ? Boolean.valueOf(value) : defaultValue;
+    return value != null && value.length() > 0 ? value : defaultValue;
+  }
+
+  private boolean getBooleanConfigurationValue(MavenProject mavenProjectModel, String configName, boolean defaultValue) {
+    String value = getConfigurationValue(mavenProjectModel, configName, String.valueOf(defaultValue));
+    return Boolean.valueOf(value);
   }
 
   @Override
@@ -154,6 +164,13 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, "joo/classes").getAbsolutePath());
+    String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
+    try {
+      jooConfig.publicApiViolationsMode = PublicApiViolationsMode.valueOf(publicApiViolationsMode.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      IdeaLogger.getInstance(JangarooFacetImporter.class).warn("Illegal value for <publicApiViolations>: '" + publicApiViolationsMode);
+      jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
+    }
 
     if (isWar) {
       postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));

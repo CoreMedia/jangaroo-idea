@@ -22,6 +22,7 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import net.jangaroo.jooc.config.PublicApiViolationsMode;
 
 import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
 import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
@@ -38,6 +39,7 @@ public class JangarooFacetEditorTabUI {
   private JCheckBox verboseCheckBox;
   private JPanel rootComponent;
   private JCheckBox enableAssertionsCheckBox;
+  private ButtonGroup whiteSpaceButtonGroup;
   private JRadioButton keepDebugSourceRadioButton;
   private JRadioButton keepNewLinesOnlyRadioButton;
   private JRadioButton suppressWhiteSpaceRadioButton;
@@ -45,7 +47,10 @@ public class JangarooFacetEditorTabUI {
   private TextFieldWithBrowseButton outputDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JangarooSdkComboBoxWithBrowseButton jangarooSdkComboBoxWithBrowseButton;
-  private ButtonGroup whiteSpaceButtonGroup;
+  private ButtonGroup publicApiViolationsButtonGroup;
+  private JRadioButton publicApiViolationsErrorRadioButton;
+  private JRadioButton publicApiViolationsWarnRadioButton;
+  private JRadioButton publicApiViolationsAllowRadioButton;
 
   private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
@@ -101,6 +106,10 @@ public class JangarooFacetEditorTabUI {
     allowDuplicateVariableCheckBox.setSelected(data.allowDuplicateLocalVariables);
     outputDirTextField.setText(toPath(data.outputDirectory));
     showCompilerInfoMessages.setSelected(data.showCompilerInfoMessages);
+    publicApiViolationsButtonGroup.setSelected(
+      (   data.publicApiViolationsMode == PublicApiViolationsMode.ERROR ? publicApiViolationsErrorRadioButton
+        : data.publicApiViolationsMode == PublicApiViolationsMode.WARN ? publicApiViolationsWarnRadioButton
+        : publicApiViolationsAllowRadioButton).getModel(), true);
   }
 
   public JoocConfigurationBean getData(JoocConfigurationBean data) {
@@ -109,12 +118,17 @@ public class JangarooFacetEditorTabUI {
     data.enableAssertions = enableAssertionsCheckBox.isSelected();
     ButtonModel debugSelection = whiteSpaceButtonGroup.getSelection();
     data.debugLevel = 
-        keepDebugSourceRadioButton. getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_SOURCE :
-        keepNewLinesOnlyRadioButton.getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_LINES
+        keepDebugSourceRadioButton. getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_SOURCE
+      : keepNewLinesOnlyRadioButton.getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_LINES
                                                                       : JoocConfigurationBean.DEBUG_LEVEL_NONE;
     data.allowDuplicateLocalVariables = allowDuplicateVariableCheckBox.isSelected();
     data.outputDirectory = toIdeaUrl(outputDirTextField.getText());
     data.showCompilerInfoMessages = showCompilerInfoMessages.isSelected();
+    ButtonModel publicApiViolationsSelection = publicApiViolationsButtonGroup.getSelection();
+    data.publicApiViolationsMode =
+        publicApiViolationsErrorRadioButton.getModel().equals(publicApiViolationsSelection) ? PublicApiViolationsMode.ERROR
+      : publicApiViolationsWarnRadioButton .getModel().equals(publicApiViolationsSelection) ? PublicApiViolationsMode.WARN
+                                                                                            : PublicApiViolationsMode.ALLOW;
     return data;
   }
 
