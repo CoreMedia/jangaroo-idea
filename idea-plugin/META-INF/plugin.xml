@@ -28,6 +28,7 @@
     <facetType implementation="net.jangaroo.ide.idea.exml.ExmlFacetType"/>
     <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
     <languageInjector implementation="net.jangaroo.ide.idea.exml.ExmlLanguageInjector"/>
+    <languageInjector implementation="net.jangaroo.ide.idea.sith.SithLanguageInjector"/>
     <xml.elementDescriptorProvider implementation="net.jangaroo.ide.idea.exml.ComponentXmlElementDescriptorProvider"/>
   </extensions>
 
