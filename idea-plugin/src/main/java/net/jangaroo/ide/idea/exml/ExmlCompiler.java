@@ -256,7 +256,9 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
               addItem(file, generatedConfigClassFile, JooGenerationItemType.CONFIG, module, exmlConfiguration, items);
   
               File generatedComponentClassFile = exmlConfiguration.computeGeneratedComponentClassFile(ioFile);
-              addItem(file, generatedComponentClassFile, JooGenerationItemType.COMPONENT, module, exmlConfiguration, items);
+              if (generatedComponentClassFile != null) {
+                addItem(file, generatedComponentClassFile, JooGenerationItemType.COMPONENT, module, exmlConfiguration, items);
+              }
             }
           } catch (IOException e) {
             e.printStackTrace();
