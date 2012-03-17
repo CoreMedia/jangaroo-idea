@@ -21,12 +21,12 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="jangaroo-api-0.9.4">
+      <library name="jangaroo-api-0.9.12">
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/0.9.11/jangaroo-compiler-api-0.9.11.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.9.11/jangaroo-utils-0.9.11.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/0.9.11/exml-compiler-api-0.9.11.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/0.9.11/properties-compiler-api-0.9.11.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/0.9.12/jangaroo-compiler-api-0.9.12.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/0.9.12/jangaroo-utils-0.9.12.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/0.9.12/exml-compiler-api-0.9.12.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/0.9.12/properties-compiler-api-0.9.12.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
