@@ -26,6 +26,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.InjectedLanguagePlaces;
 import com.intellij.psi.LanguageInjector;
+import com.intellij.psi.LiteralTextEscaper;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLanguageInjectionHost;
@@ -70,20 +71,21 @@ public class ExmlLanguageInjector implements LanguageInjector {
 
   public void getLanguagesToInject(@NotNull PsiLanguageInjectionHost psiLanguageInjectionHost, @NotNull InjectedLanguagePlaces injectedLanguagePlaces) {
     PsiFile psiFile = psiLanguageInjectionHost.getContainingFile();
-    if (psiFile.getName().endsWith(Exmlc.EXML_SUFFIX)) {
+    if (psiFile.getName().endsWith(Exmlc.EXML_SUFFIX)
+      && (psiLanguageInjectionHost instanceof XmlAttributeValue || psiLanguageInjectionHost instanceof XmlText)) {
+      VirtualFile exmlFile = psiFile.getOriginalFile().getVirtualFile();
+      if (exmlFile == null) {
+        return;
+      }
+      Module module = getModuleForFile(psiFile.getProject(), exmlFile);
+      if (module == null) {
+        return;
+      }
+      ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
+      if (exmlConfig == null) {
+        return;
+      }
       if (psiLanguageInjectionHost instanceof XmlAttributeValue) {
-        VirtualFile exmlFile = psiFile.getOriginalFile().getVirtualFile();
-        if (exmlFile == null) {
-          return;
-        }
-        Module module = getModuleForFile(psiFile.getProject(), exmlFile);
-        if (module == null) {
-          return;
-        }
-        ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
-        if (exmlConfig == null) {
-          return;
-        }
         XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
         String text = attributeValue.getValue();
         if (isImportClassAttribute(attributeValue)) {
@@ -91,19 +93,22 @@ public class ExmlLanguageInjector implements LanguageInjector {
         } else {
           if (isBaseClassAttribute(attributeValue) || isDeclarationTypeAttribute(attributeValue) ||
             isDeclarationValueAttribute(attributeValue) || ExmlUtils.isCodeExpression(text)) {
-            injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, attributeValue);
+            injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
           }
         }
-      } else if (psiLanguageInjectionHost instanceof XmlText) {
+      } else { // psiLanguageInjectionHost instanceof XmlText
         XmlText xmlText = (XmlText)psiLanguageInjectionHost;
-        if (isExmlElement(xmlText.getParentTag(), Exmlc.EXML_ANNOTATION_NODE_NAME)) {
+        XmlTag parentTag = xmlText.getParentTag();
+        if (isExmlElement(parentTag, Exmlc.EXML_ANNOTATION_NODE_NAME)) {
           injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "[", "]");
+        } else if (isExmlElement(parentTag, Exmlc.EXML_OBJECT_NODE_NAME)) {
+          injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
         }
       }
     }
   }
 
-  private void injectAS(InjectedLanguagePlaces injectedLanguagePlaces, VirtualFile exmlFile, Module module, ExmlcConfigurationBean exmlConfig, XmlAttributeValue attributeValue) {
+  private void injectAS(InjectedLanguagePlaces injectedLanguagePlaces, VirtualFile exmlFile, Module module, ExmlcConfigurationBean exmlConfig, PsiLanguageInjectionHost attributeValue) {
     String configClassPackage = exmlConfig.getConfigClassPackage();
     if (configClassPackage == null) {
       IdeaLogger.getInstance(this.getClass()).warn("No config class package set in module " + module.getName() + ", EXML AS3 language injection cancelled.");
@@ -120,9 +125,14 @@ public class ExmlLanguageInjector implements LanguageInjector {
       StringBuilder code = new StringBuilder();
       code.append(String.format("package %s {\n", packageName));
 
-      String text = attributeValue.getValue();
+      String text;
+      if (attributeValue instanceof XmlAttributeValue) {
+        text = ((XmlAttributeValue)attributeValue).getValue();
+      } else {
+        text = getRelevantText(attributeValue);
+      }
       boolean isCodeExpression = ExmlUtils.isCodeExpression(text);
-      String superClassName = isCodeExpression ? findSuperClass(exmlComponentTag) : null;
+      String superClassName = isCodeExpression || attributeValue instanceof XmlText ? findSuperClass(exmlComponentTag) : null;
 
       // find and append imports:
       Set<String> imports = findImports(exmlComponentTag);
@@ -139,7 +149,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
       String codePrefix = null;
 
       code.append(" extends ");
-      if (isBaseClassAttribute(attributeValue)) {
+      if (attributeValue instanceof XmlAttributeValue && isBaseClassAttribute((XmlAttributeValue)attributeValue)) {
         codePrefix = flush(code);
       } else {
         code.append(superClassName != null ? superClassName : "Object");
@@ -184,9 +194,20 @@ public class ExmlLanguageInjector implements LanguageInjector {
 
       TextRange textRange = isCodeExpression ?
         TextRange.from(2, text.length() - 2) : // cut off quotes and braces ("{...}")
-        TextRange.from(1, text.length());      // cut off quotes only ("...")
+        attributeValue instanceof XmlText ?
+          attributeValue.createLiteralTextEscaper().getRelevantTextRange() :
+          TextRange.from(1, text.length());      // cut off quotes only ("...")
       injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix, code.toString());
     }
+  }
+
+  private String getRelevantText(PsiLanguageInjectionHost languageInjectionHost) {
+    String text;LiteralTextEscaper<? extends PsiLanguageInjectionHost> literalTextEscaper =
+      languageInjectionHost.createLiteralTextEscaper();
+    StringBuilder builder = new StringBuilder();
+    literalTextEscaper.decode(literalTextEscaper.getRelevantTextRange(), builder);
+    text = builder.toString();
+    return text;
   }
 
   private String renderDeclarations(XmlTag exmlComponentTag, StringBuilder code,
@@ -394,7 +415,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
     return false;
   }
 
-  private static XmlAttribute getXmlAttribute(XmlAttributeValue attributeValue) {
+  private static XmlAttribute getXmlAttribute(PsiElement attributeValue) {
     PsiElement parent = attributeValue.getParent();
     return parent instanceof XmlAttribute ? (XmlAttribute)parent : null;
   }
