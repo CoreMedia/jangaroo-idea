@@ -178,16 +178,38 @@ public class ExmlLanguageInjector implements LanguageInjector {
         codePrefix = renderDeclarations(exmlComponentTag, code, xmlTag, xmlAttribute,
           Exmlc.EXML_VAR_NODE_NAME, "var");
       }
-      code.append("  super(");
       if (codePrefix == null) {
-        code.append(configClassName).append("({x:(");
+        String attributeName = null;
+        if (xmlTag != null) {
+          attributeName = xmlAttribute.getLocalName();
+          if (Exmlc.EXML_UNTYPED_NAMESPACE_URI.equals(xmlAttribute.getNamespace())) {
+            xmlTag = null;
+          }
+        } else if (attributeValue instanceof XmlText) {
+          XmlTag parentTag = ((XmlText)attributeValue).getParentTag();
+          if (parentTag != null) {
+            XmlTag attributeTag = parentTag.getParentTag();
+            if (attributeTag != null) {
+              attributeName = attributeTag.getLocalName();
+              xmlTag = attributeTag.getParentTag();
+            }
+          }
+        }
+        if (attributeName == null) {
+          // nothing found?!
+          return;
+        }
+        if (xmlTag == null) {
+          code.append("  ({})._ = "); // force untyped expression without using an auxiliary variable!
+        } else {
+          String attributeConfigClassName = CompilerUtils.qName(ExmlUtils.parsePackageFromNamespace(xmlTag.getNamespace()), xmlTag.getLocalName());
+          code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName).append(" = ");
+        }
         codePrefix = flush(code);
-        code.append(")})");
-      } else {
-        code.append("config");
+        code.append(";");
       }
+      code.append("  super(config);");
       code
-        .append(");\n")    // super(
         .append("}\n")     // constructor {
         .append("\n}\n")   // class {
         .append("\n}\n");  // package {
