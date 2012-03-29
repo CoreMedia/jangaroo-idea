@@ -103,6 +103,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
           injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "[", "]");
         } else if (isExmlElement(parentTag, Exmlc.EXML_OBJECT_NODE_NAME)) {
           injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
+        } else if (isExmlElement(parentTag, Exmlc.EXML_DESCRIPTION_NODE_NAME)) {
+          injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "/**", "*/");
         }
       }
     }
