@@ -86,7 +86,7 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
       String[] contentRootUrls = ModuleRootManager.getInstance(invalidModule).getContentRootUrls();
       String invalidModuleUrl = contentRootUrls.length > 0 ? contentRootUrls[0] : null;
       context.addMessage(CompilerMessageCategory.ERROR,
-        "Jangaroo SDK not set up correctly. Please press 'Force Reimport All Maven Projects' or manually correct your Jangaroo / EXML facets ('Project Structure').",
+        "Jangaroo SDK not set up correctly. If using Maven, please run 'mvn install', then press 'Reimport All Maven Projects', otherwise correct your Jangaroo / EXML facets ('Project Structure') manually.",
         invalidModuleUrl, -1, -1);
       return false;
     }
