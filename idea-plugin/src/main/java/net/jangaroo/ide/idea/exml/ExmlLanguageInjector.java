@@ -201,12 +201,14 @@ public class ExmlLanguageInjector implements LanguageInjector {
           // nothing found?!
           return;
         }
-        if (xmlTag == null) {
-          code.append("  ({})._ = "); // force untyped expression without using an auxiliary variable!
-        } else {
-          String attributeConfigClassName = CompilerUtils.qName(ExmlUtils.parsePackageFromNamespace(xmlTag.getNamespace()), xmlTag.getLocalName());
-          code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName).append(" = ");
+        String attributeConfigClassName = "Object";
+        if (xmlTag != null) {
+          String configPackageName = ExmlUtils.parsePackageFromNamespace(xmlTag.getNamespace());
+          if (configPackageName != null) {
+            attributeConfigClassName = CompilerUtils.qName(configPackageName, xmlTag.getLocalName());
+          }
         }
+        code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName).append(" = ");
         codePrefix = flush(code);
         code.append(";");
       }
