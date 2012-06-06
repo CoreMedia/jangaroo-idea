@@ -1,9 +1,9 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.idea.IdeaLogger;
-import com.intellij.lang.javascript.index.JavaScriptIndex;
+import com.intellij.lang.javascript.psi.ecmal4.JSAttribute;
+import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
-import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -27,6 +27,9 @@ import com.intellij.xml.XmlNSDescriptor;
 import com.intellij.xml.impl.schema.XmlElementDescriptorImpl;
 import com.intellij.xml.util.XmlUtil;
 import net.jangaroo.exml.api.Exmlc;
+import net.jangaroo.exml.utils.ExmlUtils;
+import net.jangaroo.ide.idea.AbstractCompiler;
+import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
@@ -75,23 +78,36 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
 
     public PsiElement getDeclaration() {
       XmlTag declaration = (XmlTag)super.getDeclaration();
-      if (declaration != null) {
-        Project project = declaration.getProject();
-        String componentClassName = declaration.getAttributeValue("id");
-        if (componentClassName != null) {
-          VirtualFile exmlFile = findExmlFile(project, componentClassName);
-          if (exmlFile != null) {
-            PsiFile file = PsiManager.getInstance(project).findFile(exmlFile);
-            if (file != null && file.isValid()) {
-              return file;
-            }
-          }
-        }
-        String configClassName = declaration.getAttributeValue("type");
-        if (configClassName != null) {
-          configClassName = XmlUtil.findLocalNameByQualifiedName(configClassName);
-          JSClass asClass = getASClass(project, configClassName);
+      // only check top-level declarations:
+      if (declaration != null && declaration.getParentTag() != null
+        && "schema".equals(declaration.getParentTag().getLocalName())
+        && "http://www.w3.org/2001/XMLSchema".equals(declaration.getParentTag().getNamespace())) {
+        String packageName = ExmlUtils.parsePackageFromNamespace(getNamespace());
+        if (packageName != null) {
+          String className = CompilerUtils.qName(packageName, getName());
+          Project project = declaration.getProject();
+          JSClass asClass = AbstractCompiler.getASClass(project, className);
           if (asClass != null && asClass.isValid()) {
+            // found ActionScript class.
+            String targetClassName = className;
+            // could be a config class with an [ExtConfig(target="...")] annotation:
+            JSAttributeList attributeList = asClass.getAttributeList();
+            if (attributeList != null) {
+              for (JSAttribute attribute : attributeList.getAttributes()) {
+                if ("ExtConfig".equals(attribute.getName())) {
+                  targetClassName = attribute.getValueByName("target").getSimpleValue();
+                  break;
+                }
+              }
+            }
+            // always prefer EXML file:
+            VirtualFile exmlFile = findExmlFile(project, targetClassName);
+            if (exmlFile != null) {
+              PsiFile file = PsiManager.getInstance(project).findFile(exmlFile);
+              if (file != null && file.isValid()) {
+                return file;
+              }
+            }
             return asClass;
           }
         }
@@ -104,15 +120,10 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       if (declaration != null) {
         String className = declaration.getAttributeValue("id");
         if (className != null) {
-          return getASClass(declaration.getProject(), className);
+          return AbstractCompiler.getASClass(declaration.getProject(), className);
         }
       }
       return null;
-    }
-
-    private JSClass getASClass(Project project, String className) {
-      PsiElement asClass = JSResolveUtil.findClassByQName(className, JavaScriptIndex.getInstance(project), null);
-      return asClass instanceof JSClass ? (JSClass)asClass : null;
     }
 
     private static VirtualFile findExmlFile(Project project, String className) {

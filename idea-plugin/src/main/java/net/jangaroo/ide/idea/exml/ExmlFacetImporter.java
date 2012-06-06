@@ -8,6 +8,7 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.utils.CompilerUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
@@ -18,10 +19,12 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -116,17 +119,23 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         if (orderEntry instanceof ModuleOrderEntry) {
           ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(((ModuleOrderEntry)orderEntry).getModule());
           if (exmlConfig != null) {
-            resourceMap.put(exmlConfig.getNamespace(), toPath(exmlConfig.getXsdFilename()));
+            String generatedResourcesPath = toPath(exmlConfig.getGeneratedResourcesDirectory()) + File.separator;
+            File generatedResourcesDirectory = new File(generatedResourcesPath);
+            if (generatedResourcesDirectory.exists()) {
+              String[] xsdFiles = generatedResourcesDirectory.list(new SuffixFileFilter(".xsd"));
+              for (String xsdFile : xsdFiles) {
+                mapXsdResource(resourceMap, generatedResourcesPath, xsdFile);
+              }
+            }
           }
         } else {
           String zipFileName = ExmlCompiler.findDependentModuleZipFileName(orderEntry);
           if (zipFileName != null) {
             ZipFile zipFile = new ZipFile(zipFileName);
-            ZipEntry xsdZipEntry = ExmlCompiler.findXsdZipEntry(zipFile);
-            if (xsdZipEntry != null) {
-              String namespace = Exmlc.EXML_CONFIG_URI_PREFIX + CompilerUtils.removeExtension(xsdZipEntry.getName());
-              String filename = zipFileName + "!/" + xsdZipEntry.getName();
-              resourceMap.put(namespace, filename);
+            String zipFilePath = zipFileName + "!/";
+            Set<ZipEntry> xsdZipEntries = ExmlCompiler.findXsdZipEntries(zipFile);
+            for (ZipEntry xsdZipEntry : xsdZipEntries) {
+              mapXsdResource(resourceMap, zipFilePath, xsdZipEntry.getName());
             }
           }
         }
@@ -139,6 +148,11 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
       resourceMap.put(exmlConfig.getNamespace(), toPath(exmlConfig.getXsdFilename()));
     }
     return resourceMap;
+  }
+
+  private static void mapXsdResource(Map<String, String> resourceMap, String path, String xsdFileName) {
+    String namespace = Exmlc.EXML_CONFIG_URI_PREFIX + CompilerUtils.removeExtension(xsdFileName);
+    resourceMap.put(namespace, path + xsdFileName);
   }
 
 }

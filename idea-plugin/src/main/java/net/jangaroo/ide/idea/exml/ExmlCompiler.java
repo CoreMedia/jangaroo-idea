@@ -40,8 +40,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -89,16 +91,17 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     return null;
   }
 
-  static ZipEntry findXsdZipEntry(ZipFile zipFile) throws IOException {
+  static Set<ZipEntry> findXsdZipEntries(ZipFile zipFile) throws IOException {
     // find a *.xsd in jar's root folder:
     Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+    Set<ZipEntry> result = new LinkedHashSet<ZipEntry>();
     while (enumeration.hasMoreElements()) {
       ZipEntry zipEntry = enumeration.nextElement();
       if (!zipEntry.isDirectory() && zipEntry.getName().indexOf('/') == -1 && zipEntry.getName().endsWith(".xsd")) {
-        return zipEntry;
+        result.add(zipEntry);
       }
     }
-    return null;
+    return result;
   }
 
   public VirtualFile getPresentableFile(CompileContext context, Module module, VirtualFile outputRoot, VirtualFile generatedFile) {

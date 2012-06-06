@@ -16,6 +16,8 @@ package net.jangaroo.ide.idea.exml;
 
 import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.psi.JSFunction;
+import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -38,6 +40,7 @@ import com.intellij.psi.xml.XmlText;
 import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
+import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.utils.AS3Type;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
@@ -206,6 +209,20 @@ public class ExmlLanguageInjector implements LanguageInjector {
           String configPackageName = ExmlUtils.parsePackageFromNamespace(xmlTag.getNamespace());
           if (configPackageName != null) {
             attributeConfigClassName = CompilerUtils.qName(configPackageName, xmlTag.getLocalName());
+            // since EXML update, this may be a target class, so try to find the reference to the config class:
+            JSClass asClass = AbstractCompiler.getASClass(module.getProject(), attributeConfigClassName);
+            if (asClass != null) {
+              JSFunction asConstructor = asClass.getConstructor();
+              if (asConstructor != null) {
+                JSParameter[] parameters = asConstructor.getParameters();
+                if (parameters.length > 0 & "config".equals(parameters[0].getName())) {
+                  String configClassNameCandidate = parameters[0].getType().getResolvedTypeText();
+                  if (!"Object".equals(configClassNameCandidate)) {
+                    attributeConfigClassName = configClassNameCandidate;
+                  }
+                }
+              }
+            }
           }
         }
         code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName).append(" = ");
