@@ -35,6 +35,7 @@ public class JoocConfigurationBean {
   public boolean allowDuplicateLocalVariables = false;
   public String outputPrefix;
   public String outputDirectory = "target/jangaroo-output/joo/classes";
+  public String apiOutputDirectory = "target/jangaroo-output/META-INF/joo-api";
   public boolean showCompilerInfoMessages = false;
   public PublicApiViolationsMode publicApiViolationsMode;
 
@@ -62,8 +63,7 @@ public class JoocConfigurationBean {
   }
 
   public File getApiOutputDirectory() {
-    // TODO: make configurable
-    return new File(getOutputDirectory(), "../../META-INF/joo-api");
+    return apiOutputDirectory == null || apiOutputDirectory.length() == 0 ? null : new File(toPath(apiOutputDirectory));
   }
 
   @Override

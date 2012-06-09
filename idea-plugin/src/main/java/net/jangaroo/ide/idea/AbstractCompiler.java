@@ -1,10 +1,14 @@
 package net.jangaroo.ide.idea;
 
+import com.intellij.lang.javascript.index.JavaScriptIndex;
+import com.intellij.lang.javascript.psi.ecmal4.JSClass;
+import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.LibraryOrderEntry;
@@ -16,6 +20,7 @@ import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiElement;
 import net.jangaroo.jooc.api.CompileLog;
 import net.jangaroo.jooc.config.DebugMode;
 import net.jangaroo.jooc.api.FilePosition;
@@ -70,6 +75,11 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
       jarFileNames.add(filename);
     }
     return jarFileNames;
+  }
+
+  public static JSClass getASClass(Project project, String className) {
+    PsiElement asClass = JSResolveUtil.findClassByQName(className, JavaScriptIndex.getInstance(project), null);
+    return asClass instanceof JSClass ? (JSClass)asClass : null;
   }
 
   @NotNull

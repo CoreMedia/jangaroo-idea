@@ -45,6 +45,7 @@ public class JangarooFacetEditorTabUI {
   private JRadioButton suppressWhiteSpaceRadioButton;
   private JCheckBox allowDuplicateVariableCheckBox;
   private TextFieldWithBrowseButton outputDirTextField;
+  private TextFieldWithBrowseButton apiOutputDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JangarooSdkComboBoxWithBrowseButton jangarooSdkComboBoxWithBrowseButton;
   private ButtonGroup publicApiViolationsButtonGroup;
@@ -54,16 +55,21 @@ public class JangarooFacetEditorTabUI {
 
   private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+  private static final FileChooserDescriptor API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
     COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo compiler JAR location.");
     COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the Jangaroo compiler JAR. This allows to use different versions of the Jangaroo compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo Output Directory");
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place JavaScript files containing compiled ActionScript classes.");
+    API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo API Output Directory");
+    API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place generated ActionScript API files.");
   }
 
   public JangarooFacetEditorTabUI() {
     outputDirTextField.addBrowseFolderListener(null,null, null, OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
+      TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
+    apiOutputDirTextField.addBrowseFolderListener(null,null, null, API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
   }
 
@@ -105,6 +111,7 @@ public class JangarooFacetEditorTabUI {
         : suppressWhiteSpaceRadioButton).getModel(), true);
     allowDuplicateVariableCheckBox.setSelected(data.allowDuplicateLocalVariables);
     outputDirTextField.setText(toPath(data.outputDirectory));
+    apiOutputDirTextField.setText(toPath(data.apiOutputDirectory));
     showCompilerInfoMessages.setSelected(data.showCompilerInfoMessages);
     publicApiViolationsButtonGroup.setSelected(
       (   data.publicApiViolationsMode == PublicApiViolationsMode.ERROR ? publicApiViolationsErrorRadioButton
@@ -123,6 +130,7 @@ public class JangarooFacetEditorTabUI {
                                                                       : JoocConfigurationBean.DEBUG_LEVEL_NONE;
     data.allowDuplicateLocalVariables = allowDuplicateVariableCheckBox.isSelected();
     data.outputDirectory = toIdeaUrl(outputDirTextField.getText());
+    data.apiOutputDirectory = toIdeaUrl(apiOutputDirTextField.getText());
     data.showCompilerInfoMessages = showCompilerInfoMessages.isSelected();
     ButtonModel publicApiViolationsSelection = publicApiViolationsButtonGroup.getSelection();
     data.publicApiViolationsMode =

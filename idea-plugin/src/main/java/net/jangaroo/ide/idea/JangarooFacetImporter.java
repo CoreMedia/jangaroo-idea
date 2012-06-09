@@ -143,6 +143,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
+    boolean isJangaroo2 = jangarooMavenPlugin.getVersion().startsWith("2.");
     String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_ARTIFACT_ID, jangarooMavenPlugin.getVersion());
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
@@ -163,7 +164,13 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!outputDir.isAbsolute()) {
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
-    jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, "joo/classes").getAbsolutePath());
+    String jooClassesPath = "joo/classes";
+    if (isJangaroo2 && !isWar) {
+      jooClassesPath = "META-INF/resources/" + jooClassesPath;
+    }
+    jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
+    String apiOutputDirectory = getConfigurationValue(mavenProjectModel, "apiOutputDirectory", null);
+    jooConfig.apiOutputDirectory = isWar ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.valueOf(publicApiViolationsMode.toUpperCase());
@@ -172,7 +179,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
 
-    if (isWar) {
+    if (isWar && !isJangaroo2) {
       postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
     }
   }
