@@ -57,6 +57,7 @@ public class ExmlFacetConfiguration implements FacetConfiguration, PersistentSta
     // ignore
   }
 
+  @NotNull
   public ExmlcConfigurationBean getState() {
     return exmlcConfigurationBean;
   }

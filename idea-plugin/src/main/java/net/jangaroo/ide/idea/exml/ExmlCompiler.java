@@ -218,10 +218,13 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
     VirtualFile[] propertiesFiles = context.getProjectCompileScope().getFiles(fileTypeManager.getFileTypeByExtension("properties"), true);
     for (VirtualFile file : propertiesFiles) {
       Module module = context.getModuleByFile(file);
-      if (hasExmlFacet(module)) {
+      ExmlFacet exmlFacet = ExmlFacet.ofModule(module);
+      if (exmlFacet != null) {
         VirtualFile sourceRoot = MakeUtil.getSourceRoot(context, module, file);
-        if (!(sourceRoot != null && sourceRoot.getPath().endsWith("/webapp"))) { // hack: skip all files under .../webapp
+        if (sourceRoot != null && sourceRoot.getUrl().equals(exmlFacet.getConfiguration().getState().getSourceDirectory())) {
           compilableFiles.add(file);
+        } else {
+          getLog().debug("EXML Properties Compiler: Ignoring properties file " + file.getPath() + " because it is not below the EXML source directory.");
         }
       }
     }
