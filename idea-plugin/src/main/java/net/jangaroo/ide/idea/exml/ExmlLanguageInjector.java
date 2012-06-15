@@ -19,6 +19,7 @@ import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -88,27 +89,31 @@ public class ExmlLanguageInjector implements LanguageInjector {
       if (exmlConfig == null) {
         return;
       }
-      if (psiLanguageInjectionHost instanceof XmlAttributeValue) {
-        XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
-        String text = attributeValue.getValue();
-        if (isImportClassAttribute(attributeValue)) {
-          injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(1, text.length()), "import ", ";");
-        } else {
-          if (isBaseClassAttribute(attributeValue) || isDeclarationTypeAttribute(attributeValue) ||
-            isDeclarationValueAttribute(attributeValue) || ExmlUtils.isCodeExpression(text)) {
+      try {
+        if (psiLanguageInjectionHost instanceof XmlAttributeValue) {
+          XmlAttributeValue attributeValue = (XmlAttributeValue)psiLanguageInjectionHost;
+          String text = attributeValue.getValue();
+          if (isImportClassAttribute(attributeValue)) {
+            injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(1, text.length()), "import ", ";");
+          } else {
+            if (isBaseClassAttribute(attributeValue) || isDeclarationTypeAttribute(attributeValue) ||
+              isDeclarationValueAttribute(attributeValue) || ExmlUtils.isCodeExpression(text)) {
+              injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
+            }
+          }
+        } else { // psiLanguageInjectionHost instanceof XmlText
+          XmlText xmlText = (XmlText)psiLanguageInjectionHost;
+          XmlTag parentTag = xmlText.getParentTag();
+          if (isExmlElement(parentTag, Exmlc.EXML_ANNOTATION_NODE_NAME)) {
+            injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "[", "]");
+          } else if (isExmlElement(parentTag, Exmlc.EXML_OBJECT_NODE_NAME)) {
             injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
+          } else if (isExmlElement(parentTag, Exmlc.EXML_DESCRIPTION_NODE_NAME)) {
+            injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "/**", "*/");
           }
         }
-      } else { // psiLanguageInjectionHost instanceof XmlText
-        XmlText xmlText = (XmlText)psiLanguageInjectionHost;
-        XmlTag parentTag = xmlText.getParentTag();
-        if (isExmlElement(parentTag, Exmlc.EXML_ANNOTATION_NODE_NAME)) {
-          injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "[", "]");
-        } else if (isExmlElement(parentTag, Exmlc.EXML_OBJECT_NODE_NAME)) {
-          injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
-        } else if (isExmlElement(parentTag, Exmlc.EXML_DESCRIPTION_NODE_NAME)) {
-          injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "/**", "*/");
-        }
+      } catch (Throwable t) {
+        Logger.getInstance("ExmlLanguageInjector").error("While trying to inject AS3 into " + exmlFile.getPath() + ".", t);
       }
     }
   }
