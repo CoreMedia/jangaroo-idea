@@ -1,0 +1,5 @@
+# Backups
+*.*~
+# target dirs
+out
+idea-plugin/*.zip
