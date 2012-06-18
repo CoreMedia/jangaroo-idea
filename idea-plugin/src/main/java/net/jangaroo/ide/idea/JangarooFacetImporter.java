@@ -1,10 +1,12 @@
 package net.jangaroo.ide.idea;
 
 import com.intellij.facet.FacetManager;
-import com.intellij.idea.IdeaLogger;
 import com.intellij.javaee.facet.JavaeeFacet;
 import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
 import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -148,8 +150,9 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
       if (jangarooSdkVersion == null) {
-        IdeaLogger.getInstance(JangarooFacetImporter.class).warn("No version found for Jangaroo SDK in Maven POM "
-          + mavenProjectModel.getDisplayName() + ", no Jangaroo facet created.");
+        Notifications.Bus.notify(new Notification("Maven", "Jangaroo Version Not Found",
+          "No version found for Jangaroo SDK in Maven POM " + mavenProjectModel.getDisplayName() +
+            ", no Jangaroo facet created.", NotificationType.WARNING));
         return;
       }
       jooConfig.jangarooSdkName = "Jangaroo SDK " + jangarooSdkVersion;
@@ -182,7 +185,10 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     try {
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.valueOf(publicApiViolationsMode.toUpperCase());
     } catch (IllegalArgumentException e) {
-      IdeaLogger.getInstance(JangarooFacetImporter.class).warn("Illegal value for <publicApiViolations>: '" + publicApiViolationsMode);
+      Notifications.Bus.notify(new Notification("Maven", "Invalid Jangaroo Configuration",
+        "Illegal value for &lt;publicApiViolations>: '" + publicApiViolationsMode + "' in Maven POM " +
+          mavenProjectModel.getDisplayName() +", falling back to 'warn'.",
+        NotificationType.WARNING));
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
 
