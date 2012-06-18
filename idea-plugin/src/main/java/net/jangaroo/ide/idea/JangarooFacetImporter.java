@@ -143,13 +143,19 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
-    boolean isJangaroo2 = jangarooMavenPlugin.getVersion().startsWith("2.");
-    String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_ARTIFACT_ID, jangarooMavenPlugin.getVersion());
+    String jangarooSdkVersion = jangarooMavenPlugin.getVersion();
+    String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_ARTIFACT_ID, jangarooSdkVersion);
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
-      jooConfig.jangarooSdkName = "Jangaroo SDK " + jangarooMavenPlugin.getVersion();
+      if (jangarooSdkVersion == null) {
+        IdeaLogger.getInstance(JangarooFacetImporter.class).warn("No version found for Jangaroo SDK in Maven POM "
+          + mavenProjectModel.getDisplayName() + ", no Jangaroo facet created.");
+        return;
+      }
+      jooConfig.jangarooSdkName = "Jangaroo SDK " + jangarooSdkVersion;
     } else {
       jooConfig.jangarooSdkName = jangarooSdk.getName();
+      jangarooSdkVersion = jangarooSdk.getVersionString();
     }
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
@@ -165,6 +171,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
     String jooClassesPath = "joo/classes";
+    boolean isJangaroo2 = jangarooSdkVersion.startsWith("2.");
     if (isJangaroo2 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesPath;
     }
