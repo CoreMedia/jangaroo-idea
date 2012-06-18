@@ -24,10 +24,11 @@ public class JangarooSdkUtils {
       return null;
     }
     ProjectJdkTable projectJdkTable = ProjectJdkTable.getInstance();
+    String sdkHomePathNormalized = sdkHomePath.replace('\\', '/');
     for (Sdk sdk : projectJdkTable.getSdksOfType(sdkType)) {
       String homePath = sdk.getHomePath();
-      if (homePath != null && homePath.replace('\\', '/').equals(sdkHomePath.replace('\\', '/'))) {
-        if ((sdkType instanceof JangarooSdkType)) {
+      if (homePath != null && homePath.replace('\\', '/').equals(sdkHomePathNormalized)) {
+        if (sdkType instanceof JangarooSdkType) {
           sdkType.setupSdkPaths(sdk);
         }
         return sdk;
