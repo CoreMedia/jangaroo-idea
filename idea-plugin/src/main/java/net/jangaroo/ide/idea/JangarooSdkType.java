@@ -41,6 +41,7 @@ public class JangarooSdkType extends SdkType {
       if (mavenVersion != null) {
         VirtualFile rootDirectory = sdkRoot.getParent().getParent();
         SdkModificator modificator = sdk.getSdkModificator();
+        modificator.setVersionString(mavenVersion);
         addArtifact(rootDirectory, "jangaroo-compiler", mavenVersion, modificator);
         addArtifact(rootDirectory, "exml-compiler", mavenVersion, modificator);
         addArtifact(rootDirectory, "properties-compiler", mavenVersion, modificator);
@@ -52,6 +53,7 @@ public class JangarooSdkType extends SdkType {
           VirtualFile binDir = sdkRoot.findChild("bin");
           String fileSuffix = sdkVersion + "-jar-with-dependencies";
           SdkModificator modificator = sdk.getSdkModificator();
+          modificator.setVersionString(sdkVersion);
           addArtifactIfExists(binDir, "jangaroo-compiler", fileSuffix, modificator);
           addArtifactIfExists(binDir, "exml-compiler", fileSuffix, modificator);
           addArtifactIfExists(binDir, "properties-compiler", fileSuffix, modificator);
