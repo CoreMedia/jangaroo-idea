@@ -158,6 +158,13 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       jooConfig.jangarooSdkName = "Jangaroo SDK " + jangarooSdkVersion;
     } else {
       jooConfig.jangarooSdkName = jangarooSdk.getName();
+      if (jangarooSdk.getVersionString() == null) {
+        Notifications.Bus.notify(new Notification("Jangaroo", "Incompatible Jangaroo Version",
+          "Jangaroo compiler version " + jangarooSdkVersion + " is not compatible with this Jangaroo IDEA plugin. "
+        + "Either use another IDEA plugin or change the Jangaroo Maven plugin version in " + mavenProjectModel.getDisplayName(),
+          NotificationType.WARNING));
+        return;
+      }
       jangarooSdkVersion = jangarooSdk.getVersionString();
     }
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
