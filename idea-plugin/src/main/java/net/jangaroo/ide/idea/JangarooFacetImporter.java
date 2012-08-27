@@ -63,7 +63,7 @@ import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
-  private static final String JANGAROO_COMPILER_ARTIFACT_ID = "jangaroo-compiler";
+  static final String JANGAROO_COMPILER_API_ARTIFACT_ID = "jangaroo-compiler-api";
   public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
@@ -146,7 +146,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
     String jangarooSdkVersion = jangarooMavenPlugin.getVersion();
-    String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_ARTIFACT_ID, jangarooSdkVersion);
+    String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
       if (jangarooSdkVersion == null) {

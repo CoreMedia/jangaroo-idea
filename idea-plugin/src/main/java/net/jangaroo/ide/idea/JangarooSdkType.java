@@ -26,7 +26,8 @@ import java.util.regex.Pattern;
  */
 public class JangarooSdkType extends SdkType {
 
-  private static final Pattern JANGAROO_COMPILER_JAR_PATTERN = Pattern.compile("^jangaroo-compiler-((0\\.9\\.[0-9]+|2\\.[0-9]+(-preview-[0-9]+)?)(-SNAPSHOT)?)\\.jar$");
+  private static final Pattern JANGAROO_COMPILER_API_JAR_PATTERN =
+    Pattern.compile("^" + JangarooFacetImporter.JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+\\.[0-9]+(\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
 
   public JangarooSdkType() {
     super("Jangaroo SDK");
@@ -146,7 +147,7 @@ public class JangarooSdkType extends SdkType {
 
   private static String getVersionFromMavenLayout(VirtualFile dir) {
     for (VirtualFile child : dir.getChildren()) {
-      Matcher matcher = JANGAROO_COMPILER_JAR_PATTERN.matcher(child.getName());
+      Matcher matcher = JANGAROO_COMPILER_API_JAR_PATTERN.matcher(child.getName());
       if (matcher.matches()) {
         return matcher.group(1);
       }
