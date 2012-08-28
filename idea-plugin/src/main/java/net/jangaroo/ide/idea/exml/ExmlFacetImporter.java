@@ -118,16 +118,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
       try {
         if (orderEntry instanceof ModuleOrderEntry) {
           ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(((ModuleOrderEntry)orderEntry).getModule());
-          if (exmlConfig != null) {
-            String generatedResourcesPath = toPath(exmlConfig.getGeneratedResourcesDirectory()) + File.separator;
-            File generatedResourcesDirectory = new File(generatedResourcesPath);
-            if (generatedResourcesDirectory.exists()) {
-              String[] xsdFiles = generatedResourcesDirectory.list(new SuffixFileFilter(".xsd"));
-              for (String xsdFile : xsdFiles) {
-                mapXsdResource(resourceMap, generatedResourcesPath, xsdFile);
-              }
-            }
-          }
+          mapXsdResources(resourceMap, exmlConfig);
         } else {
           String zipFileName = ExmlCompiler.findDependentModuleZipFileName(orderEntry);
           if (zipFileName != null) {
@@ -144,10 +135,21 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
       }
     }
     ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
-    if (exmlConfig != null) {
-      resourceMap.put(exmlConfig.getNamespace(), toPath(exmlConfig.getXsdFilename()));
-    }
+    mapXsdResources(resourceMap, exmlConfig);
     return resourceMap;
+  }
+
+  private static void mapXsdResources(Map<String, String> resourceMap, ExmlcConfigurationBean exmlConfig) {
+    if (exmlConfig != null) {
+      String generatedResourcesPath = toPath(exmlConfig.getGeneratedResourcesDirectory()) + File.separator;
+      File generatedResourcesDirectory = new File(generatedResourcesPath);
+      if (generatedResourcesDirectory.exists()) {
+        String[] xsdFiles = generatedResourcesDirectory.list(new SuffixFileFilter(".xsd"));
+        for (String xsdFile : xsdFiles) {
+          mapXsdResource(resourceMap, generatedResourcesPath, xsdFile);
+        }
+      }
+    }
   }
 
   private static void mapXsdResource(Map<String, String> resourceMap, String path, String xsdFileName) {
