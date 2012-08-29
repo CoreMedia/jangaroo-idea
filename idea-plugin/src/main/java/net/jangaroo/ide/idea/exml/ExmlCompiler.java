@@ -168,7 +168,7 @@ public class ExmlCompiler extends AbstractCompiler implements SourceGeneratingCo
   }
 
   static void addMessageForExmlcException(CompileContext context, ExmlcException e) {
-    VirtualFile file = LocalFileSystem.getInstance().findFileByIoFile(e.getFile());
+    VirtualFile file = e.getFile() == null ? null : LocalFileSystem.getInstance().findFileByIoFile(e.getFile());
     context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file==null ? null : file.getUrl(), e.getLine(), e.getColumn());
   }
 
