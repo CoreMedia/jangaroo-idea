@@ -76,7 +76,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       NSDescriptor = xmlElementDescriptor.getNSDescriptor();
     }
 
-    public PsiElement getDeclaration() {
+    public String getTargetClassName() {
       XmlTag declaration = (XmlTag)super.getDeclaration();
       // only check top-level declarations:
       if (declaration != null && declaration.getParentTag() != null
@@ -100,30 +100,29 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
                 }
               }
             }
-            // always prefer EXML file:
-            VirtualFile exmlFile = findExmlFile(project, targetClassName);
-            if (exmlFile != null) {
-              PsiFile file = PsiManager.getInstance(project).findFile(exmlFile);
-              if (file != null && file.isValid()) {
-                return file;
-              }
-            }
-            return asClass;
+            return targetClassName;
           }
         }
       }
-      return declaration;
+      return null;
     }
 
-    public JSClass getComponentClass() {
-      XmlTag declaration = (XmlTag)super.getDeclaration();
-      if (declaration != null) {
-        String className = declaration.getAttributeValue("id");
-        if (className != null) {
-          return AbstractCompiler.getASClass(declaration.getProject(), className);
+    public PsiElement getDeclaration() {
+      PsiElement declaration = super.getDeclaration();
+      String targetClassName = getTargetClassName();
+      if (targetClassName != null) {
+        // always prefer EXML file:
+        Project project = declaration.getProject();
+        VirtualFile exmlFile = findExmlFile(project, targetClassName);
+        if (exmlFile != null) {
+          PsiFile file = PsiManager.getInstance(project).findFile(exmlFile);
+          if (file != null && file.isValid()) {
+            return file;
+          }
         }
+        return AbstractCompiler.getASClass(project, targetClassName);
       }
-      return null;
+      return declaration;
     }
 
     private static VirtualFile findExmlFile(Project project, String className) {
@@ -141,7 +140,8 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       LibraryTable table = LibraryTablesRegistrar.getInstance().getLibraryTableByLevel(LibraryTablesRegistrar.PROJECT_LEVEL, project);
       if (table != null) {
         for (Library library : table.getLibraries()) {
-          if (library.getName().contains(":jangaroo:")) {
+          String libraryName = library.getName();
+          if (libraryName != null && libraryName.contains(":jangaroo:")) {
             VirtualFile[] files = library.getFiles(OrderRootType.SOURCES);
             for (VirtualFile file : files) {
               if (file.getPath().endsWith(".jar!/")) {

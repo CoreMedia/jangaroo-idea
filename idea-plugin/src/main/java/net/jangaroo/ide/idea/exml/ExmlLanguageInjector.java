@@ -332,10 +332,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
     if (componentTag != null) {
       XmlElementDescriptor descriptor = componentTag.getDescriptor();
       if (descriptor instanceof ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor) {
-        JSClass componentClass = ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getComponentClass();
-        if (componentClass != null) {
-          return componentClass.getQualifiedName();
-        }
+        return ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getTargetClassName();
       }
     }
     return null;
