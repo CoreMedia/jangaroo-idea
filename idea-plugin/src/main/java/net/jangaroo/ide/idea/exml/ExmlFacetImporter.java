@@ -107,6 +107,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   public void collectSourceFolders(MavenProject mavenProject, List<String> result) {
     // TODO: peek into Maven config of ext-xml goal!
     result.add("target/generated-sources/joo");
+    result.add("target/generated-resources");
   }
 
   private Map<String, String> getXsdResourcesOfModule(Module module) {
