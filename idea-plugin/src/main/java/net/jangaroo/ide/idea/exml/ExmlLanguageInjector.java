@@ -219,7 +219,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
             if (asClass != null) {
               JSFunction asConstructor = asClass.getConstructor();
               if (asConstructor != null) {
-                JSParameter[] parameters = asConstructor.getParameters();
+                JSParameter[] parameters = asConstructor.getParameterList().getParameters();
                 if (parameters.length > 0 & "config".equals(parameters[0].getName())) {
                   String configClassNameCandidate = parameters[0].getType().getResolvedTypeText();
                   if (!"Object".equals(configClassNameCandidate)) {
