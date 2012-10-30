@@ -22,7 +22,6 @@
     <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
     <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
 
-    <compiler implementation="net.jangaroo.ide.idea.exml.ExmlCompiler"/>
     <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
     <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
     <facetType implementation="net.jangaroo.ide.idea.exml.ExmlFacetType"/>
