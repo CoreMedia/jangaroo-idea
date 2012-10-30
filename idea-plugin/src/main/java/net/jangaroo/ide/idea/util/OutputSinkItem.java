@@ -37,7 +37,15 @@ public class OutputSinkItem {
 
   public void addOutputItem(VirtualFile sourceFile, File outputFile) {
     outputItems.add(new OutputItemImpl(FileUtil.toSystemIndependentName(outputFile.getPath()), sourceFile));
-    filesToRefresh.add(outputFile);
+    addFileToRefresh(outputFile);
+  }
+
+  public void addFileToRefresh(File file) {
+    filesToRefresh.add(file);
+  }
+
+  public Collection<File> getFilesToRefresh() {
+    return filesToRefresh;
   }
 
   public void addFileToRecompile(VirtualFile file) {

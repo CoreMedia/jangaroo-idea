@@ -1,11 +1,17 @@
 package net.jangaroo.ide.idea;
 
+import com.intellij.compiler.impl.CompilerUtil;
+import com.intellij.facet.Facet;
+import com.intellij.facet.FacetManager;
+import com.intellij.facet.FacetTypeId;
 import com.intellij.lang.javascript.index.JavaScriptIndex;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
+import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -21,6 +27,8 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
+import com.intellij.util.Chunk;
+import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.api.CompileLog;
 import net.jangaroo.jooc.config.DebugMode;
 import net.jangaroo.jooc.api.FilePosition;
@@ -37,13 +45,13 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA. User: fwienber Date: 23.08.11 Time: 14:12 To change this template use File | Settings |
- * File Templates.
+ * An abstraction of all three Jangaroo compilers.
  */
-public abstract class AbstractCompiler implements com.intellij.openapi.compiler.Compiler {
+public abstract class AbstractCompiler implements TranslatingCompiler {
   private static List<File> virtualToIoFiles(List<VirtualFile> virtualFiles) {
     List<File> ioFiles = new ArrayList<File>(virtualFiles.size());
     for (VirtualFile virtualSourceFile : virtualFiles) {
@@ -58,6 +66,21 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
 
   protected AbstractCompiler() {
     getLog().debug("AbstractCompiler constructor");
+  }
+
+  private static @NotNull VirtualFile getOrCreateVirtualFile(@NotNull final String path) throws IOException {
+    LocalFileSystem localFileSystem = LocalFileSystem.getInstance();
+    VirtualFile virtualFile = localFileSystem.findFileByPath(path);
+    if (virtualFile == null) {
+      File file = new File(path);
+      String parent = file.getParent();
+      if (parent == null) {
+        throw new IOException("Path not found: " + path);
+      }
+      VirtualFile vfParentFolder = getOrCreateVirtualFile(parent);
+      virtualFile = localFileSystem.createChildDirectory(null, vfParentFolder, file.getName());
+    }
+    return virtualFile;
   }
 
   public static List<String> getJarFileNames(String jangarooSdkName) {
@@ -89,6 +112,45 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
     // as the user does not get any feedback if we return false here, we refrain from doing so.
     return true;
   }
+
+  protected abstract String getInputFileSuffix();
+
+  protected abstract String getOutputFileSuffix();
+
+  protected abstract FacetTypeId<? extends Facet> getFacetType();
+
+  public boolean isCompilableFile(VirtualFile file, CompileContext context) {
+    Module module = context.getModuleByFile(file);
+    return getInputFileSuffix().equals(file.getExtension())
+      && !file.getPath().contains("/joo-api/") // hack: skip all files under .../joo-api
+      && (module == null || FacetManager.getInstance(module).getFacetByType(getFacetType()) != null);
+  }
+
+  public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
+    if (!validateConfiguration(context)) {
+      return;
+    }
+    final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
+    final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
+
+    ApplicationManager.getApplication().runReadAction(new Runnable() {
+
+      public void run() {
+        for (Map.Entry<Module, List<VirtualFile>> filesOfModuleEntry : filesByModule.entrySet()) {
+          OutputSinkItem outputSinkItem = compile(context, filesOfModuleEntry.getKey(), filesOfModuleEntry.getValue());
+          if (outputSinkItem != null) {
+            outputs.add(outputSinkItem);
+          }
+        }
+      }
+
+    });
+    for (OutputSinkItem outputSinkItem : outputs) {
+      outputSinkItem.addTo(outputSink);
+    }
+  }
+
+  protected abstract OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files);
 
   protected boolean validateConfiguration(CompileContext context) {
     Module invalidModule = findInvalidModule(context.getCompileScope());
@@ -170,6 +232,17 @@ public abstract class AbstractCompiler implements com.intellij.openapi.compiler.
           addToClassOrSourcePath(dependentModule, classPath, sourcePath);
         }
       }
+    }
+  }
+
+  protected OutputSinkItem createGeneratedSourcesOutputSinkItem(CompileContext context, String generatedSourcesDirectory) {
+    try {
+      String generatedAs3RootDir = getOrCreateVirtualFile(generatedSourcesDirectory).getPath();
+      return new OutputSinkItem(generatedAs3RootDir);
+    } catch (IOException e) {
+      context.addMessage(CompilerMessageCategory.ERROR, "Target directory could not be created: " + generatedSourcesDirectory, null, -1, -1);
+      getLog().warn("Jangaroo: Generated sources target directory could not be created.", e);
+      return null;
     }
   }
 

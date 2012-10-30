@@ -14,15 +14,13 @@
  */
 package net.jangaroo.ide.idea;
 
-import com.intellij.compiler.impl.CompilerUtil;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.facet.FacetTypeId;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.module.Module;
-import com.intellij.util.Chunk;
 import net.jangaroo.ide.idea.util.CompilerLoader;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.api.CompilationResult;
@@ -36,7 +34,7 @@ import java.util.*;
 import java.io.File;
 
 /**
- *
+ * An IDEA wrapper for Jangaroo's ActionScript-to-JavaScript compiler "jooc".
  */
 public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
 
@@ -64,38 +62,7 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
     return "Jangaroo Compiler";
   }
 
-  public boolean isCompilableFile(VirtualFile file, CompileContext context) {
-    // Does not work due to ClassLoader problems:
-    // return JavaScriptSupportLoader.ECMA_SCRIPT_L4.equals(JavaScriptSupportLoader.getLanguageDialect(file));
-    return Jooc.AS_SUFFIX_NO_DOT.equals(file.getExtension())
-      && !file.getPath().contains("/joo-api/") // hack: skip all files under .../joo-api
-      && JangarooFacet.ofModule(context.getModuleByFile(file)) != null;
-  }
-
-  public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
-    if (!validateConfiguration(context)) {
-      return;
-    }
-    final Collection<OutputSinkItem> outputs = new ArrayList<OutputSinkItem>();
-    final Map<Module, List<VirtualFile>> filesByModule = CompilerUtil.buildModuleToFilesMap(context, files);
-
-    ApplicationManager.getApplication().runReadAction(new Runnable() {
-
-      public void run() {
-        for (Map.Entry<Module, List<VirtualFile>> filesOfModuleEntry : filesByModule.entrySet()) {
-          OutputSinkItem outputSinkItem = compile(context, filesOfModuleEntry.getKey(), filesOfModuleEntry.getValue());
-          if (outputSinkItem != null) {
-            outputs.add(outputSinkItem);
-          }
-        }
-      }
-
-    });
-    for (OutputSinkItem outputSinkItem : outputs) {
-      outputSinkItem.addTo(outputSink);
-    }
-  }
-
+  @Override
   protected OutputSinkItem compile(CompileContext context, Module module, final List<VirtualFile> files) {
     JoocConfiguration joocConfig = getJoocConfiguration(module, files);
     OutputSinkItem outputSinkItem = null;
@@ -105,25 +72,27 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
         outputSinkItem = new OutputSinkItem(outputDirectoryPath);
         IdeaCompileLog ideaCompileLog = new IdeaCompileLog(context);
         getLog().info("running " + getDescription() + "...");
-        CompilationResult result = runJooc(context, getJoocConfigurationBean(module).jangarooSdkName, joocConfig, ideaCompileLog);
+        JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
+        CompilationResult result = runJooc(context, joocConfigurationBean.jangarooSdkName, joocConfig, ideaCompileLog);
         if (result == null) {
           return null;
         }
+        Map<File, File> outputFileMap = result.getOutputFileMap();
         for (final VirtualFile file : files) {
           if (ideaCompileLog.hasErrors(file)) {
             outputSinkItem.addFileToRecompile(file);
           } else {
-            File outputFile = result.getOutputFileMap().get(VfsUtil.virtualToIoFile(file));
-            if (outputFile == null) {
-              getLog().warn("No compiler error logged for " + file + ", but still no output file was generated / mapped.");
-              outputSinkItem.addFileToRecompile(file);
-            } else {
+            File ioFile = VfsUtil.virtualToIoFile(file);
+            File outputFile = outputFileMap.get(ioFile);
+            if (outputFile != null) {
               outputSinkItem.addOutputItem(file, outputFile);
               String fileUrl = file.getUrl();
-              //if (joocConfig.showCompilerInfoMessages) {
-              //  context.addMessage(CompilerMessageCategory.INFORMATION, "as->js (" + outputFile.getPath() + ")", fileUrl, -1, -1);
-              //}
+              if (joocConfigurationBean.showCompilerInfoMessages) {
+                context.addMessage(CompilerMessageCategory.INFORMATION, "as->js (" + outputFile.getPath() + ")", fileUrl, -1, -1);
+              }
               getLog().info("as->js: " + fileUrl + " -> " + outputFile.getPath());
+            } else if (!outputFileMap.containsKey(ioFile)) {
+              getLog().warn("No compiler error logged for " + file + ", but still no output file was generated / mapped.");
             }
           }
         }
@@ -143,4 +112,16 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
     return outputSinkItem;
   }
 
+  protected String getInputFileSuffix() {
+    return Jooc.AS_SUFFIX_NO_DOT;
+  }
+
+  @Override
+  protected String getOutputFileSuffix() {
+    return "js";
+  }
+
+  protected FacetTypeId<JangarooFacet> getFacetType() {
+    return JangarooFacetType.ID;
+  }
 }
