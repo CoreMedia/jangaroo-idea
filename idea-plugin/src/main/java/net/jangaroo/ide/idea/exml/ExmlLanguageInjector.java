@@ -21,6 +21,7 @@ import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -113,7 +114,9 @@ public class ExmlLanguageInjector implements LanguageInjector {
           }
         }
       } catch (Throwable t) {
-        Logger.getInstance("ExmlLanguageInjector").error("While trying to inject AS3 into " + exmlFile.getPath() + ".", t);
+        if (!(t instanceof ProcessCanceledException)) {
+          Logger.getInstance("ExmlLanguageInjector").error("While trying to inject AS3 into " + exmlFile.getPath() + ".", t);
+        }
       }
     }
   }
