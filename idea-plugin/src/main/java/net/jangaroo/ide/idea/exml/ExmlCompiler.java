@@ -143,9 +143,26 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     return null;
   }
 
-  private static void addMessageForExmlcException(CompileContext context, ExmlcException e) {
-    VirtualFile file = e.getFile() == null ? null : LocalFileSystem.getInstance().findFileByIoFile(e.getFile());
-    context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), file==null ? null : file.getUrl(), e.getLine(), e.getColumn());
+  private static void addMessageForExmlcException(@NotNull CompileContext context, @NotNull ExmlcException e) {
+    // EXML compiler has the bad habit of wrapping ExmlcExceptions, but the line / column information may be contained
+    // in the wrapped exception, so collect the best info we can get:
+    File file = null;
+    int line = -1;
+    int column = -1;
+    for (Throwable current = e; current instanceof ExmlcException; current = current.getCause()) {
+      ExmlcException exmlcException = (ExmlcException)current;
+      if (exmlcException.getFile() != null) {
+        file = exmlcException.getFile();
+      }
+      if (exmlcException.getLine() != -1) {
+        line = exmlcException.getLine();
+      }
+      if (exmlcException.getColumn() != -1) {
+        column = exmlcException.getColumn();
+      }
+    }
+    VirtualFile virtualFile = file == null ? null : LocalFileSystem.getInstance().findFileByIoFile(file);
+    context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), virtualFile==null ? null : virtualFile.getUrl(), line, column);
   }
 
   private Exmlc getExmlc(String jangarooSdkName, ExmlConfiguration exmlConfiguration, CompileContext context) {
