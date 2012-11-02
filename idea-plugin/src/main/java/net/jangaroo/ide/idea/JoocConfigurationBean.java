@@ -36,6 +36,7 @@ public class JoocConfigurationBean {
   public String outputPrefix;
   public String outputDirectory = "target/jangaroo-output/joo/classes";
   public String apiOutputDirectory = "target/jangaroo-output/META-INF/joo-api";
+  public String testOutputDirectory = "target/jangaroo-test-output/joo/classes";
   public boolean showCompilerInfoMessages = false;
   public PublicApiViolationsMode publicApiViolationsMode;
 
@@ -64,6 +65,14 @@ public class JoocConfigurationBean {
 
   public File getApiOutputDirectory() {
     return apiOutputDirectory == null || apiOutputDirectory.length() == 0 ? null : new File(toPath(apiOutputDirectory));
+  }
+
+  public File getTestOutputDirectory() {
+    File testOutputDir = new File(toPath(testOutputDirectory));
+    if (!testOutputDir.isAbsolute() && outputPrefix != null && outputPrefix.length() > 0) {
+      testOutputDir = new File(outputPrefix + testOutputDir.getPath());
+    }
+    return testOutputDir;
   }
 
   @Override

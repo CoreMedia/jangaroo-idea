@@ -63,8 +63,8 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
   }
 
   @Override
-  protected OutputSinkItem compile(CompileContext context, Module module, final List<VirtualFile> files) {
-    JoocConfiguration joocConfig = getJoocConfiguration(module, files);
+  protected OutputSinkItem compile(CompileContext context, Module module, final List<VirtualFile> files, boolean forTests) {
+    JoocConfiguration joocConfig = getJoocConfiguration(module, files, forTests);
     OutputSinkItem outputSinkItem = null;
     if (joocConfig!=null) {
       String outputDirectoryPath = joocConfig.getOutputDirectory().getPath();

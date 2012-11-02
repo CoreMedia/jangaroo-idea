@@ -99,12 +99,12 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
   }
 
   @Override
-  protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files) {
+  protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files, boolean forTests) {
     ExmlcConfigurationBean exmlcConfigurationBean = getExmlConfig(module);
     JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
     ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
-    updateFileLocations(exmlConfiguration, module, files);
-    copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration);
+    updateFileLocations(exmlConfiguration, module, files, forTests);
+    copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration, forTests);
     Exmlc exmlc = getExmlc(joocConfigurationBean.jangarooSdkName, exmlConfiguration, context);
     if (exmlc == null) {
       return null;
@@ -167,8 +167,8 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     return Logger.getInstance("ExmlCompiler");
   }
 
-  private static void copyFromBeanToConfiguration(ExmlcConfigurationBean exmlcConfigurationBean, ExmlConfiguration exmlConfiguration) {
-    exmlConfiguration.setOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedSourcesDirectory())));
+  private static void copyFromBeanToConfiguration(ExmlcConfigurationBean exmlcConfigurationBean, ExmlConfiguration exmlConfiguration, boolean forTests) {
+    exmlConfiguration.setOutputDirectory(new File(toPath(forTests ? exmlcConfigurationBean.getGeneratedTestSourcesDirectory() : exmlcConfigurationBean.getGeneratedSourcesDirectory())));
     exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
   }

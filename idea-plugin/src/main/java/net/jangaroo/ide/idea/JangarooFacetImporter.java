@@ -172,6 +172,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
     // "debug" (boolean; true), "debuglevel" ("none", "lines", "source"; "source")
     boolean isWar = "war".equals(mavenProjectModel.getPackaging());
+
     String outputDirectory = findConfigValue(mavenProjectModel, "outputDirectory");
     if (outputDirectory == null) {
       outputDirectory = isWar ? "target/jangaroo-output" : mavenProjectModel.getOutputDirectory();
@@ -180,14 +181,27 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!outputDir.isAbsolute()) {
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
+
     String jooClassesPath = "joo/classes";
     boolean isJangaroo2 = jangarooSdkVersion.startsWith("2.");
     if (isJangaroo2 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesPath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
+
     String apiOutputDirectory = getConfigurationValue(mavenProjectModel, "apiOutputDirectory", null);
     jooConfig.apiOutputDirectory = isWar ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
+
+    String testOutputDirectory = findConfigValue(mavenProjectModel, "testOutputDirectory");
+    if (testOutputDirectory == null) {
+      testOutputDirectory = isWar ? "target/jangaroo-test-output" : mavenProjectModel.getTestOutputDirectory();
+    }
+    File testOutputDir = new File(testOutputDirectory);
+    if (!testOutputDir.isAbsolute()) {
+      testOutputDir = new File(mavenProjectModel.getDirectory(), testOutputDirectory);
+    }
+    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, "joo/classes").getAbsolutePath());
+
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.valueOf(publicApiViolationsMode.toUpperCase());

@@ -17,7 +17,10 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.DependencyScope;
+import com.intellij.openapi.roots.ExportableOrderEntry;
 import com.intellij.openapi.roots.LibraryOrderEntry;
+import com.intellij.openapi.roots.ModuleFileIndex;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ModuleSourceOrderEntry;
@@ -126,6 +129,17 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
       && (module == null || FacetManager.getInstance(module).getFacetByType(getFacetType()) != null);
   }
 
+  private static List<VirtualFile> filterTestSources(Module module, List<VirtualFile> files, boolean forTests) {
+    ModuleFileIndex moduleFileIndex = ModuleRootManager.getInstance(module).getFileIndex();
+    ArrayList<VirtualFile> result = new ArrayList<VirtualFile>();
+    for (VirtualFile file : files) {
+      if (moduleFileIndex.isInTestSourceContent(file) == forTests) {
+        result.add(file);
+      }
+    }
+    return result;
+  }
+
   public void compile(final CompileContext context, Chunk<Module> moduleChunk, final VirtualFile[] files, final OutputSink outputSink) {
     if (!validateConfiguration(context)) {
       return;
@@ -137,10 +151,10 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
 
       public void run() {
         for (Map.Entry<Module, List<VirtualFile>> filesOfModuleEntry : filesByModule.entrySet()) {
-          OutputSinkItem outputSinkItem = compile(context, filesOfModuleEntry.getKey(), filesOfModuleEntry.getValue());
-          if (outputSinkItem != null) {
-            outputs.add(outputSinkItem);
-          }
+          Module module = filesOfModuleEntry.getKey();
+          List<VirtualFile> files = filesOfModuleEntry.getValue();
+          compile(context, module, files, false, outputs);
+          compile(context, module, files, true, outputs);
         }
       }
 
@@ -150,7 +164,14 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     }
   }
 
-  protected abstract OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files);
+  private void compile(CompileContext context, Module module, List<VirtualFile> files, boolean forTests, Collection<OutputSinkItem> outputs) {
+    OutputSinkItem outputSinkItem = compile(context, module, filterTestSources(module, files, forTests), forTests);
+    if (outputSinkItem != null) {
+      outputs.add(outputSinkItem);
+    }
+  }
+
+  protected abstract OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files, boolean forTests);
 
   protected boolean validateConfiguration(CompileContext context) {
     Module invalidModule = findInvalidModule(context.getCompileScope());
@@ -181,7 +202,7 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     return null;
   }
 
-  protected JoocConfiguration getJoocConfiguration(Module module, List<VirtualFile> virtualSourceFiles) {
+  protected JoocConfiguration getJoocConfiguration(Module module, List<VirtualFile> virtualSourceFiles, boolean forTests) {
     JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
     if (joocConfigurationBean==null) {
       return null;
@@ -191,10 +212,10 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     joocConfig.setDebugMode(joocConfigurationBean.isDebug() ? joocConfigurationBean.isDebugSource() ? DebugMode.SOURCE : DebugMode.LINES : null);
     joocConfig.setAllowDuplicateLocalVariables(joocConfigurationBean.allowDuplicateLocalVariables);
     joocConfig.setEnableAssertions(joocConfigurationBean.enableAssertions);
-    joocConfig.setApiOutputDirectory(joocConfigurationBean.getApiOutputDirectory());
-    updateFileLocations(joocConfig, module, virtualSourceFiles);
+    joocConfig.setApiOutputDirectory(forTests ? null : joocConfigurationBean.getApiOutputDirectory());
+    updateFileLocations(joocConfig, module, virtualSourceFiles, forTests);
     joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
-    joocConfig.setOutputDirectory(joocConfigurationBean.getOutputDirectory());
+    joocConfig.setOutputDirectory(forTests ? joocConfigurationBean.getTestOutputDirectory() : joocConfigurationBean.getOutputDirectory());
     //joocConfig.showCompilerInfoMessages = joocConfigurationBean.showCompilerInfoMessages;
     joocConfig.setPublicApiViolationsMode(joocConfigurationBean.publicApiViolationsMode);
     return joocConfig;
@@ -205,10 +226,10 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     return jangarooFacet==null ? null : jangarooFacet.getConfiguration().getState();
   }
 
-  protected void updateFileLocations(FileLocations fileLocations, Module module, List<VirtualFile> virtualSourceFiles) {
+  protected void updateFileLocations(FileLocations fileLocations, Module module, List<VirtualFile> virtualSourceFiles, boolean forTests) {
     Collection<File> classPath = new LinkedHashSet<File>();
     Collection<File> sourcePath = new LinkedHashSet<File>();
-    addToClassOrSourcePath(module, classPath, sourcePath);
+    addToClassOrSourcePath(module, classPath, sourcePath, forTests);
     fileLocations.setClassPath(new ArrayList<File>(classPath));
     try {
       fileLocations.setSourcePath(new ArrayList<File>(sourcePath));
@@ -219,17 +240,24 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     fileLocations.setSourceFiles(sourceFiles);
   }
 
-  private void addToClassOrSourcePath(Module module, Collection<File> classPath, Collection<File> sourcePath) {
-    for (OrderEntry orderEntry : ModuleRootManager.getInstance(module).getOrderEntries()) {
+  private void addToClassOrSourcePath(Module module, Collection<File> classPath, Collection<File> sourcePath, boolean forTests) {
+    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+    for (OrderEntry orderEntry : moduleRootManager.getOrderEntries()) {
       if (orderEntry instanceof ModuleSourceOrderEntry) {
-        // TODO: to filter out test sources, we could use moduleRootManager.getFileIndex().isInTestSourceContent(<virtualFile>)
-        sourcePath.addAll(virtualToIoFiles(Arrays.asList(((ModuleSourceOrderEntry)orderEntry).getRootModel().getSourceRoots())));
+        VirtualFile[] sourceRoots = ((ModuleSourceOrderEntry)orderEntry).getRootModel().getSourceRoots();
+        for (VirtualFile sourceRoot : sourceRoots) {
+          if (forTests || !moduleRootManager.getFileIndex().isInTestSourceContent(sourceRoot)) {
+            sourcePath.add(VfsUtil.virtualToIoFile(sourceRoot));
+          }
+        }
       } else if (orderEntry instanceof LibraryOrderEntry) {
-        classPath.addAll(virtualToIoFiles(Arrays.asList(((LibraryOrderEntry)orderEntry).getRootFiles(OrderRootType.CLASSES_AND_OUTPUT))));
+        if (forTests || ((ExportableOrderEntry)orderEntry).getScope() != DependencyScope.TEST) {
+          classPath.addAll(virtualToIoFiles(Arrays.asList(((LibraryOrderEntry)orderEntry).getRootFiles(OrderRootType.CLASSES))));
+        }
       } else if (orderEntry instanceof ModuleOrderEntry) {
         Module dependentModule = ((ModuleOrderEntry)orderEntry).getModule();
         if (dependentModule != null) {
-          addToClassOrSourcePath(dependentModule, classPath, sourcePath);
+          addToClassOrSourcePath(dependentModule, classPath, sourcePath, forTests);
         }
       }
     }

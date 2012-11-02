@@ -46,6 +46,7 @@ public class JangarooFacetEditorTabUI {
   private JCheckBox allowDuplicateVariableCheckBox;
   private TextFieldWithBrowseButton outputDirTextField;
   private TextFieldWithBrowseButton apiOutputDirTextField;
+  private TextFieldWithBrowseButton testOutputDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JangarooSdkComboBoxWithBrowseButton jangarooSdkComboBoxWithBrowseButton;
   private ButtonGroup publicApiViolationsButtonGroup;
@@ -56,6 +57,7 @@ public class JangarooFacetEditorTabUI {
   private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+  private static final FileChooserDescriptor TEST_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
     COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo compiler JAR location.");
@@ -64,12 +66,16 @@ public class JangarooFacetEditorTabUI {
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place JavaScript files containing compiled ActionScript classes.");
     API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo API Output Directory");
     API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place generated ActionScript API files.");
+    TEST_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo Test Output Directory");
+    TEST_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place JavaScript files containing compiled ActionScript test classes.");
   }
 
   public JangarooFacetEditorTabUI() {
     outputDirTextField.addBrowseFolderListener(null,null, null, OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
     apiOutputDirTextField.addBrowseFolderListener(null,null, null, API_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
+      TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
+    testOutputDirTextField.addBrowseFolderListener(null,null, null, TEST_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
   }
 
@@ -112,6 +118,7 @@ public class JangarooFacetEditorTabUI {
     allowDuplicateVariableCheckBox.setSelected(data.allowDuplicateLocalVariables);
     outputDirTextField.setText(toPath(data.outputDirectory));
     apiOutputDirTextField.setText(toPath(data.apiOutputDirectory));
+    testOutputDirTextField.setText(toPath(data.testOutputDirectory));
     showCompilerInfoMessages.setSelected(data.showCompilerInfoMessages);
     publicApiViolationsButtonGroup.setSelected(
       (   data.publicApiViolationsMode == PublicApiViolationsMode.ERROR ? publicApiViolationsErrorRadioButton
@@ -131,6 +138,7 @@ public class JangarooFacetEditorTabUI {
     data.allowDuplicateLocalVariables = allowDuplicateVariableCheckBox.isSelected();
     data.outputDirectory = toIdeaUrl(outputDirTextField.getText());
     data.apiOutputDirectory = toIdeaUrl(apiOutputDirTextField.getText());
+    data.testOutputDirectory = toIdeaUrl(testOutputDirTextField.getText());
     data.showCompilerInfoMessages = showCompilerInfoMessages.isSelected();
     ButtonModel publicApiViolationsSelection = publicApiViolationsButtonGroup.getSelection();
     data.publicApiViolationsMode =

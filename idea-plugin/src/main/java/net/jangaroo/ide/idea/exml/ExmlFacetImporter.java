@@ -82,8 +82,8 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     //System.out.println("reimportFacet called!");
     ExmlFacetConfiguration exmlFacetConfiguration = exmlFacet.getConfiguration();
     ExmlcConfigurationBean exmlConfig = exmlFacetConfiguration.getState();
-    exmlConfig.setSourceDirectory(toIdeaUrl(mavenProjectModel.getSources().get(0)));
     exmlConfig.setGeneratedSourcesDirectory(toIdeaUrl(mavenProjectModel.getGeneratedSourcesDirectory(false) + "/joo"));
+    exmlConfig.setGeneratedTestSourcesDirectory(toIdeaUrl(mavenProjectModel.getGeneratedSourcesDirectory(true) + "/joo"));
     exmlConfig.setGeneratedResourcesDirectory(toIdeaUrl(getTargetOutputPath(mavenProjectModel, "generated-resources")));
     String configClassPackage = getConfigurationValue(mavenProjectModel, "configClassPackage", "");
     exmlConfig.setConfigClassPackage(configClassPackage);

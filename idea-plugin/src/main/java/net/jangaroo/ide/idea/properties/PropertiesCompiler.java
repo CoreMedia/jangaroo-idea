@@ -94,7 +94,7 @@ public class PropertiesCompiler extends AbstractCompiler implements Intermediate
     return propc;
   }
 
-  protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files) {
+  protected OutputSinkItem compile(CompileContext context, Module module, List<VirtualFile> files, boolean forTests) {
     JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
     if (joocConfigurationBean == null) {
       return null;
@@ -104,7 +104,7 @@ public class PropertiesCompiler extends AbstractCompiler implements Intermediate
       return null;
     }
     FileLocations exmlConfiguration = new FileLocations();
-    updateFileLocations(exmlConfiguration, module, files);
+    updateFileLocations(exmlConfiguration, module, files, forTests);
     String generatedSourcesDirectory = toPath(exmlcConfigurationBean.getGeneratedSourcesDirectory());
     exmlConfiguration.setOutputDirectory(new File(generatedSourcesDirectory));
     Propc generator = getPropc(joocConfigurationBean.jangarooSdkName, exmlConfiguration, context);

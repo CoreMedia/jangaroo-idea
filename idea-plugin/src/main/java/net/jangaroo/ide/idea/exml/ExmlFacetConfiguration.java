@@ -39,7 +39,7 @@ public class ExmlFacetConfiguration implements FacetConfiguration, PersistentSta
   }
 
   private synchronized ExmlcConfigurationBean initExmlcConfigurationBean(@NotNull FacetEditorContext facetEditorContext) {
-    if (exmlcConfigurationBean.getSourceDirectory() == null) {
+    if (exmlcConfigurationBean.getGeneratedSourcesDirectory() == null) {
       ModuleRootModel rootModel = facetEditorContext.getRootModel();
       VirtualFile[] contentRoots = rootModel.getContentRoots();
       if (contentRoots.length > 0) {

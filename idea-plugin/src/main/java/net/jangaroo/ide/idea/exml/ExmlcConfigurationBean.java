@@ -14,21 +14,15 @@
  */
 package net.jangaroo.ide.idea.exml;
 
-import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.ide.idea.util.IdeaFileUtils;
 
 /**
  * IDEA serialization adapter of JoocConfiguration. 
  */
 public class ExmlcConfigurationBean {
-  private static final String DEFAULT_SOURCE_DIRECTORY = "src/main/joo";
   private static final String DEFAULT_GENERATED_SOURCES_DIRECTORY = "target/generated-sources/joo";
+  private static final String DEFAULT_GENERATED_TEST_SOURCES_DIRECTORY = "target/generated-test-sources/joo";
   private static final String DEFAULT_GENERATED_RESOURCES_DIRECTORY = "target/generated-resources/joo";
-
-  /**
-   * Source directory to scan for files to compile.
-   */
-  private String sourceDirectory;
 
   /**
    * The namespace of the component suite
@@ -39,6 +33,11 @@ public class ExmlcConfigurationBean {
    * Output directory for all ActionScript3 files generated out of exml components
    */
   private String generatedSourcesDirectory;
+
+  /**
+   * Output directory for all ActionScript3 files generated out of exml test components
+   */
+  private String generatedTestSourcesDirectory;
 
   /**
    * The directory where to generate the XSD Schema for this component suite.
@@ -52,8 +51,8 @@ public class ExmlcConfigurationBean {
 
   public void init(String outputPrefix) {
     if (outputPrefix != null) {
-      sourceDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_SOURCE_DIRECTORY);
       generatedSourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_SOURCES_DIRECTORY);
+      generatedTestSourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_TEST_SOURCES_DIRECTORY);
       generatedResourcesDirectory = IdeaFileUtils.toIdeaUrl(outputPrefix + "/" + DEFAULT_GENERATED_RESOURCES_DIRECTORY);
     }
   }
@@ -66,24 +65,12 @@ public class ExmlcConfigurationBean {
     this.showCompilerInfoMessages = showCompilerInfoMessages;
   }
 
-  public String getSourceDirectory() {
-    return sourceDirectory;
-  }
-
-  public void setSourceDirectory(String sourceDirectory) {
-    this.sourceDirectory = sourceDirectory;
-  }
-
   public String getConfigClassPackage() {
     return configClassPackage;
   }
 
   public void setConfigClassPackage(String configClassPackage) {
     this.configClassPackage = configClassPackage;
-  }
-
-  public String getNamespace() {
-    return Exmlc.EXML_CONFIG_URI_PREFIX + getConfigClassPackage();
   }
 
   public String getGeneratedSourcesDirectory() {
@@ -94,8 +81,12 @@ public class ExmlcConfigurationBean {
     this.generatedSourcesDirectory = generatedSourcesDirectory;
   }
 
-  public String getXsd() {
-    return getConfigClassPackage() + ".xsd";
+  public String getGeneratedTestSourcesDirectory() {
+    return generatedTestSourcesDirectory;
+  }
+
+  public void setGeneratedTestSourcesDirectory(String generatedTestSourcesDirectory) {
+    this.generatedTestSourcesDirectory = generatedTestSourcesDirectory;
   }
 
   public String getGeneratedResourcesDirectory() {
@@ -104,10 +95,6 @@ public class ExmlcConfigurationBean {
 
   public void setGeneratedResourcesDirectory(String generatedResourcesDirectory) {
     this.generatedResourcesDirectory = generatedResourcesDirectory;
-  }
-
-  public String getXsdFilename() {
-    return getGeneratedResourcesDirectory() + "/" + getXsd();
   }
 
   @Override
@@ -121,7 +108,7 @@ public class ExmlcConfigurationBean {
       return false;
     if (generatedSourcesDirectory != null ? !generatedSourcesDirectory.equals(that.generatedSourcesDirectory) : that.generatedSourcesDirectory != null)
       return false;
-    if (sourceDirectory != null ? !sourceDirectory.equals(that.sourceDirectory) : that.sourceDirectory != null)
+    if (generatedTestSourcesDirectory != null ? !generatedTestSourcesDirectory.equals(that.generatedTestSourcesDirectory) : that.generatedTestSourcesDirectory != null)
       return false;
     if (configClassPackage != null ? !configClassPackage.equals(that.configClassPackage) : that.configClassPackage != null)
       return false;
@@ -131,7 +118,7 @@ public class ExmlcConfigurationBean {
 
   @Override
   public int hashCode() {
-    int result = sourceDirectory != null ? sourceDirectory.hashCode() : 0;
+    int result = generatedTestSourcesDirectory != null ? generatedTestSourcesDirectory.hashCode() : 0;
     result = 31 * result + (generatedSourcesDirectory != null ? generatedSourcesDirectory.hashCode() : 0);
     result = 31 * result + (configClassPackage != null ? configClassPackage.hashCode() : 0);
     result = 31 * result + (generatedResourcesDirectory != null ? generatedResourcesDirectory.hashCode() : 0);

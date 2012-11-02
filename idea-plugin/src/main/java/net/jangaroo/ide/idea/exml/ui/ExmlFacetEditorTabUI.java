@@ -30,30 +30,31 @@ import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
  */
 public class ExmlFacetEditorTabUI {
   private JPanel rootComponent;
-  private TextFieldWithBrowseButton sourceDirTextField;
   private TextFieldWithBrowseButton generatedSourcesDirTextField;
+  private TextFieldWithBrowseButton generatedTestSourcesDirTextField;
   private TextFieldWithBrowseButton generatedResourcesDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JTextField configClassesPackageTextField;
 
-  private static final FileChooserDescriptor SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+  private static final FileChooserDescriptor GENERATED_TEST_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
-    SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Source Directory");
-    SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should read *.exml files containing component descriptions.");
     GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Generated Sources Directory");
     GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should store the *.as files created from *.exml. "+
       "This should be a source directory, so that the Jangaroo Language plugin finds and compiles these classes.");
+    GENERATED_TEST_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Generated Test Sources Directory");
+    GENERATED_TEST_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should store the *.as files created from test *.exml. "+
+      "This should be a test source directory, so that the Jangaroo Language plugin finds and compiles these classes.");
     GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose EXML Schema Directory");
     GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where EXML should store the generated *.xsd file.");
   }
 
   public ExmlFacetEditorTabUI() {
-    sourceDirTextField.addBrowseFolderListener(null,null, null, SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
-      TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
     generatedSourcesDirTextField.addBrowseFolderListener(null,null, null, GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
+      TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
+    generatedTestSourcesDirTextField.addBrowseFolderListener(null,null, null, GENERATED_TEST_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
     generatedResourcesDirTextField.addBrowseFolderListener(null,null, null, GENERATED_RESOURCE_DIRECTORY_CHOOSER_DESCRIPTOR,
       TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
@@ -64,16 +65,16 @@ public class ExmlFacetEditorTabUI {
   }
 
   public void setData(ExmlcConfigurationBean data) {
-    sourceDirTextField.setText(toPath(data.getSourceDirectory()));
     generatedSourcesDirTextField.setText(toPath(data.getGeneratedSourcesDirectory()));
+    generatedTestSourcesDirTextField.setText(toPath(data.getGeneratedTestSourcesDirectory()));
     generatedResourcesDirTextField.setText(toPath(data.getGeneratedResourcesDirectory()));
     configClassesPackageTextField.setText(data.getConfigClassPackage());
     showCompilerInfoMessages.setSelected(data.isShowCompilerInfoMessages());
   }
 
   public ExmlcConfigurationBean getData(ExmlcConfigurationBean data) {
-    data.setSourceDirectory(toIdeaUrl(sourceDirTextField.getText()));
     data.setGeneratedSourcesDirectory(toIdeaUrl(generatedSourcesDirTextField.getText()));
+    data.setGeneratedTestSourcesDirectory(toIdeaUrl(generatedTestSourcesDirTextField.getText()));
     data.setGeneratedResourcesDirectory(toIdeaUrl(generatedResourcesDirTextField.getText()));
     data.setConfigClassPackage(configClassesPackageTextField.getText());
     data.setShowCompilerInfoMessages(showCompilerInfoMessages.isSelected());
