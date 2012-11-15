@@ -18,6 +18,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import net.jangaroo.exml.config.ValidationMode;
 import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
 
 import javax.swing.*;
@@ -35,6 +36,10 @@ public class ExmlFacetEditorTabUI {
   private TextFieldWithBrowseButton generatedResourcesDirTextField;
   private JCheckBox showCompilerInfoMessages;
   private JTextField configClassesPackageTextField;
+  private ButtonGroup validationModeButtonGroup;
+  private JRadioButton validationModeErrorRadioButton;
+  private JRadioButton validationModeWarnRadioButton;
+  private JRadioButton validationModeOffRadioButton;
 
   private static final FileChooserDescriptor GENERATED_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
   private static final FileChooserDescriptor GENERATED_TEST_SOURCE_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
@@ -70,6 +75,10 @@ public class ExmlFacetEditorTabUI {
     generatedResourcesDirTextField.setText(toPath(data.getGeneratedResourcesDirectory()));
     configClassesPackageTextField.setText(data.getConfigClassPackage());
     showCompilerInfoMessages.setSelected(data.isShowCompilerInfoMessages());
+    validationModeButtonGroup.setSelected(
+      (data.validationMode == ValidationMode.ERROR ? validationModeErrorRadioButton
+        : data.validationMode == ValidationMode.WARN ? validationModeWarnRadioButton
+        : validationModeOffRadioButton).getModel(), true);
   }
 
   public ExmlcConfigurationBean getData(ExmlcConfigurationBean data) {
@@ -78,6 +87,11 @@ public class ExmlFacetEditorTabUI {
     data.setGeneratedResourcesDirectory(toIdeaUrl(generatedResourcesDirTextField.getText()));
     data.setConfigClassPackage(configClassesPackageTextField.getText());
     data.setShowCompilerInfoMessages(showCompilerInfoMessages.isSelected());
+    ButtonModel validationModeSelection = validationModeButtonGroup.getSelection();
+    data.validationMode =
+        validationModeErrorRadioButton.getModel().equals(validationModeSelection) ? ValidationMode.ERROR
+      : validationModeWarnRadioButton .getModel().equals(validationModeSelection) ? ValidationMode.WARN
+                                                                                  : ValidationMode.OFF;
     return data;
   }
 

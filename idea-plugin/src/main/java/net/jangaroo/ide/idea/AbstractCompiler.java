@@ -17,7 +17,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.roots.DependencyScope;
 import com.intellij.openapi.roots.ExportableOrderEntry;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleFileIndex;
@@ -229,7 +228,7 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
   protected void updateFileLocations(FileLocations fileLocations, Module module, List<VirtualFile> virtualSourceFiles, boolean forTests) {
     Collection<File> classPath = new LinkedHashSet<File>();
     Collection<File> sourcePath = new LinkedHashSet<File>();
-    addToClassOrSourcePath(module, classPath, sourcePath, forTests);
+    addToClassOrSourcePath(module, true, classPath, sourcePath, forTests);
     fileLocations.setClassPath(new ArrayList<File>(classPath));
     try {
       fileLocations.setSourcePath(new ArrayList<File>(sourcePath));
@@ -240,24 +239,33 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     fileLocations.setSourceFiles(sourceFiles);
   }
 
-  private void addToClassOrSourcePath(Module module, Collection<File> classPath, Collection<File> sourcePath, boolean forTests) {
+  private void addToClassOrSourcePath(Module module, boolean sourceModule, Collection<File> classPath, Collection<File> sourcePath, boolean forTests) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     for (OrderEntry orderEntry : moduleRootManager.getOrderEntries()) {
+      if (orderEntry instanceof ExportableOrderEntry) {
+        switch (((ExportableOrderEntry)orderEntry).getScope()) {
+          case RUNTIME:
+            continue;
+          case TEST:
+            if (!forTests) {
+              continue;
+            }
+          // PROVIDED, COMPILE: add to path!
+        }
+      }
       if (orderEntry instanceof ModuleSourceOrderEntry) {
         VirtualFile[] sourceRoots = ((ModuleSourceOrderEntry)orderEntry).getRootModel().getSourceRoots();
         for (VirtualFile sourceRoot : sourceRoots) {
           if (forTests || !moduleRootManager.getFileIndex().isInTestSourceContent(sourceRoot)) {
-            sourcePath.add(VfsUtil.virtualToIoFile(sourceRoot));
+            (sourceModule ? sourcePath : classPath).add(VfsUtil.virtualToIoFile(sourceRoot));
           }
         }
       } else if (orderEntry instanceof LibraryOrderEntry) {
-        if (forTests || ((ExportableOrderEntry)orderEntry).getScope() != DependencyScope.TEST) {
-          classPath.addAll(virtualToIoFiles(Arrays.asList(((LibraryOrderEntry)orderEntry).getRootFiles(OrderRootType.CLASSES))));
-        }
+        classPath.addAll(virtualToIoFiles(Arrays.asList(((LibraryOrderEntry)orderEntry).getRootFiles(OrderRootType.CLASSES))));
       } else if (orderEntry instanceof ModuleOrderEntry) {
         Module dependentModule = ((ModuleOrderEntry)orderEntry).getModule();
         if (dependentModule != null) {
-          addToClassOrSourcePath(dependentModule, classPath, sourcePath, forTests);
+          addToClassOrSourcePath(dependentModule, false, classPath, sourcePath, forTests);
         }
       }
     }
@@ -278,7 +286,7 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     private CompileContext compileContext;
     private Set<VirtualFile> filesWithErrors;
 
-    protected IdeaCompileLog(CompileContext compileContext) {
+    public IdeaCompileLog(CompileContext compileContext) {
       this.compileContext = compileContext;
       filesWithErrors = new HashSet<VirtualFile>();
     }

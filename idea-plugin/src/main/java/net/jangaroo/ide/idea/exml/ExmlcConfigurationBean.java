@@ -14,6 +14,7 @@
  */
 package net.jangaroo.ide.idea.exml;
 
+import net.jangaroo.exml.config.ValidationMode;
 import net.jangaroo.ide.idea.util.IdeaFileUtils;
 
 /**
@@ -45,6 +46,8 @@ public class ExmlcConfigurationBean {
   private String generatedResourcesDirectory;
 
   private boolean showCompilerInfoMessages;
+
+  public ValidationMode validationMode = ValidationMode.OFF;
 
   public ExmlcConfigurationBean() {
   }
@@ -112,6 +115,8 @@ public class ExmlcConfigurationBean {
       return false;
     if (configClassPackage != null ? !configClassPackage.equals(that.configClassPackage) : that.configClassPackage != null)
       return false;
+    if (validationMode != that.validationMode)
+      return false;
     //noinspection SimplifiableIfStatement
     return showCompilerInfoMessages == that.showCompilerInfoMessages;
   }
@@ -123,6 +128,7 @@ public class ExmlcConfigurationBean {
     result = 31 * result + (configClassPackage != null ? configClassPackage.hashCode() : 0);
     result = 31 * result + (generatedResourcesDirectory != null ? generatedResourcesDirectory.hashCode() : 0);
     result = 31 * result + (showCompilerInfoMessages ? 1 : 0);
+    result = 31 * result + validationMode.hashCode();
     return result;
   }
 

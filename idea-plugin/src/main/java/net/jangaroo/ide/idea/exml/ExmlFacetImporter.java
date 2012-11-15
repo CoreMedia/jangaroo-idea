@@ -1,12 +1,16 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.javaee.ExternalResourceManager;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import net.jangaroo.exml.api.Exmlc;
+import net.jangaroo.exml.config.ValidationMode;
 import net.jangaroo.utils.CompilerUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.jdom.Element;
@@ -87,6 +91,16 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     exmlConfig.setGeneratedResourcesDirectory(toIdeaUrl(getTargetOutputPath(mavenProjectModel, "generated-resources")));
     String configClassPackage = getConfigurationValue(mavenProjectModel, "configClassPackage", "");
     exmlConfig.setConfigClassPackage(configClassPackage);
+    String validationMode = getConfigurationValue(mavenProjectModel, "validationMode", "off");
+    try {
+      exmlConfig.validationMode = ValidationMode.valueOf(validationMode.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      Notifications.Bus.notify(new Notification("Maven", "Invalid Jangaroo EXML Configuration",
+        "Illegal value for &lt;validationMode>: '" + validationMode + "' in Maven POM " +
+          mavenProjectModel.getDisplayName() +", falling back to 'off'.",
+        NotificationType.WARNING));
+      exmlConfig.validationMode = ValidationMode.OFF;
+    }
 
     final Map<String, String> resourceMap = getXsdResourcesOfModule(module);
     ApplicationManager.getApplication().invokeLater(new Runnable() {

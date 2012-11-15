@@ -104,6 +104,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     JoocConfigurationBean joocConfigurationBean = getJoocConfigurationBean(module);
     ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
     updateFileLocations(exmlConfiguration, module, files, forTests);
+    exmlConfiguration.setLog(new IdeaCompileLog(context));
     copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration, forTests);
     Exmlc exmlc = getExmlc(joocConfigurationBean.jangarooSdkName, exmlConfiguration, context);
     if (exmlc == null) {
@@ -188,6 +189,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     exmlConfiguration.setOutputDirectory(new File(toPath(forTests ? exmlcConfigurationBean.getGeneratedTestSourcesDirectory() : exmlcConfigurationBean.getGeneratedSourcesDirectory())));
     exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
+    exmlConfiguration.setValidationMode(exmlcConfigurationBean.validationMode);
   }
 
 }
