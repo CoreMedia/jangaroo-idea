@@ -141,7 +141,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       if (table != null) {
         for (Library library : table.getLibraries()) {
           String libraryName = library.getName();
-          if (libraryName != null && libraryName.contains(":jangaroo:")) {
+          if (libraryName != null) {
             VirtualFile[] files = library.getFiles(OrderRootType.SOURCES);
             for (VirtualFile file : files) {
               if (file.getPath().endsWith(".jar!/")) {
