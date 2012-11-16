@@ -4,7 +4,6 @@ import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttribute;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
@@ -13,7 +12,6 @@ import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -31,9 +29,8 @@ import net.jangaroo.exml.utils.ExmlUtils;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * A custom XmlElementDescriptorProvider to support navigation from component/attribute elements to
@@ -129,33 +126,28 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       String exmlFileName = className.replace('.', '/') + Exmlc.EXML_SUFFIX;
       Module[] modules = ModuleManager.getInstance(project).getModules();
       for (Module module : modules) {
-        VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getSourceRoots();
-        for (VirtualFile contentRoot : contentRoots) {
-          VirtualFile exmlFile = contentRoot.findFileByRelativePath(exmlFileName);
-          if (exmlFile != null) {
-            return exmlFile;
-          }
+        VirtualFile exmlFile = findExmlFile(ModuleRootManager.getInstance(module).getSourceRoots(), exmlFileName);
+        if (exmlFile != null) {
+          return exmlFile;
         }
       }
       LibraryTable table = LibraryTablesRegistrar.getInstance().getLibraryTableByLevel(LibraryTablesRegistrar.PROJECT_LEVEL, project);
       if (table != null) {
         for (Library library : table.getLibraries()) {
-          String libraryName = library.getName();
-          if (libraryName != null) {
-            VirtualFile[] files = library.getFiles(OrderRootType.SOURCES);
-            for (VirtualFile file : files) {
-              if (file.getPath().endsWith(".jar!/")) {
-                try {
-                  VirtualFile fileInJar = VfsUtil.findFileByURL(new URL(VfsUtil.fixIDEAUrl(file.getUrl() + exmlFileName)));
-                  if (fileInJar != null) {
-                    return fileInJar;
-                  }
-                } catch (MalformedURLException e) {
-                  Logger.getInstance(ComponentXmlElementDescriptorProvider.class.getName()).error("Error while peeking into library jar file " + file.getPath() + ": " + e);
-                }
-              }
-            }
+          VirtualFile exmlFile = findExmlFile(library.getFiles(OrderRootType.SOURCES), exmlFileName);
+          if (exmlFile != null) {
+            return exmlFile;
           }
+        }
+      }
+      return null;
+    }
+
+    private static @Nullable VirtualFile findExmlFile(@NotNull VirtualFile[] sourceRoots, @NotNull String exmlFileName) {
+      for (VirtualFile contentRoot : sourceRoots) {
+        VirtualFile exmlFile = contentRoot.findFileByRelativePath(exmlFileName);
+        if (exmlFile != null) {
+          return exmlFile;
         }
       }
       return null;
