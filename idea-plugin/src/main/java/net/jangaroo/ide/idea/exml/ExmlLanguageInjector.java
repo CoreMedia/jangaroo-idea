@@ -18,7 +18,10 @@ import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSParameter;
+import com.intellij.lang.javascript.psi.JSVariable;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
+import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
+import com.intellij.lang.javascript.psi.resolve.ResolveProcessor;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -34,6 +37,7 @@ import com.intellij.psi.LiteralTextEscaper;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLanguageInjectionHost;
+import com.intellij.psi.ResolveState;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
@@ -204,7 +208,12 @@ public class ExmlLanguageInjector implements LanguageInjector {
             XmlTag attributeTag = parentTag.getParentTag();
             if (attributeTag != null) {
               attributeName = attributeTag.getLocalName();
-              xmlTag = attributeTag.getParentTag();
+              if (attributeTag.getSubTags().length > 1) {
+                // the code inside the <exml:object> element is wrapped by an Array: do not check the type!
+                xmlTag = null;
+              } else {
+                xmlTag = attributeTag.getParentTag();
+              }
             }
           }
         }
@@ -227,7 +236,33 @@ public class ExmlLanguageInjector implements LanguageInjector {
                   String configClassNameCandidate = parameters[0].getType().getResolvedTypeText();
                   if (!"Object".equals(configClassNameCandidate)) {
                     attributeConfigClassName = configClassNameCandidate;
+                    asClass = AbstractCompiler.getASClass(module.getProject(), attributeConfigClassName);
                   }
+                }
+              }
+            }
+            if (attributeValue instanceof XmlText && asClass != null) {
+              // check whether type of config attribute is "Array", then disable type check as Arrays can hold anything:
+              // find declaration of "attributeName" get or set method:
+              ResolveProcessor propertyResolveProcessor = new ResolveProcessor(attributeName);
+              propertyResolveProcessor.setToProcessHierarchy(true);
+              propertyResolveProcessor.setToProcessMembers(true);
+              if (!asClass.processDeclarations(propertyResolveProcessor, ResolveState.initial(), asClass, asClass)) {
+                PsiElement result = propertyResolveProcessor.getResult();
+                final String propertyType;
+                if (result instanceof JSFunction) {
+                  JSFunction method = (JSFunction)result;
+                  propertyType = method.isSetProperty() ? JSResolveUtil.getTypeFromSetAccessor(method)
+                    : method.getReturnTypeString();
+                } else if (result instanceof JSVariable) {
+                  propertyType = ((JSVariable)result).getTypeString();
+                } else {
+                  propertyType = null;
+                }
+                if ("Array".equals(propertyType)) {
+                  // found Array-typed property: stop processing and return false!
+                  // disable type check by falling back to Object type:
+                  attributeConfigClassName = "Object";
                 }
               }
             }
