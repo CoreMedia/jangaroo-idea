@@ -38,6 +38,8 @@ import java.io.File;
  */
 public class JangarooCompiler extends AbstractCompiler implements TranslatingCompiler {
 
+  public static final HashSet<String> INPUT_FILE_SUFFIXES = new HashSet<String>(Arrays.asList(Jooc.AS_SUFFIX_NO_DOT, Jooc.MXML_SUFFIX_NO_DOT));
+
   public static CompilationResult runJooc(CompileContext context, String jangarooSdkName, JoocConfiguration configuration, CompileLog log) {
     Jooc jooc;
     try {
@@ -112,8 +114,8 @@ public class JangarooCompiler extends AbstractCompiler implements TranslatingCom
     return outputSinkItem;
   }
 
-  protected String getInputFileSuffix() {
-    return Jooc.AS_SUFFIX_NO_DOT;
+  protected Set<String> getInputFileSuffixes() {
+    return INPUT_FILE_SUFFIXES;
   }
 
   @Override

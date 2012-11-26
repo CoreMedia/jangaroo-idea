@@ -14,6 +14,7 @@
   <depends>JavaScript</depends>
   <depends>org.jetbrains.idea.maven</depends>
   <depends>com.intellij.javaee</depends>
+  <depends>com.intellij.flex</depends>
 
   <extensions defaultExtensionNs="com.intellij">
     <sdkType implementation="net.jangaroo.ide.idea.JangarooSdkType"/>

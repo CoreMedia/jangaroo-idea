@@ -40,7 +40,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
 
@@ -70,8 +72,8 @@ public class PropertiesCompiler extends AbstractCompiler implements Intermediate
   }
 
   @Override
-  protected String getInputFileSuffix() {
-    return "properties";
+  protected Set<String> getInputFileSuffixes() {
+    return Collections.singleton("properties");
   }
 
   @Override

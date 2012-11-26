@@ -115,7 +115,7 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     return true;
   }
 
-  protected abstract String getInputFileSuffix();
+  protected abstract Set<String> getInputFileSuffixes();
 
   protected abstract String getOutputFileSuffix();
 
@@ -123,7 +123,7 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
 
   public boolean isCompilableFile(VirtualFile file, CompileContext context) {
     Module module = context.getModuleByFile(file);
-    return getInputFileSuffix().equals(file.getExtension())
+    return getInputFileSuffixes().contains(file.getExtension())
       && !file.getPath().contains("/joo-api/") // hack: skip all files under .../joo-api
       && (module == null || FacetManager.getInstance(module).getFacetByType(getFacetType()) != null);
   }
