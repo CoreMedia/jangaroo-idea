@@ -95,9 +95,12 @@ public class JangarooSdkUtils {
       throw new IllegalStateException(e);
     } catch (InvocationTargetException e) {
       Throwable targetException = e.getTargetException();
-      throw targetException instanceof RuntimeException
-        ? (RuntimeException)targetException
-        : new RuntimeException(e);
+      if (targetException instanceof RuntimeException) {
+        throw (RuntimeException)targetException;
+      } else if (targetException instanceof Error) {
+        throw (Error)targetException;
+      }
+      else throw new RuntimeException(e);
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
