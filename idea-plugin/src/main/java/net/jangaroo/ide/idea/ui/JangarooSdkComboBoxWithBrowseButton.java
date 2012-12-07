@@ -31,10 +31,12 @@ import javax.swing.JList;
 import net.jangaroo.ide.idea.JangarooSdkType;
 import org.jetbrains.annotations.Nullable;
 
+import static net.jangaroo.ide.idea.JangarooSdkUtils.getSdkType;
+
 public class JangarooSdkComboBoxWithBrowseButton extends ComboboxWithBrowseButton {
   public static final Condition<Sdk> JANGAROO_SDK = new Condition<Sdk>() {
     public boolean value(Sdk sdk) {
-      return sdk != null && sdk.getSdkType() instanceof JangarooSdkType;
+      return sdk != null && getSdkType(sdk) instanceof JangarooSdkType;
     }
   };
 
@@ -66,7 +68,7 @@ public class JangarooSdkComboBoxWithBrowseButton extends ComboboxWithBrowseButto
             }
           } else {
             setText("Module SDK [" + sdk.getName() + "]");
-            setIcon(((JangarooSdkComboBoxWithBrowseButton.ModuleSdk)value).mySdk.getSdkType().getIcon());
+            setIcon(getSdkType(((JangarooSdkComboBoxWithBrowseButton.ModuleSdk)value).mySdk).getIcon());
           }
         } else if ((value instanceof String)) {
           if (sdkCombo.isEnabled()) {
@@ -78,7 +80,7 @@ public class JangarooSdkComboBoxWithBrowseButton extends ComboboxWithBrowseButto
           }
         } else if ((value instanceof Sdk)) {
           setText(((Sdk)value).getName());
-          setIcon(((Sdk)value).getSdkType().getIcon());
+          setIcon(getSdkType(((Sdk)value)).getIcon());
         } else if (sdkCombo.isEnabled()) {
           setText("<html><font color='red'>[none]</font></html>");
         } else {
