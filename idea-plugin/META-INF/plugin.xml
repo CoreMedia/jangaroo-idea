@@ -5,7 +5,7 @@
   <description>
     A plugin for using the Jangaroo Open Source tools version 0.9 and up.
   </description>
-  <version>0.22</version>
+  <version>0.23-SNAPSHOT</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net"
           logo="/net/jangaroo/jooley-16x16.png">Jangaroo</vendor>
