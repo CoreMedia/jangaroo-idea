@@ -255,8 +255,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
 
     String jooClassesPath = "joo/classes";
-    boolean isJangaroo2 = jangarooSdkVersion.startsWith("2.");
-    if (isJangaroo2 && !isWar) {
+    boolean isJangaroo1 = jangarooSdkVersion.startsWith("0.") || jangarooSdkVersion.startsWith("1.");
+    if (!isJangaroo1 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesPath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
@@ -285,7 +285,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
 
-    if (isWar && !isJangaroo2) {
+    if (isWar && isJangaroo1) {
       postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
     }
   }
