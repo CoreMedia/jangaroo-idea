@@ -213,7 +213,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
 
-    if (isWar && !isJangaroo2) {
+    if (isWar) {
       postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
     }
   }
