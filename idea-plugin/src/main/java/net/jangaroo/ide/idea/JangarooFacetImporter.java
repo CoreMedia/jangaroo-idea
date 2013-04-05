@@ -184,27 +184,29 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       Library library = modelsProvider.getLibraryByName(libraryName);
       if (library == null) {
         VirtualFile artifactFile = LocalFileSystem.getInstance().findFileByIoFile(dependency.getFile());
-        VirtualFile artifactJarFile = JarFileSystem.getInstance().getJarRootForLocalFile(artifactFile);
-        if (artifactJarFile != null) {
-          VirtualFile jooApiDir = artifactJarFile.findFileByRelativePath("META-INF/joo-api");
-          if (jooApiDir != null) {
-            library = modelsProvider.createLibrary(libraryName);
-            LibraryEx.ModifiableModelEx modifiableModel = (LibraryEx.ModifiableModelEx)library.getModifiableModel();
-            modifiableModel.setType(FlexLibraryType.getInstance());
-            modifiableModel.setProperties(new FlexLibraryProperties(libraryName));
-            modifiableModel.addRoot(jooApiDir, OrderRootType.CLASSES);
-            String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
-            VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
-            if (sourcesJar == null || !sourcesJar.exists()) {
-              sourcesJar = jooApiDir;
+        if (artifactFile != null) {
+          VirtualFile artifactJarFile = JarFileSystem.getInstance().getJarRootForLocalFile(artifactFile);
+          if (artifactJarFile != null) {
+            VirtualFile jooApiDir = artifactJarFile.findFileByRelativePath("META-INF/joo-api");
+            if (jooApiDir != null) {
+              library = modelsProvider.createLibrary(libraryName);
+              LibraryEx.ModifiableModelEx modifiableModel = (LibraryEx.ModifiableModelEx)library.getModifiableModel();
+              modifiableModel.setType(FlexLibraryType.getInstance());
+              modifiableModel.setProperties(new FlexLibraryProperties(libraryName));
+              modifiableModel.addRoot(jooApiDir, OrderRootType.CLASSES);
+              String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
+              VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
+              if (sourcesJar == null || !sourcesJar.exists()) {
+                sourcesJar = jooApiDir;
+              }
+              modifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
+              String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
+              VirtualFile asdocJar = LocalFileSystem.getInstance().findFileByPath(asdocPath);
+              if (asdocJar != null && asdocJar.exists()) {
+                modifiableModel.addRoot(asdocJar, OrderRootType.DOCUMENTATION);
+              }
+              modifiableModel.commit();
             }
-            modifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
-            String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
-            VirtualFile asdocJar = LocalFileSystem.getInstance().findFileByPath(asdocPath);
-            if (asdocJar != null && asdocJar.exists()) {
-              modifiableModel.addRoot(asdocJar, OrderRootType.DOCUMENTATION);
-            }
-            modifiableModel.commit();
           }
         }
       }
@@ -254,10 +256,14 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
 
-    String jooClassesPath = "joo/classes";
-    boolean isJangaroo1 = jangarooSdkVersion.startsWith("0.") || jangarooSdkVersion.startsWith("1.");
-    if (!isJangaroo1 && !isWar) {
-      jooClassesPath = "META-INF/resources/" + jooClassesPath;
+    String jooClassesRelativePath = "joo/classes";
+    int jangarooMajorVersion = Integer.parseInt(jangarooSdkVersion.split("[.-]", 2)[0]);
+    if (jangarooMajorVersion > 2) {
+      jooClassesRelativePath = "amd/as3";
+    }
+    String jooClassesPath = "";
+    if (jangarooMajorVersion > 1 && !isWar) {
+      jooClassesPath = "META-INF/resources/" + jooClassesRelativePath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
 
@@ -272,7 +278,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!testOutputDir.isAbsolute()) {
       testOutputDir = new File(mavenProjectModel.getDirectory(), testOutputDirectory);
     }
-    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, "joo/classes").getAbsolutePath());
+    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, jooClassesRelativePath).getAbsolutePath());
 
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {
@@ -285,7 +291,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
 
-    if (isWar && isJangaroo1) {
+    if (isWar && jangarooMajorVersion <= 1) {
       postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
     }
   }
