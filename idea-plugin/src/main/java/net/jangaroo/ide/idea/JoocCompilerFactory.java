@@ -9,13 +9,15 @@ import net.jangaroo.ide.idea.properties.PropertiesCompiler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Factory for all Jangaroo compilers:
  * <ul>
- *   <li>AS3->JS Compiler "jooc"</li>
- *   <li>EXML->AS3 Compiler "exmlc"</li>
- *   <li>properties->AS3 Compiler "propc"</li>
+ *   <li>*.as/*.mxml -> *.js: Compiler "jooc"</li>
+ *   <li>*.exml -> *.as: Compiler "exmlc"</li>
+ *   <li>*.properties -> *.as: Compiler "propc"</li>
  * </ul>
  * Because they are translating compilers, we cannot use IDEA's usual Compiler extension point.
  * Instead, we implement a CompilerFactory to get hold of the compiler manager, but do not
@@ -31,12 +33,18 @@ public class JoocCompilerFactory implements CompilerFactory {
   }
 
   private static void registerCompiler(CompilerManager compilerManager, AbstractCompiler compiler) {
-    FileType inputFileType = FileTypeManager.getInstance().getFileTypeByExtension(compiler.getInputFileSuffix());
-    FileType outputFileType = FileTypeManager.getInstance().getFileTypeByExtension(compiler.getOutputFileSuffix());
-    compilerManager.addCompilableFileType(inputFileType);
+    FileTypeManager fileTypeManager = FileTypeManager.getInstance();
+    Set<String> inputFileSuffixes = compiler.getInputFileSuffixes();
+    Set<FileType> inputFileTypes = new LinkedHashSet<FileType>(2);
+    for (String inputFileSuffix : inputFileSuffixes) {
+      FileType inputFileType = fileTypeManager.getFileTypeByExtension(inputFileSuffix);
+      compilerManager.addCompilableFileType(inputFileType);
+      inputFileTypes.add(inputFileType);
+    }
+    FileType outputFileType = fileTypeManager.getFileTypeByExtension(compiler.getOutputFileSuffix());
     compilerManager.addTranslatingCompiler(compiler,
-      Collections.<FileType>singleton(inputFileType),
-      Collections.<FileType>singleton(outputFileType));
+      inputFileTypes,
+      Collections.singleton(outputFileType));
   }
 
 }

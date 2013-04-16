@@ -21,12 +21,12 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="jangaroo-api-1.0.0">
+      <library name="jangaroo-api-3-preview-1-SNAPSHOT">
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/1.0.0/jangaroo-compiler-api-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/1.0.0/jangaroo-utils-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/1.0.0/exml-compiler-api-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/1.0.0/properties-compiler-api-1.0.0.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/3-preview-1-SNAPSHOT/jangaroo-compiler-api-3-preview-1-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/3-preview-1-SNAPSHOT/jangaroo-utils-3-preview-1-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/3-preview-1-SNAPSHOT/exml-compiler-api-3-preview-1-SNAPSHOT.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/3-preview-1-SNAPSHOT/properties-compiler-api-3-preview-1-SNAPSHOT.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

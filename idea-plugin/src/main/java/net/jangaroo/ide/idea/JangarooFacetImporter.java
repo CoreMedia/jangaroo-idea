@@ -4,16 +4,31 @@ import com.intellij.facet.FacetManager;
 import com.intellij.javaee.facet.JavaeeFacet;
 import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
 import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
+import com.intellij.lang.javascript.flex.FlexModuleType;
+import com.intellij.lang.javascript.flex.library.FlexLibraryProperties;
+import com.intellij.lang.javascript.flex.library.FlexLibraryType;
+import com.intellij.lang.javascript.flex.projectStructure.model.FlexBuildConfigurationManager;
+import com.intellij.lang.javascript.flex.projectStructure.model.LinkageType;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableDependencies;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableFlexIdeBuildConfiguration;
+import com.intellij.lang.javascript.flex.projectStructure.model.OutputType;
+import com.intellij.lang.javascript.flex.projectStructure.model.impl.ConversionHelper;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.impl.libraries.LibraryEx;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.vfs.JarFileSystem;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.packaging.artifacts.Artifact;
 import com.intellij.packaging.artifacts.ArtifactManager;
 import com.intellij.packaging.artifacts.ModifiableArtifact;
@@ -33,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
+import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenConsole;
 import org.jetbrains.idea.maven.project.MavenEmbeddersManager;
@@ -72,6 +88,19 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     super(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, JangarooFacetType.INSTANCE, DEFAULT_JANGAROO_FACET_NAME);
   }
 
+  @Override
+  public void getSupportedPackagings(Collection<String> result) {
+    super.getSupportedPackagings(result);
+    result.add(JANGAROO_PACKAGING_TYPE);
+    result.add("war");
+  }
+
+  @NotNull
+  @Override
+  public ModuleType getModuleType() {
+    return FlexModuleType.getInstance();
+  }
+
   // we cannot use MavenProject#findPlugin(), because it also searches in <pluginManagement>:
   public static MavenPlugin findDeclaredJangarooPlugin(MavenProject mavenProject, @Nullable String artifactId) {
     for (MavenPlugin each : mavenProject.getDeclaredPlugins()) {
@@ -105,6 +134,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   public void getSupportedDependencyTypes(Collection<String> result, SupportedRequestType type) {
     super.getSupportedDependencyTypes(result, type);
     result.add(JANGAROO_PACKAGING_TYPE);
+    result.add("jar"); // for Jangaroo 2!
   }
 
   @Override
@@ -142,6 +172,50 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
                                MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName,
                                List<MavenProjectsProcessorTask> postTasks) {
     //System.out.println("reimportFacet called!");
+    FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
+    ModifiableFlexIdeBuildConfiguration buildConfiguration = (ModifiableFlexIdeBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
+    buildConfiguration.setOutputType(OutputType.Library);
+    buildConfiguration.setSkipCompile(true);
+    ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
+    modifiableDependencies.setFrameworkLinkage(LinkageType.External);
+    modifiableDependencies.getModifiableEntries().clear();
+    for (MavenArtifact dependency : mavenProjectModel.getDependencies()) {
+      String libraryName = dependency.getLibraryName() + "-joo";
+      Library library = modelsProvider.getLibraryByName(libraryName);
+      if (library == null) {
+        VirtualFile artifactFile = LocalFileSystem.getInstance().findFileByIoFile(dependency.getFile());
+        if (artifactFile != null) {
+          VirtualFile artifactJarFile = JarFileSystem.getInstance().getJarRootForLocalFile(artifactFile);
+          if (artifactJarFile != null) {
+            VirtualFile jooApiDir = artifactJarFile.findFileByRelativePath("META-INF/joo-api");
+            if (jooApiDir != null) {
+              library = modelsProvider.createLibrary(libraryName);
+              LibraryEx.ModifiableModelEx modifiableModel = (LibraryEx.ModifiableModelEx)library.getModifiableModel();
+              modifiableModel.setType(FlexLibraryType.getInstance());
+              modifiableModel.setProperties(new FlexLibraryProperties(libraryName));
+              modifiableModel.addRoot(jooApiDir, OrderRootType.CLASSES);
+              String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
+              VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
+              if (sourcesJar == null || !sourcesJar.exists()) {
+                sourcesJar = jooApiDir;
+              }
+              modifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
+              String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
+              VirtualFile asdocJar = LocalFileSystem.getInstance().findFileByPath(asdocPath);
+              if (asdocJar != null && asdocJar.exists()) {
+                modifiableModel.addRoot(asdocJar, OrderRootType.DOCUMENTATION);
+              }
+              modifiableModel.commit();
+            }
+          }
+        }
+      }
+      if (library != null) {
+        // add library to buildConfiguration...
+        modifiableDependencies.getModifiableEntries().add(ConversionHelper.createSharedLibraryEntry(libraryName, "project"));
+      }
+    }
+
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
@@ -182,10 +256,14 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
 
-    String jooClassesPath = "joo/classes";
-    boolean isJangaroo2 = jangarooSdkVersion.startsWith("2.");
-    if (isJangaroo2 && !isWar) {
-      jooClassesPath = "META-INF/resources/" + jooClassesPath;
+    String jooClassesRelativePath = "joo/classes";
+    int jangarooMajorVersion = Integer.parseInt(jangarooSdkVersion.split("[.-]", 2)[0]);
+    if (jangarooMajorVersion > 2) {
+      jooClassesRelativePath = "amd/as3";
+    }
+    String jooClassesPath = "";
+    if (jangarooMajorVersion > 1 && !isWar) {
+      jooClassesPath = "META-INF/resources/" + jooClassesRelativePath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
 
@@ -200,7 +278,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!testOutputDir.isAbsolute()) {
       testOutputDir = new File(mavenProjectModel.getDirectory(), testOutputDirectory);
     }
-    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, "joo/classes").getAbsolutePath());
+    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, jooClassesRelativePath).getAbsolutePath());
 
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -85,8 +86,8 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
   }
 
   @Override
-  protected String getInputFileSuffix() {
-    return Exmlc.EXML_SUFFIX.substring(1);
+  protected Set<String> getInputFileSuffixes() {
+    return Collections.singleton(Exmlc.EXML_SUFFIX.substring(1));
   }
 
   @Override
