@@ -13,6 +13,8 @@ import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableDepend
 import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableFlexIdeBuildConfiguration;
 import com.intellij.lang.javascript.flex.projectStructure.model.OutputType;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.ConversionHelper;
+import com.intellij.lang.javascript.flex.projectStructure.model.impl.Factory;
+import com.intellij.lang.javascript.flex.sdk.FlexSdkUtils;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
@@ -66,6 +68,7 @@ import org.jetbrains.idea.maven.utils.MavenUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -174,9 +177,23 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     //System.out.println("reimportFacet called!");
     FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
     ModifiableFlexIdeBuildConfiguration buildConfiguration = (ModifiableFlexIdeBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
+    buildConfiguration.setName("JooFlex");
     buildConfiguration.setOutputType(OutputType.Library);
     buildConfiguration.setSkipCompile(true);
+    // just to satisfy IDEA:
+    buildConfiguration.setOutputFolder(mavenProjectModel.getBuildDirectory());
+    buildConfiguration.setOutputFileName(mavenProjectModel.getFinalName() + ".swc");
+
     ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
+    if (modifiableDependencies.getSdkEntry() == null) {
+      Iterator<Sdk> flexSdks = FlexSdkUtils.getFlexAndFlexmojosSdks().iterator();
+      if (!flexSdks.hasNext()) {
+        // TODO: complain that there is no Flex SDK at all!
+      } else {
+        Sdk flexSdk = flexSdks.next();
+        modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flexSdk.getName()));
+      }
+    }
     modifiableDependencies.setFrameworkLinkage(LinkageType.External);
     modifiableDependencies.getModifiableEntries().clear();
     for (MavenArtifact dependency : mavenProjectModel.getDependencies()) {
@@ -383,8 +400,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       for (PackagingElement packagingElement : libDir.getChildren()) {
         if (packagingElement instanceof LibraryPackagingElement) {
           Library library = ((LibraryPackagingElement)packagingElement).findLibrary(packagingElementResolvingContext);
-          if (library != null && library.getName().contains(":jangaroo:")) {
-            toBeRemovedLibraries.add(packagingElement);
+          if (library != null) {
+            String libraryName = library.getName();
+            if (libraryName != null && libraryName.contains(":jangaroo:")) {
+              toBeRemovedLibraries.add(packagingElement);
+            }
           }
         } else if (packagingElement instanceof ArchivePackagingElement) {
           List<PackagingElement<?>> archiveChildren = ((ArchivePackagingElement)packagingElement).getChildren();
