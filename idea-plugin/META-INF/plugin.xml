@@ -32,6 +32,7 @@
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
     <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
+    <importer implementation="net.jangaroo.ide.idea.Jangaroo3FacetImporter"/>
     <importer implementation="net.jangaroo.ide.idea.WebResourcesImporter"/>
     <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
   </extensions>

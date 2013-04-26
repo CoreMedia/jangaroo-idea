@@ -1,31 +1,36 @@
 package net.jangaroo.ide.idea;
 
-import com.intellij.facet.FacetManager;
-import com.intellij.javaee.facet.JavaeeFacet;
-import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
-import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
+import com.intellij.lang.javascript.flex.FlexModuleType;
+import com.intellij.lang.javascript.flex.library.FlexLibraryProperties;
+import com.intellij.lang.javascript.flex.library.FlexLibraryType;
+import com.intellij.lang.javascript.flex.projectStructure.model.FlexBuildConfigurationManager;
+import com.intellij.lang.javascript.flex.projectStructure.model.LinkageType;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableBuildConfigurationEntry;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableDependencies;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableFlexIdeBuildConfiguration;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableSharedLibraryEntry;
+import com.intellij.lang.javascript.flex.projectStructure.model.OutputType;
+import com.intellij.lang.javascript.flex.projectStructure.model.impl.ConversionHelper;
+import com.intellij.lang.javascript.flex.projectStructure.model.impl.Factory;
+import com.intellij.lang.javascript.flex.sdk.FlexSdkUtils;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.impl.libraries.LibraryEx;
 import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.packaging.artifacts.Artifact;
-import com.intellij.packaging.artifacts.ArtifactManager;
-import com.intellij.packaging.artifacts.ModifiableArtifact;
-import com.intellij.packaging.artifacts.ModifiableArtifactModel;
-import com.intellij.packaging.elements.CompositePackagingElement;
-import com.intellij.packaging.elements.PackagingElement;
-import com.intellij.packaging.elements.PackagingElementResolvingContext;
-import com.intellij.packaging.impl.elements.ArchivePackagingElement;
-import com.intellij.packaging.impl.elements.ArtifactPackagingElement;
-import com.intellij.packaging.impl.elements.DirectoryPackagingElement;
-import com.intellij.packaging.impl.elements.LibraryPackagingElement;
-import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
+import com.intellij.openapi.vfs.JarFileSystem;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import net.jangaroo.jooc.config.CompilerConfigParser;
+import net.jangaroo.jooc.config.JoocConfiguration;
+import net.jangaroo.jooc.config.NamespaceConfiguration;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
+import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenConsole;
 import org.jetbrains.idea.maven.project.MavenEmbeddersManager;
@@ -48,19 +54,20 @@ import org.jetbrains.idea.maven.utils.MavenProgressIndicator;
 import org.jetbrains.idea.maven.utils.MavenUtil;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
 
 /**
  * A Facet-from-Maven Importer for the Jangaroo Facet type.
  */
-public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
+public class Jangaroo3FacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
   static final String JANGAROO_COMPILER_API_ARTIFACT_ID = "jangaroo-compiler-api";
@@ -68,8 +75,20 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
-  public JangarooFacetImporter() {
+  public Jangaroo3FacetImporter() {
     super(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, JangarooFacetType.INSTANCE, DEFAULT_JANGAROO_FACET_NAME);
+  }
+
+  @Override
+  public void getSupportedPackagings(Collection<String> result) {
+    super.getSupportedPackagings(result);
+    result.add(JANGAROO_PACKAGING_TYPE);
+  }
+
+  @NotNull
+  @Override
+  public ModuleType getModuleType() {
+    return FlexModuleType.getInstance();
   }
 
   // we cannot use MavenProject#findPlugin(), because it also searches in <pluginManagement>:
@@ -105,6 +124,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   public void getSupportedDependencyTypes(Collection<String> result, SupportedRequestType type) {
     super.getSupportedDependencyTypes(result, type);
     result.add(JANGAROO_PACKAGING_TYPE);
+    result.add("jar"); // for Jangaroo 2!
   }
 
   @Override
@@ -142,6 +162,74 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
                                MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName,
                                List<MavenProjectsProcessorTask> postTasks) {
     //System.out.println("reimportFacet called!");
+    FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
+    ModifiableFlexIdeBuildConfiguration buildConfiguration = (ModifiableFlexIdeBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
+    buildConfiguration.setName(mavenProjectModel.getName());
+    buildConfiguration.setOutputType(OutputType.Library);
+    buildConfiguration.setSkipCompile(true);
+    // just to satisfy IDEA:
+    buildConfiguration.setOutputFolder(mavenProjectModel.getBuildDirectory());
+    buildConfiguration.setOutputFileName(mavenProjectModel.getFinalName() + ".swc");
+
+    StringBuilder namespaceConfigs = new StringBuilder();
+    ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
+    if (modifiableDependencies.getSdkEntry() == null) {
+      Iterator<Sdk> flexSdks = FlexSdkUtils.getFlexAndFlexmojosSdks().iterator();
+      if (!flexSdks.hasNext()) {
+        // TODO: complain that there is no Flex SDK at all!
+      } else {
+        Sdk flexSdk = flexSdks.next();
+        modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flexSdk.getName()));
+      }
+    }
+    modifiableDependencies.setFrameworkLinkage(LinkageType.External);
+    modifiableDependencies.getModifiableEntries().clear();
+    for (MavenArtifact dependency : mavenProjectModel.getDependencies()) {
+      String libraryName = dependency.getLibraryName() + "-joo";
+      Library library = modelsProvider.getLibraryByName(libraryName);
+      VirtualFile artifactFile = LocalFileSystem.getInstance().findFileByIoFile(dependency.getFile());
+      if (artifactFile != null) {
+        VirtualFile artifactJarFile = JarFileSystem.getInstance().getJarRootForLocalFile(artifactFile);
+        // build library if it does not exit:
+        if (artifactJarFile != null) {
+          if (library == null) {
+            VirtualFile jooApiDir = artifactJarFile.findFileByRelativePath("META-INF/joo-api");
+            if (jooApiDir != null) {
+              library = modelsProvider.createLibrary(libraryName);
+              LibraryEx.ModifiableModelEx modifiableModel = (LibraryEx.ModifiableModelEx)library.getModifiableModel();
+              modifiableModel.setType(FlexLibraryType.getInstance());
+              modifiableModel.setProperties(new FlexLibraryProperties(libraryName));
+              modifiableModel.addRoot(jooApiDir, OrderRootType.CLASSES);
+              String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
+              VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
+              if (sourcesJar == null || !sourcesJar.exists()) {
+                sourcesJar = jooApiDir;
+              }
+              modifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
+              String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
+              VirtualFile asdocJar = LocalFileSystem.getInstance().findFileByPath(asdocPath);
+              if (asdocJar != null && asdocJar.exists()) {
+                modifiableModel.addRoot(asdocJar, OrderRootType.DOCUMENTATION);
+              }
+              modifiableModel.commit();
+            }
+          }
+          // look for component namespace:
+          parseCompilerConfig(artifactJarFile, namespaceConfigs);
+        }
+      }
+      if (library != null) {
+        // add library to buildConfiguration...
+        ModifiableSharedLibraryEntry dependencyEntry = ConversionHelper.createSharedLibraryEntry(libraryName, "project");
+        if ("test".equals(dependency.getScope())) {
+          dependencyEntry.getDependencyType().setLinkageType(LinkageType.Test);
+        }
+        modifiableDependencies.getModifiableEntries().add(dependencyEntry);
+      }
+    }
+
+    postTasks.add(new EstablishModuleDependenciesTask(module, namespaceConfigs));
+
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
@@ -149,9 +237,9 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
-      if (jangarooSdkVersion == null) {
+      if (sdkHomePath == null) {
         Notifications.Bus.notify(new Notification("Maven", "Jangaroo Version Not Found",
-          "No version found for Jangaroo SDK in Maven POM " + mavenProjectModel.getDisplayName() +
+          "No or illegal version found for Jangaroo SDK in Maven POM " + mavenProjectModel.getDisplayName() +
             ", no Jangaroo facet created.", NotificationType.WARNING));
         return;
       }
@@ -182,10 +270,14 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
 
-    String jooClassesPath = "joo/classes";
-    boolean isJangaroo2 = jangarooSdkVersion.startsWith("2.");
-    if (isJangaroo2 && !isWar) {
-      jooClassesPath = "META-INF/resources/" + jooClassesPath;
+    String jooClassesRelativePath = "joo/classes";
+    int jangarooMajorVersion = Integer.parseInt(jangarooSdkVersion.split("[.-]", 2)[0]);
+    if (jangarooMajorVersion > 2) {
+      jooClassesRelativePath = "amd/as3";
+    }
+    String jooClassesPath = "";
+    if (jangarooMajorVersion > 1 && !isWar) {
+      jooClassesPath = "META-INF/resources/" + jooClassesRelativePath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
 
@@ -200,7 +292,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!testOutputDir.isAbsolute()) {
       testOutputDir = new File(mavenProjectModel.getDirectory(), testOutputDirectory);
     }
-    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, "joo/classes").getAbsolutePath());
+    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, jooClassesRelativePath).getAbsolutePath());
 
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {
@@ -212,13 +304,39 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         NotificationType.WARNING));
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
+  }
 
-    if (isWar && !isJangaroo2) {
-      postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
+  private static void parseCompilerConfig(VirtualFile baseDirOrJar, StringBuilder namespaceConfigs) {
+    VirtualFile compilerConfigXml = baseDirOrJar.findFileByRelativePath("config.xml");
+    if (compilerConfigXml != null) {
+      JoocConfiguration joocConfiguration = new JoocConfiguration();
+      try {
+        new CompilerConfigParser(joocConfiguration).parse(compilerConfigXml.getInputStream());
+        for (NamespaceConfiguration namespace : joocConfiguration.getNamespaces()) {
+          VirtualFile manifestFile = baseDirOrJar.findFileByRelativePath(namespace.getManifest());
+          if (manifestFile != null && manifestFile.exists()) {
+            if (namespaceConfigs.length() > 0) {
+              namespaceConfigs.append('\n');
+            }
+            namespaceConfigs.append(namespace.getUri()).append('\t').append(manifestFile.getPath());
+          } else {
+            // ignore, TODO: log!
+          }
+        }
+
+      } catch (IOException e) {
+        // ignore, TODO: log!
+      }
     }
   }
 
   public static String jangarooSdkHomePath(String artifactId, String version) {
+    // version sanity check:
+    try {
+      Integer.parseInt(version.split("[.-]", 2)[0]);
+    } catch (NumberFormatException e) {
+      return null;
+    }
     File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
     File jarFile = MavenArtifactUtil.getArtifactFile(localRepository, JANGAROO_GROUP_ID, artifactId, version, "jar");
     return jarFile.getParentFile().getAbsolutePath();
@@ -245,154 +363,65 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     sourceDirs.add(defaultDir);
   }
 
-  private static class AddJangarooPackagingOutputToExplodedWebArtifactsTask implements MavenProjectsProcessorTask {
-    private final JangarooFacet jangarooFacet;
+  private static class EstablishModuleDependenciesTask implements MavenProjectsProcessorTask {
+    private Module module;
+    private StringBuilder namespaceConfigs;
 
-    private AddJangarooPackagingOutputToExplodedWebArtifactsTask(JangarooFacet jangarooFacet) {
-      this.jangarooFacet = jangarooFacet;
+    private EstablishModuleDependenciesTask(Module module, StringBuilder namespaceConfigs) {
+      this.module = module;
+      this.namespaceConfigs = namespaceConfigs;
     }
 
-    public void perform(final Project project, MavenEmbeddersManager mavenEmbeddersManager, MavenConsole mavenConsole, MavenProgressIndicator mavenProgressIndicator) throws MavenProcessCanceledException {
-      ApplicationManager.getApplication().runReadAction(new Runnable() {
+    @Override
+    public void perform(Project project, MavenEmbeddersManager embeddersManager, MavenConsole console, MavenProgressIndicator indicator) throws MavenProcessCanceledException {
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        @Override
         public void run() {
-          Module webModule = jangarooFacet.getModule();
-          // for this Jangaroo-enabled Web app, add all Jangaroo-dependent modules' Jangaroo compiler output.
+          ApplicationManager.getApplication().runWriteAction(new Runnable() {
+            @Override
+            public void run() {
+              FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
+              ModifiableFlexIdeBuildConfiguration buildConfiguration = (ModifiableFlexIdeBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
 
-          // find the IDEA exploded Web artifact for this Jangaroo-enabled Web app module:
-          final Artifact artifact = getExplodedWebArtifact(webModule);
-          if (artifact != null) {
-            // instruct IDEA to build the Web app on make:
-            final ArtifactManager artifactManager = ArtifactManager.getInstance(project);
-            if (!artifact.isBuildOnMake()) {
-              ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                  ApplicationManager.getApplication().runWriteAction(new Runnable() {
-                    public void run() {
-                      ModifiableArtifactModel modifiableArtifactModel = artifactManager.createModifiableModel();
-                      final ModifiableArtifact modifiableArtifact = modifiableArtifactModel.getOrCreateModifiableArtifact(artifact);
-                      modifiableArtifact.setBuildOnMake(true);
-                      modifiableArtifactModel.commit();
-                    }
-                  });
+              ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+              for (VirtualFile sourceRoot : moduleRootManager.getSourceRoots()) {
+                parseCompilerConfig(sourceRoot, namespaceConfigs);
+              }
+
+              ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
+              for (Module dependency : moduleRootManager.getDependencies()) {
+                if (FlexModuleType.getInstance().equals(ModuleType.get(dependency))) {
+                  ModifiableBuildConfigurationEntry buildConfigurationEntry = createModifiableBuildConfigurationEntry(dependency, dependency.getName());
+                  modifiableDependencies.getModifiableEntries().add(buildConfigurationEntry);
+                  // look for config.xml containing additional compiler settings:
+                  for (VirtualFile sourceRoot : ModuleRootManager.getInstance(dependency).getSourceRoots()) {
+                    parseCompilerConfig(sourceRoot, namespaceConfigs);
+                  }
                 }
-              });
+              }
+              if (namespaceConfigs.length() > 0) {
+                buildConfiguration.getCompilerOptions().setAllOptions(Collections.singletonMap(
+                  "compiler.namespaces.namespace", namespaceConfigs.toString()
+                ));
+              }
             }
-
-            // get all Jangaroo Facets used by this Web app:
-            Set<JangarooFacet> dependencies = getTransitiveJangarooDependencies(jangarooFacet);
-            // remove all Jangaroo Facets already contained in some overlay:
-            Set<JangarooFacet> overlays = findTransitiveJangarooOverlays(artifactManager, artifact);
-            for (JangarooFacet overlay : overlays) {
-              dependencies.remove(overlay);
-              dependencies.removeAll(getTransitiveJangarooDependencies(overlay));
-            }
-            // add the remaining modules' Jangaroo packaging output to the Web app's root directory:
-            CompositePackagingElement<?> rootDirectory = artifact.getRootElement();
-            removeJangarooJarsFromWebInfLib(project, rootDirectory);
-            for (JangarooFacet dependency : dependencies) {
-              rootDirectory.addOrFindChild(new JangarooPackagingOutputElement(project, dependency));
-            }
-          }
+          });
         }
       });
     }
 
-    private static void removeJangarooJarsFromWebInfLib(Project project, CompositePackagingElement<?> rootDirectory) {
-      DirectoryPackagingElement libDir = rootDirectory.addOrFindChild(new DirectoryPackagingElement("WEB-INF")).addOrFindChild(new DirectoryPackagingElement("lib"));
-      PackagingElementResolvingContext packagingElementResolvingContext = ArtifactManager.getInstance(project).getResolvingContext();
-      ModuleManager moduleManager = ModuleManager.getInstance(project);
-      Collection<PackagingElement<?>> toBeRemovedLibraries = new ArrayList<PackagingElement<?>>();
-      for (PackagingElement packagingElement : libDir.getChildren()) {
-        if (packagingElement instanceof LibraryPackagingElement) {
-          Library library = ((LibraryPackagingElement)packagingElement).findLibrary(packagingElementResolvingContext);
-          if (library != null && library.getName().contains(":jangaroo:")) {
-            toBeRemovedLibraries.add(packagingElement);
-          }
-        } else if (packagingElement instanceof ArchivePackagingElement) {
-          List<PackagingElement<?>> archiveChildren = ((ArchivePackagingElement)packagingElement).getChildren();
-          if (!archiveChildren.isEmpty()) {
-            PackagingElement<?> modulePackagingElement = archiveChildren.get(0);
-            if (modulePackagingElement instanceof ModuleOutputPackagingElement) {
-              String moduleName = ((ModuleOutputPackagingElement)modulePackagingElement).getModuleName();
-              if (moduleName != null) {
-                Module module = moduleManager.findModuleByName(moduleName);
-                if (module != null) {
-                  if (JangarooFacet.ofModule(module) != null) {
-                    toBeRemovedLibraries.add(packagingElement);
-                  }
-                }
-              }
-            }
-          }
-        }
+    // how is one supposed to create new build configuration entries without using reflection and access control?!
+    private static ModifiableBuildConfigurationEntry createModifiableBuildConfigurationEntry(Module module, String bcName) {
+      try {
+        Class<?> bcei = Class.forName("com.intellij.lang.javascript.flex.projectStructure.model.impl.BuildConfigurationEntryImpl");
+        Constructor<?> constructor = bcei.getConstructor(Module.class, String.class);
+        constructor.setAccessible(true);
+        return (ModifiableBuildConfigurationEntry)constructor.newInstance(module, bcName);
+      } catch (RuntimeException e) {
+        throw e;
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
       }
-      libDir.removeChildren(toBeRemovedLibraries);
-    }
-
-    private static Artifact getExplodedWebArtifact(Module module) {
-      ArtifactManager artifactManager = ArtifactManager.getInstance(module.getProject());
-      for (Artifact artifact : artifactManager.getArtifactsByType(ExplodedWarArtifactType.getInstance())) {
-        Module artifactModule = findModule(artifactManager, artifact);
-        if (module.equals(artifactModule)) {
-          return artifact;
-        }
-      }
-      return null;
-    }
-
-    private static @Nullable Module findModule(@NotNull ArtifactManager artifactManager, @NotNull Artifact artifact) {
-      PackagingElementResolvingContext packagingElementResolvingContext = artifactManager.getResolvingContext();
-      for (PackagingElement<?> packagingElement : artifact.getRootElement().getChildren()) {
-        if (packagingElement instanceof JavaeeFacetResourcesPackagingElement) {
-          JavaeeFacet facet = ((JavaeeFacetResourcesPackagingElement) packagingElement).findFacet(packagingElementResolvingContext);
-          if (facet != null) {
-            return facet.getModule();
-          }
-        }
-      }
-      return null;
-    }
-
-    private static Set<JangarooFacet> findTransitiveJangarooOverlays(ArtifactManager artifactManager, Artifact artifact) {
-      Set<JangarooFacet> overlays = new LinkedHashSet<JangarooFacet>();
-      for (PackagingElement<?> packagingElement : artifact.getRootElement().getChildren()) {
-        if (packagingElement instanceof ArtifactPackagingElement) {
-          String artifactName = ((ArtifactPackagingElement) packagingElement).getArtifactName();
-          if (artifactName != null) {
-            Artifact overlayArtifact = artifactManager.findArtifact(artifactName);
-            if (overlayArtifact != null) {
-              Module overlayModule = findModule(artifactManager, overlayArtifact);
-              if (overlayModule != null) {
-                JangarooFacet overlayJangarooFacet = findJangarooFacet(overlayModule);
-                if (overlayJangarooFacet != null) {
-                  overlays.add(overlayJangarooFacet);
-                }
-                overlays.addAll(findTransitiveJangarooOverlays(artifactManager, overlayArtifact));
-              }
-            }
-          }
-        }
-      }
-      return overlays;
-    }
-
-    private static Set<JangarooFacet> getTransitiveJangarooDependencies(JangarooFacet jangarooFacet) {
-      return collectTransitiveJangarooDependencies(jangarooFacet, new LinkedHashSet<JangarooFacet>());
-    }
-
-    private static Set<JangarooFacet> collectTransitiveJangarooDependencies(JangarooFacet jangarooFacet, Set<JangarooFacet> dependencies) {
-      dependencies.add(jangarooFacet);
-      for (Module directDependency : ModuleRootManager.getInstance(jangarooFacet.getModule()).getDependencies()) {
-        JangarooFacet dependentModuleJangarooFacet = findJangarooFacet(directDependency);
-        if (dependentModuleJangarooFacet != null) {
-          collectTransitiveJangarooDependencies(dependentModuleJangarooFacet, dependencies);
-        }
-      }
-      return dependencies;
-    }
-
-    private static JangarooFacet findJangarooFacet(Module module) {
-      return FacetManager.getInstance(module).findFacet(JangarooFacetType.ID, DEFAULT_JANGAROO_FACET_NAME);
     }
   }
 }
