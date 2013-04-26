@@ -164,7 +164,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
       }
     }
     VirtualFile virtualFile = file == null ? null : LocalFileSystem.getInstance().findFileByIoFile(file);
-    context.addMessage(CompilerMessageCategory.ERROR, e.getLocalizedMessage(), virtualFile==null ? null : virtualFile.getUrl(), line, column);
+    context.addMessage(CompilerMessageCategory.ERROR, "EXML: " + e.getLocalizedMessage(), virtualFile==null ? file==null ? null : file.getPath() : virtualFile.getUrl(), line, column);
   }
 
   private Exmlc getExmlc(String jangarooSdkName, ExmlConfiguration exmlConfiguration, CompileContext context) {
