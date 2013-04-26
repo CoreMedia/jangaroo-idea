@@ -20,8 +20,6 @@
     <sdkType implementation="net.jangaroo.ide.idea.JangarooSdkType"/>
     <compilerFactory implementation="net.jangaroo.ide.idea.JoocCompilerFactory"/>
     <facetType implementation="net.jangaroo.ide.idea.JangarooFacetType"/>
-    <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
-    <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
 
     <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
     <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
@@ -34,6 +32,7 @@
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
     <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
+    <importer implementation="net.jangaroo.ide.idea.WebResourcesImporter"/>
     <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
   </extensions>
 
