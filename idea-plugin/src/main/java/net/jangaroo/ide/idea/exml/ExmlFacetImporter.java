@@ -1,19 +1,23 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.javaee.ExternalResourceManager;
+import com.intellij.lang.javascript.flex.FlexModuleType;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.config.ValidationMode;
+import net.jangaroo.ide.idea.JangarooFacetImporter;
 import net.jangaroo.utils.CompilerUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.jdom.Element;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
@@ -25,6 +29,7 @@ import org.jetbrains.idea.maven.project.MavenProjectsTree;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +54,24 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    return findExmlMavenPlugin(mavenProjectModel) != null;
+    MavenPlugin exmlMavenPlugin = findExmlMavenPlugin(mavenProjectModel);
+    return exmlMavenPlugin != null
+      && isApplicableVersion(JangarooFacetImporter.getMajorVersion(exmlMavenPlugin.getVersion()));
+  }
+
+  protected boolean isApplicableVersion(int majorVersion) {
+    return 0 <= majorVersion && majorVersion <= 2;
+  }
+
+  @Override
+  public void process(MavenModifiableModelsProvider modifiableModelsProvider, Module module, MavenRootModelAdapter rootModel, MavenProjectsTree mavenModel, MavenProject mavenProject, MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName, List<MavenProjectsProcessorTask> postTasks) {
+    super.process(modifiableModelsProvider, module, rootModel, mavenModel, mavenProject, changes, mavenProjectToModuleName, postTasks);
+  }
+
+  @Override
+  public void getSupportedPackagings(Collection<String> result) {
+    super.getSupportedPackagings(result);
+    result.add(JangarooFacetImporter.JANGAROO_PACKAGING_TYPE);
   }
 
   private MavenPlugin findExmlMavenPlugin(MavenProject mavenProjectModel) {

@@ -43,12 +43,9 @@ import java.util.Set;
  * A Facet-from-Maven Importer for the Jangaroo Facet type.
  */
 public class WebResourcesImporter extends MavenImporter {
-  public static final String JANGAROO_GROUP_ID = "net.jangaroo";
-  private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
-  private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
 
   public WebResourcesImporter() {
-    super(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
+    super(JangarooFacetImporter.JANGAROO_GROUP_ID, JangarooFacetImporter.JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
   }
 
   @Override
@@ -58,13 +55,13 @@ public class WebResourcesImporter extends MavenImporter {
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    return true;
+    return "war".equals(mavenProjectModel.getPackaging()); // isn't that redundant?!
   }
 
   @Override
   public void getSupportedDependencyTypes(Collection<String> result, SupportedRequestType type) {
     super.getSupportedDependencyTypes(result, type);
-    result.add(JANGAROO_PACKAGING_TYPE);
+    result.add(JangarooFacetImporter.JANGAROO_DEPENDENCY_TYPE);
     result.add("jar"); // for Jangaroo 2 + 3!
   }
 
