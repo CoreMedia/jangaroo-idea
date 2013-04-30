@@ -426,6 +426,11 @@
   uriTemplate CDATA #REQUIRED
 >
 <!--
+  Annotation to express that a class is public API.
+  In other words, the opposite of [ExcludeClass].
+-->
+<!ELEMENT PublicApi EMPTY>
+<!--
   Annotation for a property that can also be set by handing
   in a name-value configuration object to the constructor.
   A different name (alias) to use in the constructor can be
