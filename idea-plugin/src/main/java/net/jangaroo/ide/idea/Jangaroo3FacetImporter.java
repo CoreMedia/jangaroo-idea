@@ -4,12 +4,12 @@ import com.intellij.lang.javascript.flex.FlexModuleType;
 import com.intellij.lang.javascript.flex.library.FlexLibraryProperties;
 import com.intellij.lang.javascript.flex.library.FlexLibraryType;
 import com.intellij.lang.javascript.flex.projectStructure.model.FlexBuildConfigurationManager;
-import com.intellij.lang.javascript.flex.projectStructure.model.LinkageType;
+import com.intellij.flex.model.bc.LinkageType;
 import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableBuildConfigurationEntry;
 import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableDependencies;
-import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableFlexIdeBuildConfiguration;
+import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableFlexBuildConfiguration;
 import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableSharedLibraryEntry;
-import com.intellij.lang.javascript.flex.projectStructure.model.OutputType;
+import com.intellij.flex.model.bc.OutputType;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.ConversionHelper;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.Factory;
 import com.intellij.lang.javascript.flex.sdk.FlexSdkUtils;
@@ -72,7 +72,7 @@ public class Jangaroo3FacetImporter extends JangarooFacetImporter {
                                List<MavenProjectsProcessorTask> postTasks) {
     //System.out.println("reimportFacet called!");
     FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
-    ModifiableFlexIdeBuildConfiguration buildConfiguration = (ModifiableFlexIdeBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
+    ModifiableFlexBuildConfiguration buildConfiguration = (ModifiableFlexBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
     String buildConfigurationName = mavenProjectModel.getName();
     if (buildConfigurationName == null) {
       buildConfigurationName = mavenProjectModel.getFinalName();
@@ -110,15 +110,14 @@ public class Jangaroo3FacetImporter extends JangarooFacetImporter {
             if (jooApiDir != null) {
               library = modelsProvider.createLibrary(libraryName);
               LibraryEx.ModifiableModelEx modifiableModel = (LibraryEx.ModifiableModelEx)library.getModifiableModel();
-              modifiableModel.setType(FlexLibraryType.getInstance());
+              modifiableModel.setKind(FlexLibraryType.FLEX_LIBRARY);
               modifiableModel.setProperties(new FlexLibraryProperties(libraryName));
               modifiableModel.addRoot(jooApiDir, OrderRootType.CLASSES);
               String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
               VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
-              if (sourcesJar == null || !sourcesJar.exists()) {
-                sourcesJar = jooApiDir;
+              if (sourcesJar != null && sourcesJar.exists()) {
+                modifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
               }
-              modifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
               String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
               VirtualFile asdocJar = LocalFileSystem.getInstance().findFileByPath(asdocPath);
               if (asdocJar != null && asdocJar.exists()) {
@@ -189,7 +188,7 @@ public class Jangaroo3FacetImporter extends JangarooFacetImporter {
             @Override
             public void run() {
               FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
-              ModifiableFlexIdeBuildConfiguration buildConfiguration = (ModifiableFlexIdeBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
+              ModifiableFlexBuildConfiguration buildConfiguration = (ModifiableFlexBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
 
               ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
               for (VirtualFile sourceRoot : moduleRootManager.getSourceRoots()) {
