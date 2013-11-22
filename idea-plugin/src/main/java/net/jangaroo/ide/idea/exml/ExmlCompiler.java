@@ -129,7 +129,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
           }
         } catch (ExmlcException e) {
           outputSinkItem.addFileToRecompile(virtualSourceFile);
-          addMessageForExmlcException(context, e);
+          addMessageForExmlcException(context, e, virtualSourceFile);
         }
       }
       // if any EXML file has been changed, try re-generate this module's XSD:
@@ -138,14 +138,14 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
         getLog().info("exml->xsd: " + generatedXsd.getPath());
         outputSinkItem.addFileToRefresh(generatedXsd.getParentFile()); // refresh complete directory for other XSD files!
       } catch (ExmlcException e) {
-        ExmlCompiler.addMessageForExmlcException(context, e);
+        addMessageForExmlcException(context, e, module.getModuleFile());
       }
       return outputSinkItem;
     }
     return null;
   }
 
-  private static void addMessageForExmlcException(@NotNull CompileContext context, @NotNull ExmlcException e) {
+  private static void addMessageForExmlcException(@NotNull CompileContext context, @NotNull ExmlcException e, VirtualFile fallbackFile) {
     // EXML compiler has the bad habit of wrapping ExmlcExceptions, but the line / column information may be contained
     // in the wrapped exception, so collect the best info we can get:
     File file = null;
@@ -164,7 +164,10 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
       }
     }
     VirtualFile virtualFile = file == null ? null : LocalFileSystem.getInstance().findFileByIoFile(file);
-    context.addMessage(CompilerMessageCategory.ERROR, "EXML: " + e.getLocalizedMessage(), virtualFile==null ? file==null ? null : file.getPath() : virtualFile.getUrl(), line, column);
+    if (virtualFile == null) {
+      virtualFile = fallbackFile;
+    }
+    context.addMessage(CompilerMessageCategory.ERROR, "EXML: " + e.getLocalizedMessage(), virtualFile==null ? null : virtualFile.getUrl(), line, column);
   }
 
   private Exmlc getExmlc(String jangarooSdkName, ExmlConfiguration exmlConfiguration, CompileContext context) {

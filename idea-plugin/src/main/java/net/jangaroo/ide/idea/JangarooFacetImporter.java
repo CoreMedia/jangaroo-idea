@@ -67,6 +67,12 @@ public abstract class JangarooFacetImporter extends FacetImporter<JangarooFacet,
   public boolean isApplicable(MavenProject mavenProjectModel) {
     // any of the two Jangaroo Maven plugins has to be configured explicitly:
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
+    if (jangarooMavenPlugin == null && JANGAROO_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging())) {
+      Notifications.Bus.notify(new Notification("jangaroo", "Jangaroo Facet not created/updated",
+        "Module " + mavenProjectModel.getMavenId() + " uses packaging type 'jangaroo', " +
+        "but no jangaroo-maven-plugin or exml-maven-plugin was found. Try repeating 'Reimport All Maven Projects'.",
+        NotificationType.WARNING));
+    }
     return jangarooMavenPlugin != null
       && isApplicableVersion(getMajorVersion(jangarooMavenPlugin.getVersion()));
   }
