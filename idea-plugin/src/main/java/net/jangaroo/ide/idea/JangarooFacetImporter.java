@@ -22,6 +22,7 @@ import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenUtil;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,12 @@ public abstract class JangarooFacetImporter extends FacetImporter<JangarooFacet,
     return -1;
   }
   public boolean isApplicable(MavenProject mavenProjectModel) {
+    // fast path for unsupported packagings:
+    ArrayList<String> packagings = new ArrayList<String>();
+    getSupportedPackagings(packagings);
+    if (!packagings.contains(mavenProjectModel.getPackaging())) {
+      return false;
+    }
     // any of the two Jangaroo Maven plugins has to be configured explicitly:
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
     if (jangarooMavenPlugin == null && JANGAROO_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging())) {
