@@ -13,6 +13,9 @@ import com.intellij.flex.model.bc.OutputType;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.ConversionHelper;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.Factory;
 import com.intellij.lang.javascript.flex.sdk.FlexSdkUtils;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
@@ -73,10 +76,7 @@ public class Jangaroo3FacetImporter extends JangarooFacetImporter {
     //System.out.println("reimportFacet called!");
     FlexBuildConfigurationManager flexBuildConfigurationManager = FlexBuildConfigurationManager.getInstance(module);
     ModifiableFlexBuildConfiguration buildConfiguration = (ModifiableFlexBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
-    String buildConfigurationName = mavenProjectModel.getName();
-    if (buildConfigurationName == null) {
-      buildConfigurationName = mavenProjectModel.getFinalName();
-    }
+    String buildConfigurationName = mavenProjectModel.getMavenId().getArtifactId();
     buildConfiguration.setName(buildConfigurationName);
     buildConfiguration.setOutputType(OutputType.Library);
     buildConfiguration.setSkipCompile(true);
@@ -89,7 +89,8 @@ public class Jangaroo3FacetImporter extends JangarooFacetImporter {
     if (modifiableDependencies.getSdkEntry() == null) {
       Iterator<Sdk> flexSdks = FlexSdkUtils.getFlexAndFlexmojosSdks().iterator();
       if (!flexSdks.hasNext()) {
-        // TODO: complain that there is no Flex SDK at all!
+        Notifications.Bus.notify(new Notification("jangaroo", "No Flex SDK",
+          "To use MXML, you have to have some Flex SDK installed.", NotificationType.WARNING));
       } else {
         Sdk flexSdk = flexSdks.next();
         modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flexSdk.getName()));
@@ -160,12 +161,16 @@ public class Jangaroo3FacetImporter extends JangarooFacetImporter {
             }
             namespaceConfigs.append(namespace.getUri()).append('\t').append(manifestFile.getPath());
           } else {
-            // ignore, TODO: log!
+            Notifications.Bus.notify(new Notification("jangaroo", "Manifest file not found",
+              "Compiler config.xml " + compilerConfigXml.getPresentableName() + " contains a reference to manifest "
+                + namespace.getManifest() + ", but the file could not be found.", NotificationType.INFORMATION));
           }
         }
 
       } catch (IOException e) {
-        // ignore, TODO: log!
+        Notifications.Bus.notify(new Notification("jangaroo", "Manifest file not found",
+          "Error while trying to read config.xml " + compilerConfigXml.getPresentableName() + ": " + e,
+          NotificationType.WARNING));
       }
     }
   }
