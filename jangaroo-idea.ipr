@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="ArtifactManager">
+    <artifact type="jar" build-on-make="true" name="jangaroo-jps-plugin">
+      <output-path>$USER_HOME$/.IntelliJIdea12/system/plugins-sandbox/plugins/jangaroo-0.9/lib/jps</output-path>
+      <root id="archive" name="jangaroo-jps-plugin.jar">
+        <element id="module-output" name="jangaroo-jps-plugin" />
+      </root>
+    </artifact>
+  </component>
   <component name="BuildJarProjectSettings">
     <option name="BUILD_JARS_ON_MAKE" value="false" />
   </component>
@@ -57,12 +65,14 @@
       <entry name="?*.tld" />
       <entry name="?*.ftl" />
       <entry name="?*.ft" />
+      <entry name="META-INF/services/?*" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">
         <processorPath useClasspath="true" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="1.6" />
   </component>
   <component name="CopyrightManager" default="">
     <module2copyright />
@@ -404,6 +414,7 @@
         <w>exml</w>
         <w>exmlc</w>
         <w>lifecycle</w>
+        <w>packagings</w>
       </words>
     </dictionary>
   </component>
@@ -413,12 +424,13 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/idea-plugin/jangaroo-0.9.iml" filepath="$PROJECT_DIR$/idea-plugin/jangaroo-0.9.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jangaroo-jps-plugin/jangaroo-jps-plugin.iml" filepath="$PROJECT_DIR$/jangaroo-jps-plugin/jangaroo-jps-plugin.iml" />
     </modules>
   </component>
   <component name="ProjectResources">
     <default-html-doctype>http://www.w3.org/1999/xhtml</default-html-doctype>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_5" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA IU-133.193" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA IU-133.193" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ProjectRunConfigurationManager">
@@ -455,5 +467,17 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
   </component>
   <component name="WebServicesPlugin" addRequiredLibraries="true" />
+  <component name="libraryTable">
+    <library name="jangaroo-api-1.0.1">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/1.0.1/jangaroo-compiler-api-1.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/1.0.1/exml-compiler-api-1.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/1.0.1/properties-compiler-api-1.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/1.0.1/jangaroo-utils-1.0.1.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+  </component>
 </project>
 

@@ -21,18 +21,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="jangaroo-api-1.0.0">
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/1.0.0/jangaroo-compiler-api-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/1.0.0/jangaroo-utils-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/1.0.0/exml-compiler-api-1.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/1.0.0/properties-compiler-api-1.0.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
@@ -70,6 +58,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="jangaroo-api-1.0.1" level="project" />
   </component>
 </module>
 
