@@ -20,6 +20,8 @@
     <sdkType implementation="net.jangaroo.ide.idea.JangarooSdkType"/>
     <compilerFactory implementation="net.jangaroo.ide.idea.JoocCompilerFactory"/>
     <facetType implementation="net.jangaroo.ide.idea.JangarooFacetType"/>
+    <compiler.buildTargetScopeProvider implementation="net.jangaroo.ide.idea.JangarooBuildTargetScopeProvider"/>
+    <compileServer.plugin classpath="jps/jangaroo-jps-plugin.jar"/>
 
     <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
     <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
