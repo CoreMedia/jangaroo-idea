@@ -55,7 +55,7 @@ public class JangarooFacetConfiguration implements FacetConfiguration, Persisten
     // ignore
   }
 
-  public JoocConfigurationBean getState() {
+  public @NotNull JoocConfigurationBean getState() {
     return joocConfigurationBean;
   }
 

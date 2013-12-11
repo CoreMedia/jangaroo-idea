@@ -5,10 +5,10 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkType;
+import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.peer.PeerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,13 +57,20 @@ public class JangarooSdkUtils {
   private static Sdk doCreateSdk(final SdkType sdkType, @NotNull final String sdkHomePath) {
     return ApplicationManager.getApplication().runWriteAction(new Computable<Sdk>() {
       public Sdk compute() {
-        Sdk sdk = PeerFactory.getInstance().createProjectJdk(sdkType.suggestSdkName(null, sdkHomePath), "", sdkHomePath, sdkType);
+        Sdk sdk = createProjectJdk(sdkType.suggestSdkName(null, sdkHomePath), "", sdkHomePath, sdkType);
         sdkType.setupSdkPaths(sdk);
         ProjectJdkTable projectJdkTable = ProjectJdkTable.getInstance();
         projectJdkTable.addJdk(sdk);
         return sdk;
       }
     });
+  }
+
+  private static Sdk createProjectJdk(final String name, final String version, final String homePath, final SdkType sdkType) {
+    final ProjectJdkImpl projectJdk = new ProjectJdkImpl(name, sdkType);
+    projectJdk.setHomePath(homePath);
+    projectJdk.setVersionString(version);
+    return projectJdk;
   }
 
   /**

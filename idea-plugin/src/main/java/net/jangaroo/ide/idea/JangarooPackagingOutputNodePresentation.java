@@ -21,7 +21,7 @@ public class JangarooPackagingOutputNodePresentation extends TreeNodePresentatio
 
   public void render(@NotNull PresentationData presentationData, SimpleTextAttributes mainAttributes,
                      SimpleTextAttributes commentAttributes) {
-    presentationData.setIcons(IconLoader.getIcon(JangarooFacetType.JANGAROO_FACET_ICON_URL));
+    presentationData.setIcon(IconLoader.getIcon(JangarooFacetType.JANGAROO_FACET_ICON_URL));
     presentationData.addText(getPresentableName(), mainAttributes);
   }
 

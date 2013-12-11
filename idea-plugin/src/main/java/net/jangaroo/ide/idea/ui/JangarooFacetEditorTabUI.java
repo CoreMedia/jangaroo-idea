@@ -60,7 +60,7 @@ public class JangarooFacetEditorTabUI {
   private static final FileChooserDescriptor TEST_OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 
   static {
-    COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo compiler JAR location.");
+    COMPILER_JAR_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo Compiler JAR Location.");
     COMPILER_JAR_CHOOSER_DESCRIPTOR.setDescription("Choose the file location of the Jangaroo compiler JAR. This allows to use different versions of the Jangaroo compiler (0.9 and up) with the same Jangaroo IDEA plugin.");
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setTitle("Choose Jangaroo Output Directory");
     OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR.setDescription("Choose the directory where Jangaroo should place JavaScript files containing compiled ActionScript classes.");

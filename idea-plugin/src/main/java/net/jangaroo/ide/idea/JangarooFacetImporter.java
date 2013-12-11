@@ -190,7 +190,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
 
     String jooClassesPath = "joo/classes";
-    boolean isJangaroo2 = jangarooSdkVersion.startsWith("2.");
+    boolean isJangaroo2 = jangarooSdkVersion != null && jangarooSdkVersion.startsWith("2.");
     if (isJangaroo2 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesPath;
     }
@@ -312,8 +312,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       for (PackagingElement packagingElement : libDir.getChildren()) {
         if (packagingElement instanceof LibraryPackagingElement) {
           Library library = ((LibraryPackagingElement)packagingElement).findLibrary(packagingElementResolvingContext);
-          if (library != null && library.getName().contains(":jangaroo:")) {
-            toBeRemovedLibraries.add(packagingElement);
+          if (library != null) {
+            String libraryName = library.getName();
+            if (libraryName != null && libraryName.contains(":jangaroo:")) {
+              toBeRemovedLibraries.add(packagingElement);
+            }
           }
         } else if (packagingElement instanceof ArchivePackagingElement) {
           List<PackagingElement<?>> archiveChildren = ((ArchivePackagingElement)packagingElement).getChildren();

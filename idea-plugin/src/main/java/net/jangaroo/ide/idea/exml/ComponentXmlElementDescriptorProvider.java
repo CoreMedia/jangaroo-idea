@@ -76,28 +76,31 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
     public String getTargetClassName() {
       XmlTag declaration = (XmlTag)super.getDeclaration();
       // only check top-level declarations:
-      if (declaration != null && declaration.getParentTag() != null
-        && "schema".equals(declaration.getParentTag().getLocalName())
-        && "http://www.w3.org/2001/XMLSchema".equals(declaration.getParentTag().getNamespace())) {
-        String packageName = ExmlUtils.parsePackageFromNamespace(getNamespace());
-        if (packageName != null) {
-          String className = CompilerUtils.qName(packageName, getName());
-          Project project = declaration.getProject();
-          JSClass asClass = AbstractCompiler.getASClass(project, className);
-          if (asClass != null && asClass.isValid()) {
-            // found ActionScript class.
-            String targetClassName = className;
-            // could be a config class with an [ExtConfig(target="...")] annotation:
-            JSAttributeList attributeList = asClass.getAttributeList();
-            if (attributeList != null) {
-              for (JSAttribute attribute : attributeList.getAttributes()) {
-                if ("ExtConfig".equals(attribute.getName())) {
-                  targetClassName = attribute.getValueByName("target").getSimpleValue();
-                  break;
+      if (declaration != null) {
+        XmlTag parentTag = declaration.getParentTag();
+        if (parentTag != null
+          && "schema".equals(parentTag.getLocalName())
+          && "http://www.w3.org/2001/XMLSchema".equals(parentTag.getNamespace())) {
+          String packageName = ExmlUtils.parsePackageFromNamespace(getNamespace());
+          if (packageName != null) {
+            String className = CompilerUtils.qName(packageName, getName());
+            Project project = declaration.getProject();
+            JSClass asClass = AbstractCompiler.getASClass(project, className);
+            if (asClass != null && asClass.isValid()) {
+              // found ActionScript class.
+              String targetClassName = className;
+              // could be a config class with an [ExtConfig(target="...")] annotation:
+              JSAttributeList attributeList = asClass.getAttributeList();
+              if (attributeList != null) {
+                for (JSAttribute attribute : attributeList.getAttributes()) {
+                  if ("ExtConfig".equals(attribute.getName())) {
+                    targetClassName = attribute.getValueByName("target").getSimpleValue();
+                    break;
+                  }
                 }
               }
+              return targetClassName;
             }
-            return targetClassName;
           }
         }
       }
@@ -113,11 +116,14 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
         VirtualFile exmlFile = findExmlFile(project, targetClassName);
         if (exmlFile != null) {
           PsiFile file = PsiManager.getInstance(project).findFile(exmlFile);
-          if (file != null && file.isValid()) {
-            return file;
+          if (file instanceof XmlFile && file.isValid()) {
+            XmlTag rootTag = ((XmlFile)file).getRootTag();
+            if (rootTag != null) {
+              return rootTag;
+            }
           }
+          return AbstractCompiler.getASClass(project, targetClassName);
         }
-        return AbstractCompiler.getASClass(project, targetClassName);
       }
       return declaration;
     }

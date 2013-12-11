@@ -14,7 +14,6 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.ComboboxWithBrowseButton;
 import com.intellij.util.ArrayUtil;
-import com.intellij.util.Icons;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -28,6 +27,7 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 
+import com.intellij.util.PlatformIcons;
 import net.jangaroo.ide.idea.JangarooSdkType;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,10 +61,10 @@ public class JangarooSdkComboBoxWithBrowseButton extends ComboboxWithBrowseButto
           if (sdk == null) {
             if (sdkCombo.isEnabled()) {
               setText("<html><font color='red'>Module SDK [not set]</font></html>");
-              setIcon(Icons.ERROR_INTRODUCTION_ICON);
+              setIcon(PlatformIcons.ERROR_INTRODUCTION_ICON);
             } else {
               setText("Module SDK [not set]");
-              setIcon(IconLoader.getDisabledIcon(Icons.ERROR_INTRODUCTION_ICON));
+              setIcon(IconLoader.getDisabledIcon(PlatformIcons.ERROR_INTRODUCTION_ICON));
             }
           } else {
             setText("Module SDK [" + sdk.getName() + "]");
@@ -73,10 +73,10 @@ public class JangarooSdkComboBoxWithBrowseButton extends ComboboxWithBrowseButto
         } else if ((value instanceof String)) {
           if (sdkCombo.isEnabled()) {
             setText("<html><font color='red'>" + value + " [Invalid]</font></html>");
-            setIcon(Icons.ERROR_INTRODUCTION_ICON);
+            setIcon(PlatformIcons.ERROR_INTRODUCTION_ICON);
           } else {
             setText(value + " [Invalid]");
-            setIcon(IconLoader.getDisabledIcon(Icons.ERROR_INTRODUCTION_ICON));
+            setIcon(IconLoader.getDisabledIcon(PlatformIcons.ERROR_INTRODUCTION_ICON));
           }
         } else if ((value instanceof Sdk)) {
           setText(((Sdk)value).getName());
@@ -92,7 +92,7 @@ public class JangarooSdkComboBoxWithBrowseButton extends ComboboxWithBrowseButto
     });
     addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        Project project = PlatformDataKeys.PROJECT.getData(DataManager.getInstance().getDataContext());
+        Project project = PlatformDataKeys.PROJECT.getData(DataManager.getInstance().getDataContext(sdkCombo));
         if (project == null) {
           project = ProjectManager.getInstance().getDefaultProject();
         }
