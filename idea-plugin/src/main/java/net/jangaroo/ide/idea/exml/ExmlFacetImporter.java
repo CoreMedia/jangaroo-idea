@@ -9,6 +9,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
+import com.intellij.util.PairConsumer;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.config.ValidationMode;
 import net.jangaroo.utils.CompilerUtils;
@@ -22,6 +23,9 @@ import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
+import org.jetbrains.jps.model.java.JavaResourceRootType;
+import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,10 +122,12 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     });
   }
 
-  public void collectSourceFolders(MavenProject mavenProject, List<String> result) {
+  @Override
+  public void collectSourceRoots(MavenProject mavenProject, PairConsumer<String, JpsModuleSourceRootType<?>> result) {
     // TODO: peek into Maven config of ext-xml goal!
-    result.add("target/generated-sources/joo");
-    result.add("target/generated-resources");
+//    result.consume("target/generated-sources/joo", JavaSourceRootType.SOURCE); // seems to be built-in
+    result.consume("target/generated-test-sources/joo", JavaSourceRootType.TEST_SOURCE);
+    result.consume("target/generated-resources", JavaResourceRootType.RESOURCE);
   }
 
   private Map<String, String> getXsdResourcesOfModule(Module module) {
