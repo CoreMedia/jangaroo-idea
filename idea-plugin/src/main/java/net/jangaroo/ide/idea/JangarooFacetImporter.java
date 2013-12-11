@@ -26,6 +26,7 @@ import com.intellij.packaging.impl.elements.ArtifactPackagingElement;
 import com.intellij.packaging.impl.elements.DirectoryPackagingElement;
 import com.intellij.packaging.impl.elements.LibraryPackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
+import com.intellij.util.PairConsumer;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -46,6 +47,8 @@ import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenProcessCanceledException;
 import org.jetbrains.idea.maven.utils.MavenProgressIndicator;
 import org.jetbrains.idea.maven.utils.MavenUtil;
+import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -231,25 +234,25 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     return jarFile.getParentFile().getAbsolutePath();
   }
 
-  public void collectSourceFolders(MavenProject mavenProject, List<String> result) {
-    collectSourceOrTestFolders(mavenProject, "compile", "src/main/joo", result);
-    result.add("src/main/joo-api"); // must be a source folder in IDEA for references to API-only classes to work
+  @Override
+  public void collectSourceRoots(MavenProject mavenProject, PairConsumer<String, JpsModuleSourceRootType<?>> result) {
+    collectSourceOrTestFolders(mavenProject, JavaSourceRootType.SOURCE, "compile", "src/main/joo", result);
+    collectSourceOrTestFolders(mavenProject, JavaSourceRootType.TEST_SOURCE, "testCompile", "src/test/joo", result);
   }
 
-  public void collectTestFolders(MavenProject mavenProject, List<String> result) {
-    collectSourceOrTestFolders(mavenProject, "testCompile", "src/test/joo", result);
-  }
-
-  private void collectSourceOrTestFolders(MavenProject mavenProject, String goal, String defaultDir, List<String> sourceDirs) {
+  private void collectSourceOrTestFolders(MavenProject mavenProject, JavaSourceRootType type, String goal, String defaultDir,
+                                          PairConsumer<String, JpsModuleSourceRootType<?>> result) {
     Element goalConfiguration = getGoalConfig(mavenProject, goal);
     if (goalConfiguration != null) {
       List<String> mvnSrcDirs = MavenJDOMUtil.findChildrenValuesByPath(goalConfiguration, "sources", "directory");
       if (!mvnSrcDirs.isEmpty()) {
-        sourceDirs.addAll(mvnSrcDirs);
+        for (String mvnSrcDir : mvnSrcDirs) {
+          result.consume(mvnSrcDir, type);
+        }
         return;
       }
     }
-    sourceDirs.add(defaultDir);
+    result.consume(defaultDir, type);
   }
 
   private static class AddJangarooPackagingOutputToExplodedWebArtifactsTask implements MavenProjectsProcessorTask {

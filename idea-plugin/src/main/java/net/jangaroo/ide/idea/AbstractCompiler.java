@@ -4,9 +4,9 @@ import com.intellij.compiler.impl.CompilerUtil;
 import com.intellij.facet.Facet;
 import com.intellij.facet.FacetManager;
 import com.intellij.facet.FacetTypeId;
-import com.intellij.lang.javascript.index.JavaScriptIndex;
+import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
-import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
@@ -14,7 +14,6 @@ import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.TranslatingCompiler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ExportableOrderEntry;
@@ -102,8 +101,8 @@ public abstract class AbstractCompiler implements TranslatingCompiler {
     return jarFileNames;
   }
 
-  public static JSClass getASClass(Project project, String className) {
-    PsiElement asClass = JSResolveUtil.findClassByQName(className, JavaScriptIndex.getInstance(project), null);
+  public static JSClass getASClass(PsiElement context, String className) {
+    PsiElement asClass = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver().findClassByQName(className, context);
     return asClass instanceof JSClass ? (JSClass)asClass : null;
   }
 

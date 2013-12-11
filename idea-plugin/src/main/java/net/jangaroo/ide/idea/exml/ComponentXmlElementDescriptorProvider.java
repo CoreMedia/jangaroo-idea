@@ -13,7 +13,6 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.source.xml.XmlElementDescriptorProvider;
@@ -69,12 +68,12 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
     }
 
     public ComponentXmlElementDescriptor(@NotNull XmlElementDescriptorImpl xmlElementDescriptor) {
-      super((XmlTag)xmlElementDescriptor.getDeclaration());
+      super(xmlElementDescriptor.getDeclaration());
       NSDescriptor = xmlElementDescriptor.getNSDescriptor();
     }
 
     public String getTargetClassName() {
-      XmlTag declaration = (XmlTag)super.getDeclaration();
+      XmlTag declaration = super.getDeclaration();
       // only check top-level declarations:
       if (declaration != null) {
         XmlTag parentTag = declaration.getParentTag();
@@ -84,8 +83,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
           String packageName = ExmlUtils.parsePackageFromNamespace(getNamespace());
           if (packageName != null) {
             String className = CompilerUtils.qName(packageName, getName());
-            Project project = declaration.getProject();
-            JSClass asClass = AbstractCompiler.getASClass(project, className);
+            JSClass asClass = AbstractCompiler.getASClass(parentTag, className);
             if (asClass != null && asClass.isValid()) {
               // found ActionScript class.
               String targetClassName = className;
@@ -107,8 +105,8 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
       return null;
     }
 
-    public PsiElement getDeclaration() {
-      PsiElement declaration = super.getDeclaration();
+    public XmlTag getDeclaration() {
+      XmlTag declaration = super.getDeclaration();
       String targetClassName = getTargetClassName();
       if (targetClassName != null) {
         // always prefer EXML file:
@@ -122,7 +120,6 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
               return rootTag;
             }
           }
-          return AbstractCompiler.getASClass(project, targetClassName);
         }
       }
       return declaration;
