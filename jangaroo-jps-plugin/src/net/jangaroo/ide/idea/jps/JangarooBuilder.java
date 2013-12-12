@@ -5,7 +5,9 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import gnu.trove.THashSet;
 import net.jangaroo.jooc.api.Jooc;
+import net.jangaroo.jooc.config.JoocConfiguration;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.FileProcessor;
@@ -17,12 +19,23 @@ import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
+import org.jetbrains.jps.incremental.messages.BuildMessage;
+import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
+import org.jetbrains.jps.model.java.JavaSourceRootProperties;
+import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,8 +69,10 @@ public class JangarooBuilder extends ModuleLevelBuilder {
   }
 
   @Override
-  public ExitCode build(CompileContext context, ModuleChunk moduleChunk, DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder, OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
-    final Set<File> filesToCompile = new THashSet<File>(FileUtil.FILE_HASHING_STRATEGY);
+  public ExitCode build(CompileContext context, ModuleChunk chunk,
+                        DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
+                        OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
+    final List<File> filesToCompile = new ArrayList<File>();
 
     dirtyFilesHolder.processDirtyFiles(new FileProcessor<JavaSourceRootDescriptor, ModuleBuildTarget>() {
       public boolean apply(ModuleBuildTarget target, File file, JavaSourceRootDescriptor descriptor) throws IOException {
@@ -79,9 +94,45 @@ public class JangarooBuilder extends ModuleLevelBuilder {
 
     // TODO: found files to compile; hand over to jooc!
 
+    Map<ModuleBuildTarget, String> finalOutputs = getCanonicalModuleOutputs(context, chunk);
+    if (finalOutputs == null) {
+      return ExitCode.ABORT;
+    }
+
+    Jooc jooc = new net.jangaroo.jooc.Jooc();
+    for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
+      JoocConfiguration joocConfiguration = new JoocConfiguration();
+      JpsModule module = moduleBuildTarget.getModule();
+      List<File> sourcePath = new ArrayList<File>();
+      for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
+        sourcePath.add(sourceRoot.getFile());
+      }
+      joocConfiguration.setSourcePath(sourcePath);
+      joocConfiguration.setSourceFiles(filesToCompile);
+      joocConfiguration.setOutputDirectory(moduleBuildTarget.getOutputDir());
+      jooc.setConfig(joocConfiguration);
+      jooc.run();
+    }
+
     return ExitCode.NOTHING_DONE;
   }
 
+  @Nullable
+  private Map<ModuleBuildTarget, String> getCanonicalModuleOutputs(CompileContext context, ModuleChunk chunk) {
+    Map<ModuleBuildTarget, String> finalOutputs = new HashMap<ModuleBuildTarget, String>();
+    for (ModuleBuildTarget target : chunk.getTargets()) {
+      File moduleOutputDir = target.getOutputDir();
+      if (moduleOutputDir == null) {
+        context.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, BuildMessage.Kind.ERROR, "Output directory not specified for module " + target.getModule().getName()));
+        return null;
+      }
+      String moduleOutputPath = FileUtil.toCanonicalPath(moduleOutputDir.getPath());
+      assert moduleOutputPath != null;
+      finalOutputs.put(target, moduleOutputPath.endsWith("/") ? moduleOutputPath : moduleOutputPath + "/");
+    }
+    return finalOutputs;
+  }
+  
   @NotNull
   @Override
   public String getPresentableName() {
