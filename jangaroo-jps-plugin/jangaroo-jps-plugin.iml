@@ -14,7 +14,9 @@
           <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/2.0.8/jangaroo-compiler-2.0.8.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/2.0.8/jangaroo-compiler-2.0.8-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

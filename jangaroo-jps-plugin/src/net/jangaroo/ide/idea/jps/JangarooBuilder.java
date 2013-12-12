@@ -3,8 +3,10 @@ package net.jangaroo.ide.idea.jps;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import gnu.trove.THashSet;
+import net.jangaroo.jooc.StdOutCompileLog;
+import net.jangaroo.jooc.api.CompilationResult;
 import net.jangaroo.jooc.api.Jooc;
+import net.jangaroo.jooc.config.DebugMode;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,9 +23,12 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
-import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.module.JpsDependencyElement;
+import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
 
@@ -31,16 +36,13 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA. User: fwienber Date: 26.11.13 Time: 11:36 To change this template use File | Settings |
- * File Templates.
+ * Jangaroo analog of {@link org.jetbrains.jps.incremental.java.JavaBuilder}.
  */
 public class JangarooBuilder extends ModuleLevelBuilder {
 
@@ -92,26 +94,52 @@ public class JangarooBuilder extends ModuleLevelBuilder {
       }
     }
 
-    // TODO: found files to compile; hand over to jooc!
-
-    Map<ModuleBuildTarget, String> finalOutputs = getCanonicalModuleOutputs(context, chunk);
-    if (finalOutputs == null) {
-      return ExitCode.ABORT;
-    }
-
-    Jooc jooc = new net.jangaroo.jooc.Jooc();
-    for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
-      JoocConfiguration joocConfiguration = new JoocConfiguration();
-      JpsModule module = moduleBuildTarget.getModule();
-      List<File> sourcePath = new ArrayList<File>();
-      for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
-        sourcePath.add(sourceRoot.getFile());
+    if (!filesToCompile.isEmpty()) {
+      Map<ModuleBuildTarget, String> finalOutputs = getCanonicalModuleOutputs(context, chunk);
+      if (finalOutputs == null) {
+        return ExitCode.ABORT;
       }
-      joocConfiguration.setSourcePath(sourcePath);
-      joocConfiguration.setSourceFiles(filesToCompile);
-      joocConfiguration.setOutputDirectory(moduleBuildTarget.getOutputDir());
-      jooc.setConfig(joocConfiguration);
-      jooc.run();
+
+      Jooc jooc = new net.jangaroo.jooc.Jooc(); // TODO: instantiate Jooc from Jangaroo SDK (CompilerLoader)!
+      for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
+        JoocConfiguration joocConfiguration = new JoocConfiguration();
+        JpsModule module = moduleBuildTarget.getModule();
+        List<File> sourcePath = new ArrayList<File>();
+        for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
+          sourcePath.add(sourceRoot.getFile());
+        }
+        joocConfiguration.setSourcePath(sourcePath);
+
+        ArrayList<File> classPath = new ArrayList<File>();
+        List<JpsDependencyElement> dependencies = module.getDependenciesList().getDependencies();
+        for (JpsDependencyElement dependency : dependencies) {
+          if (dependency instanceof JpsLibraryDependency) {
+            JpsLibrary library = ((JpsLibraryDependency)dependency).getLibrary();
+            if (library != null) {
+              classPath.addAll(library.getFiles(JpsOrderRootType.COMPILED));
+            }
+          }
+        }
+        joocConfiguration.setClassPath(classPath);
+        joocConfiguration.setSourceFiles(filesToCompile);
+        joocConfiguration.setOutputDirectory(moduleBuildTarget.getOutputDir());
+        joocConfiguration.setDebugMode(DebugMode.SOURCE);
+        jooc.setConfig(joocConfiguration);
+        jooc.setLog(new StdOutCompileLog()); // TODO: implement Jangaroo CompileLog to delegate to JPS CompileContext!
+
+        // TODO: hand over Facet configuration to JPS and configure it here!
+
+        CompilationResult compilationResult = jooc.run();
+        if (compilationResult.getResultCode() == CompilationResult.RESULT_CODE_COMPILATION_FAILED) {
+          // TODO: add error (maybe the logger already did that)?
+          return ExitCode.ABORT;
+        }
+        if (compilationResult.getResultCode() != CompilationResult.RESULT_CODE_OK) {
+          // TODO: we used the compiler incorrectly. log or throw internal error?
+          return ExitCode.ABORT;
+        }
+      }
+      return ExitCode.OK;
     }
 
     return ExitCode.NOTHING_DONE;

@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ArtifactManager">
-    <artifact type="jar" build-on-make="true" name="jangaroo-jps-plugin">
+    <artifact build-on-make="true" name="jangaroo-jps-plugin:jar">
       <output-path>$USER_HOME$/.IntelliJIdea12/system/plugins-sandbox/plugins/jangaroo-0.9/lib/jps</output-path>
-      <root id="archive" name="jangaroo-jps-plugin.jar">
-        <element id="module-output" name="jangaroo-jps-plugin" />
+      <root id="root">
+        <element id="archive" name="jangaroo-jps-plugin.jar">
+          <element id="directory" name="META-INF">
+            <element id="file-copy" path="$PROJECT_DIR$/jangaroo-jps-plugin/src/META-INF/MANIFEST.MF" />
+          </element>
+          <element id="module-output" name="jangaroo-jps-plugin" />
+        </element>
+        <element id="library" level="project" name="jangaroo-api-1.0.1" />
+        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-io-2.0.1.jar" />
+        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/java-cup-10k.jar" />
+        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-collections-3.2.1.jar" />
+        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/args4j-2.0.16.jar" />
+        <element id="file-copy" path="$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/2.0.8/jangaroo-compiler-2.0.8.jar" />
+        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-configuration-1.6.jar" />
       </root>
     </artifact>
   </component>
@@ -438,7 +450,7 @@
       <module name="jangaroo-0.9" />
       <option name="VM_PARAMETERS" value=" -Xms256m -Xmx768m -XX:MaxPermSize=156m -ea -agentlib:yjpagent=disablej2ee,disablecounts,disablealloc,sessionname=IntelliJIDEA" />
       <option name="PROGRAM_PARAMETERS" value="" />
-      <log_file path="$USER_HOME$/.IntelliJIdea10/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
+      <log_file path="$USER_HOME$/.IntelliJIdea12/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="51555" />
         <option name="TRANSPORT" value="0" />
