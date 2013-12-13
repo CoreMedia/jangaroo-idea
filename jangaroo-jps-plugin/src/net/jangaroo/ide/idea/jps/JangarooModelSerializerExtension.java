@@ -1,16 +1,21 @@
 package net.jangaroo.ide.idea.jps;
 
+import com.intellij.facet.FacetManagerImpl;
+import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.util.xmlb.XmlSerializer;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.jps.model.serialization.JDomSerializationUtil;
 import org.jetbrains.jps.model.serialization.JpsModelSerializerExtension;
+import org.jetbrains.jps.model.serialization.facet.JpsFacetSerializer;
 
 /**
- * Created with IntelliJ IDEA. User: fwienber Date: 12.12.13 Time: 23:10 To change this template use File | Settings |
- * File Templates.
+ * JPS extension to extract Jangaroo Facet configuration into the corresponding JpsModule.
  */
 public class JangarooModelSerializerExtension extends JpsModelSerializerExtension {
+
+  public static final String JANGAROO_STRING_ID = "jangaroo";
 
   @Override
   public void loadModuleOptions(@NotNull JpsModule jpsModule, @NotNull Element rootTag) {
@@ -26,13 +31,10 @@ public class JangarooModelSerializerExtension extends JpsModelSerializerExtensio
   }
 
   private Element findJangarooFacetConfiguration(Element rootTag) {
-    for (Element component : rootTag.getChildren("component")) {
-      if ("FacetManager".equals(component.getAttributeValue("name"))) {
-        for (Element facet : component.getChildren("facet")) {
-          if ("jangaroo".equals(facet.getAttributeValue("type"))) {
-            return facet.getChild("configuration");
-          }
-        }
+    Element facetManagerElement = JDomSerializationUtil.findComponent(rootTag, FacetManagerImpl.COMPONENT_NAME);
+    for (Element facet : JDOMUtil.getChildren(facetManagerElement, JpsFacetSerializer.FACET_TAG)) {
+      if (JANGAROO_STRING_ID.equals(facet.getAttributeValue(JpsFacetSerializer.TYPE_ATTRIBUTE))) {
+        return facet.getChild(JpsFacetSerializer.CONFIGURATION_TAG);
       }
     }
     return null;
