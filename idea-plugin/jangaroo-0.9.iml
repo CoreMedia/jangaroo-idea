@@ -59,6 +59,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="jangaroo-api-1.0.1" level="project" />
+    <orderEntry type="module" module-name="jangaroo-jps-plugin" />
   </component>
 </module>
 

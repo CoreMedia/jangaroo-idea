@@ -27,6 +27,7 @@ import com.intellij.packaging.impl.elements.DirectoryPackagingElement;
 import com.intellij.packaging.impl.elements.LibraryPackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
 import com.intellij.util.PairConsumer;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
 
 /**
  * A Facet-from-Maven Importer for the Jangaroo Facet type.

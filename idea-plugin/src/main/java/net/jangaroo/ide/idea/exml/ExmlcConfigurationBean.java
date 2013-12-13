@@ -15,7 +15,7 @@
 package net.jangaroo.ide.idea.exml;
 
 import net.jangaroo.exml.config.ValidationMode;
-import net.jangaroo.ide.idea.util.IdeaFileUtils;
+import net.jangaroo.ide.idea.jps.util.IdeaFileUtils;
 
 /**
  * IDEA serialization adapter of JoocConfiguration. 

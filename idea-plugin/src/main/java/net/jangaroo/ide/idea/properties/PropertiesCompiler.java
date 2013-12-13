@@ -27,11 +27,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.JangarooFacet;
 import net.jangaroo.ide.idea.JangarooFacetType;
-import net.jangaroo.ide.idea.JoocConfigurationBean;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.exml.ExmlCompiler;
 import net.jangaroo.ide.idea.exml.ExmlFacetType;
 import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
-import net.jangaroo.ide.idea.util.CompilerLoader;
+import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.api.Jooc;
 import net.jangaroo.properties.api.Propc;
@@ -42,7 +42,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * An IDEA wrapper for Jangaroo's properties compiler "propc".

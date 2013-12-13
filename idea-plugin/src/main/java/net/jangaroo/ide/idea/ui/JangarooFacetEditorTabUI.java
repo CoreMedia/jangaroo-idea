@@ -14,7 +14,7 @@
  */
 package net.jangaroo.ide.idea.ui;
 
-import net.jangaroo.ide.idea.JoocConfigurationBean;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 
 import javax.swing.*;
 
@@ -24,8 +24,8 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 //import com.intellij.openapi.fileChooser.FileChooserFactory;
 //import com.intellij.openapi.fileChooser.FileTextField;

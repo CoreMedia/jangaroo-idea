@@ -1,4 +1,4 @@
-package net.jangaroo.ide.idea.util;
+package net.jangaroo.ide.idea.jps.util;
 
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.jooc.api.Jooc;

@@ -24,6 +24,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.roots.ModuleRootModel;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 

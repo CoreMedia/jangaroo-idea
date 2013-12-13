@@ -15,7 +15,6 @@
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/java-cup-10k.jar" />
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-collections-3.2.1.jar" />
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/args4j-2.0.16.jar" />
-        <element id="file-copy" path="$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler/2.0.8/jangaroo-compiler-2.0.8.jar" />
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-configuration-1.6.jar" />
       </root>
     </artifact>
@@ -96,7 +95,9 @@
     <option name="GENERATE_NO_WARNINGS" value="true" />
     <option name="DEPRECATION" value="false" />
   </component>
-  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$/jangaroo-jps-plugin/src/META-INF/services/org.jetbrains.jps.model.serialization.JpsModelSerializerExtension" charset="UTF-8" />
+  </component>
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>

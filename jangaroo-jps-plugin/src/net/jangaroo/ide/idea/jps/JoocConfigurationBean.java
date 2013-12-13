@@ -12,18 +12,23 @@
  * express or implied. See the License for the specific language 
  * governing permissions and limitations under the License.
  */
-package net.jangaroo.ide.idea;
+package net.jangaroo.ide.idea.jps;
 
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.JpsElementChildRole;
+import org.jetbrains.jps.model.ex.JpsElementBase;
+import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
+import org.jetbrains.jps.model.module.JpsModule;
 
 import java.io.File;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * IDEA serialization adapter of JoocConfiguration. 
  */
-public class JoocConfigurationBean {
+public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean> {
   public static final int DEBUG_LEVEL_NONE = 0;
   public static final int DEBUG_LEVEL_LINES = 50;
   public static final int DEBUG_LEVEL_SOURCE = 100;
@@ -40,7 +45,31 @@ public class JoocConfigurationBean {
   public boolean showCompilerInfoMessages = false;
   public PublicApiViolationsMode publicApiViolationsMode;
 
+  static final JpsElementChildRole<JoocConfigurationBean> ROLE = JpsElementChildRoleBase.create("Jangaroo Compiler Configuration");
+
+  public String jangarooSdk;
+
   public JoocConfigurationBean() {
+  }
+
+  public JoocConfigurationBean(JoocConfigurationBean source) {
+    jangarooSdk = source.jangarooSdk;
+  }
+
+  @NotNull
+  @Override
+  public JoocConfigurationBean createCopy() {
+    return new JoocConfigurationBean(this);
+  }
+
+  @Override
+  public void applyChanges(@NotNull JoocConfigurationBean jpsJangarooSettings) {
+  }
+
+  @NotNull
+  public static JoocConfigurationBean getSettings(@NotNull JpsModule module) {
+    JoocConfigurationBean settings = module.getContainer().getChild(ROLE);
+    return settings == null ? new JoocConfigurationBean() : settings;
   }
 
   public boolean isDebug() {

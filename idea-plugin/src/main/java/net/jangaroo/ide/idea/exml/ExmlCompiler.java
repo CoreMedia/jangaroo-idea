@@ -16,8 +16,8 @@ import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.AbstractCompiler;
-import net.jangaroo.ide.idea.JoocConfigurationBean;
-import net.jangaroo.ide.idea.util.CompilerLoader;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
+import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.api.Jooc;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * An IDEA wrapper for Jangaroo's EXML compiler "exmlc".

@@ -1,4 +1,4 @@
-package net.jangaroo.ide.idea.util;
+package net.jangaroo.ide.idea.jps.util;
 
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;

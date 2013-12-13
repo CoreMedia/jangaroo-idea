@@ -29,6 +29,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.Chunk;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.api.CompileLog;
 import net.jangaroo.jooc.config.DebugMode;

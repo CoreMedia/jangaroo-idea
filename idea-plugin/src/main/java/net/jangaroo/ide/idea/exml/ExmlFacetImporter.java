@@ -39,8 +39,8 @@ import java.util.zip.ZipFile;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.EXML_MAVEN_PLUGIN_ARTIFACT_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.JANGAROO_GROUP_ID;
 import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPlugin;
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * A Facet-from-Maven Importer for the EXML Facet type.

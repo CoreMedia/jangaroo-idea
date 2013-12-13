@@ -16,6 +16,7 @@ package net.jangaroo.ide.idea;
 
 import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.openapi.options.ConfigurationException;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.ui.JangarooFacetEditorTabUI;
 import org.jetbrains.annotations.Nls;
 

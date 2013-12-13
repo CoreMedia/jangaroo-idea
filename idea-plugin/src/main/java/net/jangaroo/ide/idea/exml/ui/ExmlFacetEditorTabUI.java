@@ -23,8 +23,8 @@ import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
 
 import javax.swing.*;
 
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toIdeaUrl;
-import static net.jangaroo.ide.idea.util.IdeaFileUtils.toPath;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
+import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * Jangaroo configuration on its Facet Tab.
