@@ -5,10 +5,15 @@ import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.util.xmlb.XmlSerializer;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.serialization.JDomSerializationUtil;
 import org.jetbrains.jps.model.serialization.JpsModelSerializerExtension;
 import org.jetbrains.jps.model.serialization.facet.JpsFacetSerializer;
+import org.jetbrains.jps.model.serialization.library.JpsSdkPropertiesSerializer;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * JPS extension to extract Jangaroo Facet configuration into the corresponding JpsModule.
@@ -16,6 +21,12 @@ import org.jetbrains.jps.model.serialization.facet.JpsFacetSerializer;
 public class JangarooModelSerializerExtension extends JpsModelSerializerExtension {
 
   public static final String JANGAROO_STRING_ID = "jangaroo";
+
+  @NotNull
+  @Override
+  public List<? extends JpsSdkPropertiesSerializer<?>> getSdkPropertiesSerializers() {
+    return Collections.singletonList(new JangarooSdkPropertiesSerializer());
+  }
 
   @Override
   public void loadModuleOptions(@NotNull JpsModule jpsModule, @NotNull Element rootTag) {

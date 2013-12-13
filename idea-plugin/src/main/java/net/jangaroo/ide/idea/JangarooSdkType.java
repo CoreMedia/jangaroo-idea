@@ -13,6 +13,7 @@ import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.jangaroo.ide.idea.jps.JangarooSdkPropertiesSerializer;
 import org.jdom.Element;
 
 import javax.swing.Icon;
@@ -30,7 +31,7 @@ public class JangarooSdkType extends SdkType {
     Pattern.compile("^" + JangarooFacetImporter.JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+\\.[0-9]+(\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
 
   public JangarooSdkType() {
-    super("Jangaroo SDK");
+    super(JangarooSdkPropertiesSerializer.JANGAROO_SDK_TYPE_ID);
   }
 
   @Override
