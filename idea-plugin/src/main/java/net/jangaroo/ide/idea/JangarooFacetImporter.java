@@ -43,7 +43,6 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 import org.jetbrains.idea.maven.project.SupportedRequestType;
-import org.jetbrains.idea.maven.utils.MavenArtifactUtil;
 import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenProcessCanceledException;
 import org.jetbrains.idea.maven.utils.MavenProgressIndicator;
@@ -229,9 +228,9 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
   }
 
-  public static String jangarooSdkHomePath(String artifactId, String version) {
+  private static String jangarooSdkHomePath(String artifactId, String version) {
     File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
-    File jarFile = MavenArtifactUtil.getArtifactFile(localRepository, JANGAROO_GROUP_ID, artifactId, version, "jar");
+    File jarFile = JangarooSdkUtils.getJangarooArtifact(localRepository, artifactId, version);
     return jarFile.getParentFile().getAbsolutePath();
   }
 

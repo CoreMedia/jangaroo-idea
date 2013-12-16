@@ -11,7 +11,9 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.idea.maven.utils.MavenArtifactUtil;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -114,4 +116,7 @@ public class JangarooSdkUtils {
     return result;
   }
 
+  public static File getJangarooArtifact(File localRepository, String artifactId, String version) {
+    return MavenArtifactUtil.getArtifactFile(localRepository, JangarooFacetImporter.JANGAROO_GROUP_ID, artifactId, version, "jar");
+  }
 }

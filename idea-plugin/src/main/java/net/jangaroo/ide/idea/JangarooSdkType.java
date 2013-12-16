@@ -11,14 +11,20 @@ import com.intellij.openapi.roots.JavadocOrderRootType;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.JarFileSystem;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.jangaroo.ide.idea.jps.JangarooSdkPropertiesSerializer;
+import net.jangaroo.ide.idea.jps.JpsJangarooSdkProperties;
 import org.jdom.Element;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.Icon;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,57 +36,66 @@ public class JangarooSdkType extends SdkType {
   private static final Pattern JANGAROO_COMPILER_API_JAR_PATTERN =
     Pattern.compile("^" + JangarooFacetImporter.JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+\\.[0-9]+(\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
 
+  private static final String[] JANGAROO_API_JAR_ARTIFACTS = new String[]{
+    "jangaroo-compiler",
+    "exml-compiler",
+    "properties-compiler"
+  };
   public JangarooSdkType() {
     super(JangarooSdkPropertiesSerializer.JANGAROO_SDK_TYPE_ID);
   }
 
   @Override
-  public void setupSdkPaths(Sdk sdk) {
+  public void setupSdkPaths(@NotNull Sdk sdk) {
     VirtualFile sdkRoot = sdk.getHomeDirectory();
     if (sdkRoot != null && sdkRoot.isValid()) {
+      String sdkVersion;
+      List<String> jarPaths = new ArrayList<String>();
       // check Jangaroo SDK Maven layout: 
       String mavenVersion = getVersionFromMavenLayout(sdkRoot);
       if (mavenVersion != null) {
-        VirtualFile rootDirectory = sdkRoot.getParent().getParent();
-        SdkModificator modificator = sdk.getSdkModificator();
-        modificator.setVersionString(mavenVersion);
-        addArtifact(rootDirectory, "jangaroo-compiler", mavenVersion, modificator);
-        addArtifact(rootDirectory, "exml-compiler", mavenVersion, modificator);
-        addArtifact(rootDirectory, "properties-compiler", mavenVersion, modificator);
-        modificator.commitChanges();
+        sdkVersion = mavenVersion;
+        File rootDirectory = new File(sdkRoot.getParent().getParent().getPath());
+        for (String jangarooApiJarArtifact : JANGAROO_API_JAR_ARTIFACTS) {
+          jarPaths.add(JangarooSdkUtils.getJangarooArtifact(rootDirectory, jangarooApiJarArtifact, mavenVersion).getPath());
+        }
       } else {
         // check Jangaroo SDK download layout:
-        String sdkVersion = getVersionFromSdkLayout(sdkRoot);
+        sdkVersion = getVersionFromSdkLayout(sdkRoot);
         if (sdkVersion != null) {
           VirtualFile binDir = sdkRoot.findChild("bin");
+          if (binDir == null) {
+            return;
+          }
+          File binDirFile = new File(binDir.getPath());
           String fileSuffix = sdkVersion + "-jar-with-dependencies";
-          SdkModificator modificator = sdk.getSdkModificator();
-          modificator.setVersionString(sdkVersion);
-          addArtifactIfExists(binDir, "jangaroo-compiler", fileSuffix, modificator);
-          addArtifactIfExists(binDir, "exml-compiler", fileSuffix, modificator);
-          addArtifactIfExists(binDir, "properties-compiler", fileSuffix, modificator);
-          modificator.commitChanges();
+          for (String jangarooApiJarArtifact : JANGAROO_API_JAR_ARTIFACTS) {
+            jarPaths.add(getArtifactPath(binDirFile, jangarooApiJarArtifact, fileSuffix));
+          }
         }
+      }
+      if (sdkVersion != null) {
+        SdkModificator modificator = sdk.getSdkModificator();
+        modificator.setVersionString(sdkVersion);
+        for (String jarPath : jarPaths) {
+          addJarPath(modificator, jarPath);
+        }
+        modificator.setSdkAdditionalData(new JpsJangarooSdkProperties(jarPaths));
+        modificator.commitChanges();
       }
     }
   }
 
-  private static void addArtifact(VirtualFile dir, String artifactId, String version, SdkModificator modificator) {
-    VirtualFile parentDir = dir.findChild(artifactId);
-    if (parentDir != null) {
-      VirtualFile versionDir = parentDir.findChild(version);
-      addArtifactIfExists(versionDir, artifactId, version, modificator);
-    }
+  private static @NotNull String getArtifactPath(File dir, String artifactId, String version) {
+    return new File(dir, artifactId + "-" + version + ".jar").getPath();
   }
 
-  private static void addArtifactIfExists(VirtualFile dir, String artifactId, String version, SdkModificator modificator) {
-    if (dir != null) {
-      VirtualFile artifact = dir.findChild(artifactId + "-" + version + ".jar");
-      if (artifact != null) {
-        VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(artifact);
-        if (!Arrays.asList(modificator.getRoots(OrderRootType.CLASSES)).contains(jarRoot)) {
-          modificator.addRoot(jarRoot, OrderRootType.CLASSES);
-        }
+  private static void addJarPath(SdkModificator modificator, @NotNull String jarPath) {
+    VirtualFile jar = LocalFileSystem.getInstance().findFileByPath(jarPath);
+    if (jar != null) {
+      VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(jar);
+      if (!Arrays.asList(modificator.getRoots(OrderRootType.CLASSES)).contains(jarRoot)) {
+        modificator.addRoot(jarRoot, OrderRootType.CLASSES);
       }
     }
   }
@@ -106,7 +121,7 @@ public class JangarooSdkType extends SdkType {
   }
 
   @Override
-  public void saveAdditionalData(SdkAdditionalData additionalData, Element additional) {
+  public void saveAdditionalData(@NotNull SdkAdditionalData additionalData, @NotNull Element additional) {
   }
 
   @Override
@@ -172,7 +187,7 @@ public class JangarooSdkType extends SdkType {
   }
 
   @Override
-  public String getVersionString(Sdk sdk) {
+  public String getVersionString(@NotNull Sdk sdk) {
     return super.getVersionString(sdk);    //To change body of overridden methods use File | Settings | File Templates.
   }
 
@@ -181,6 +196,7 @@ public class JangarooSdkType extends SdkType {
     return super.loadAdditionalData(additional);    //To change body of overridden methods use File | Settings | File Templates.
   }
 
+  @NotNull
   @Override
   public String getName() {
     return super.getName();    //To change body of overridden methods use File | Settings | File Templates.
