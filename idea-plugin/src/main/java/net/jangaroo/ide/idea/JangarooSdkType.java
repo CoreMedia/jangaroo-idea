@@ -49,25 +49,25 @@ public class JangarooSdkType extends SdkType {
   public void setupSdkPaths(@NotNull Sdk sdk) {
     VirtualFile sdkRoot = sdk.getHomeDirectory();
     if (sdkRoot != null && sdkRoot.isValid()) {
+      File sdkRootDir = VfsUtil.virtualToIoFile(sdkRoot);
       String sdkVersion;
       List<String> jarPaths = new ArrayList<String>();
       // check Jangaroo SDK Maven layout: 
-      String mavenVersion = getVersionFromMavenLayout(sdkRoot);
+      String mavenVersion = getVersionFromMavenLayout(sdkRootDir);
       if (mavenVersion != null) {
         sdkVersion = mavenVersion;
-        File rootDirectory = new File(sdkRoot.getParent().getParent().getPath());
+        File rootDirectory = sdkRootDir.getParentFile().getParentFile();
         for (String jangarooApiJarArtifact : JANGAROO_API_JAR_ARTIFACTS) {
           jarPaths.add(JangarooSdkUtils.getJangarooArtifact(rootDirectory, jangarooApiJarArtifact, mavenVersion).getPath());
         }
       } else {
         // check Jangaroo SDK download layout:
-        sdkVersion = getVersionFromSdkLayout(sdkRoot);
+        sdkVersion = getVersionFromSdkLayout(sdkRootDir);
         if (sdkVersion != null) {
-          VirtualFile binDir = sdkRoot.findChild("bin");
-          if (binDir == null) {
+          File binDirFile = new File(sdkRootDir, "bin");
+          if (!binDirFile.exists()) {
             return;
           }
-          File binDirFile = new File(binDir.getPath());
           String fileSuffix = sdkVersion + "-jar-with-dependencies";
           for (String jangarooApiJarArtifact : JANGAROO_API_JAR_ARTIFACTS) {
             jarPaths.add(getArtifactPath(binDirFile, jangarooApiJarArtifact, fileSuffix));
@@ -140,8 +140,8 @@ public class JangarooSdkType extends SdkType {
 
   @Override
   public String getVersionString(String sdkHome) {
-    VirtualFile sdkRoot = sdkHome != null ? VfsUtil.findRelativeFile(sdkHome, null) : null;
-    if (sdkRoot != null && sdkRoot.isValid()) {
+    File sdkRoot = sdkHome != null ? new File(sdkHome) : null;
+    if (sdkRoot != null && sdkRoot.exists()) {
       // check Jangaroo SDK Maven layout: 
       String joocJar = getVersionFromMavenLayout(sdkRoot);
       if (joocJar == null) {
@@ -153,19 +153,22 @@ public class JangarooSdkType extends SdkType {
     return null;
   }
 
-  private String getVersionFromSdkLayout(VirtualFile sdkRoot) {
-    VirtualFile binDir = sdkRoot.findChild("bin");
-    if (binDir != null && binDir.isValid()) {
+  private String getVersionFromSdkLayout(File sdkRoot) {
+    File binDir = new File(sdkRoot, "bin");
+    if (binDir.exists()) {
       return getVersionFromMavenLayout(binDir);
     }
     return null;
   }
 
-  private static String getVersionFromMavenLayout(VirtualFile dir) {
-    for (VirtualFile child : dir.getChildren()) {
-      Matcher matcher = JANGAROO_COMPILER_API_JAR_PATTERN.matcher(child.getName());
-      if (matcher.matches()) {
-        return matcher.group(1);
+  private static String getVersionFromMavenLayout(@NotNull File dir) {
+    File[] children = dir.listFiles();
+    if (children != null) {
+      for (File child : children) {
+        Matcher matcher = JANGAROO_COMPILER_API_JAR_PATTERN.matcher(child.getName());
+        if (matcher.matches()) {
+          return matcher.group(1);
+        }
       }
     }
     return null;

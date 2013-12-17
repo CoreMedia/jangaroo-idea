@@ -27,10 +27,12 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.model.JpsSimpleElement;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.library.sdk.JpsSdk;
 import org.jetbrains.jps.model.module.JpsDependencyElement;
 import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
@@ -110,6 +112,8 @@ public class JangarooBuilder extends ModuleLevelBuilder {
 
       for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
         JpsModule module = moduleBuildTarget.getModule();
+        JpsSdk<JpsSimpleElement<JpsJangarooSdkProperties>> sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
+        // TODO: use SDK to retrieve JARs derived from SDK's home path!
         JoocConfigurationBean settings = JoocConfigurationBean.getSettings(module);
         JoocConfiguration joocConfiguration = getJoocConfiguration(module, filesToCompile, false);
         CompilationResult compilationResult = runJooc(settings.jangarooSdkName, joocConfiguration, new JpsCompileLog(context));
