@@ -12,6 +12,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.packaging.artifacts.Artifact;
@@ -28,6 +29,7 @@ import com.intellij.packaging.impl.elements.LibraryPackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
 import com.intellij.util.PairConsumer;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
+import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -64,21 +66,19 @@ import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
  * A Facet-from-Maven Importer for the Jangaroo Facet type.
  */
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
-  public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
-  static final String JANGAROO_COMPILER_API_ARTIFACT_ID = "jangaroo-compiler-api";
   public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
   public JangarooFacetImporter() {
-    super(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, JangarooFacetType.INSTANCE, DEFAULT_JANGAROO_FACET_NAME);
+    super(JpsJangarooSdkType.JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, JangarooFacetType.INSTANCE, DEFAULT_JANGAROO_FACET_NAME);
   }
 
   // we cannot use MavenProject#findPlugin(), because it also searches in <pluginManagement>:
   public static MavenPlugin findDeclaredJangarooPlugin(MavenProject mavenProject, @Nullable String artifactId) {
     for (MavenPlugin each : mavenProject.getDeclaredPlugins()) {
-      if (each.getMavenId().equals(JANGAROO_GROUP_ID, artifactId)) {
+      if (each.getMavenId().equals(JpsJangarooSdkType.JANGAROO_GROUP_ID, artifactId)) {
         return each;
       }
     }
@@ -124,7 +124,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
   private String getConfigurationValue(MavenProject mavenProjectModel, String configName, @Nullable String defaultValue) {
     String value = null;
-    Element compileConfiguration = mavenProjectModel.getPluginGoalConfiguration(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, "compile");
+    Element compileConfiguration = mavenProjectModel.getPluginGoalConfiguration(JpsJangarooSdkType.JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, "compile");
     if (compileConfiguration != null) {
       Element compileConfigurationChild = compileConfiguration.getChild(configName);
       if (compileConfigurationChild != null) {
@@ -156,7 +156,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
     String jangarooSdkVersion = jangarooMavenPlugin.getVersion();
-    String sdkHomePath = jangarooSdkHomePath(JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
+    String sdkHomePath = jangarooSdkHomePath(JpsJangarooSdkType.JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
       if (jangarooSdkVersion == null) {
@@ -176,6 +176,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         return;
       }
       jangarooSdkVersion = jangarooSdk.getVersionString();
+      ModuleRootManager.getInstance(module).getModifiableModel().setSdk(jangarooSdk);
+      postTasks.add(new SetJangarooSdkTask(module, jangarooSdk));
     }
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
@@ -230,7 +232,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
   private static String jangarooSdkHomePath(String artifactId, String version) {
     File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
-    File jarFile = JangarooSdkUtils.getJangarooArtifact(localRepository, artifactId, version);
+    File jarFile = JpsJangarooSdkType.getJangarooArtifact(localRepository, artifactId, version);
     return jarFile.getParentFile().getAbsolutePath();
   }
 
@@ -255,6 +257,33 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     result.consume(defaultDir, type);
   }
 
+  
+  private static class SetJangarooSdkTask implements MavenProjectsProcessorTask {
+    private Module module;
+    private Sdk jangarooSdk;
+
+    public SetJangarooSdkTask(Module module, Sdk jangarooSdk) {
+      this.module = module;
+      this.jangarooSdk = jangarooSdk;
+    }
+
+    @Override
+    public void perform(Project project, MavenEmbeddersManager embeddersManager, MavenConsole console, MavenProgressIndicator indicator) throws MavenProcessCanceledException {
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        public void run() {
+          ApplicationManager.getApplication().runWriteAction(new Runnable() {
+            @Override
+            public void run() {
+              ModifiableRootModel modifiableModel = ModuleRootManager.getInstance(module).getModifiableModel();
+              modifiableModel.setSdk(jangarooSdk);
+              modifiableModel.commit();
+            }
+          });
+        }
+      });
+    }
+  }
+  
   private static class AddJangarooPackagingOutputToExplodedWebArtifactsTask implements MavenProjectsProcessorTask {
     private final JangarooFacet jangarooFacet;
 

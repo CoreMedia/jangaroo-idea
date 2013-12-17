@@ -27,7 +27,6 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
-import org.jetbrains.jps.model.JpsSimpleElement;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.library.JpsLibrary;
@@ -43,7 +42,6 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -112,11 +110,18 @@ public class JangarooBuilder extends ModuleLevelBuilder {
 
       for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
         JpsModule module = moduleBuildTarget.getModule();
-        JpsSdk<JpsSimpleElement<JpsJangarooSdkProperties>> sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
-        // TODO: use SDK to retrieve JARs derived from SDK's home path!
-        JoocConfigurationBean settings = JoocConfigurationBean.getSettings(module);
+        JpsSdk sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
+        if (sdk == null) {
+          context.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, BuildMessage.Kind.WARNING,
+            String.format("Jangaroo module %s does not have a Jangaroo SDK.", module.getName())));
+          continue;
+        }
+        List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
         JoocConfiguration joocConfiguration = getJoocConfiguration(module, filesToCompile, false);
-        CompilationResult compilationResult = runJooc(settings.jangarooSdkName, joocConfiguration, new JpsCompileLog(context));
+        CompilationResult compilationResult = runJooc(context, jarPaths, joocConfiguration, new JpsCompileLog(context));
+        if (compilationResult == null) {
+          return ExitCode.ABORT;
+        }
         if (compilationResult.getResultCode() == CompilationResult.RESULT_CODE_COMPILATION_FAILED) {
           // TODO: add error (maybe the logger already did that)?
           return ExitCode.ABORT;
@@ -175,44 +180,21 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     }
   }
 
-  public static CompilationResult runJooc(String jangarooSdkName, JoocConfiguration configuration, CompileLog log) {
+  public static CompilationResult runJooc(MessageHandler messageHandler, List<String> jarPaths, JoocConfiguration configuration, CompileLog log) {
     Jooc jooc;
     try {
-      jooc = CompilerLoader.loadJooc(getJarFileNames(jangarooSdkName));
+      jooc = CompilerLoader.loadJooc(jarPaths);
     } catch (FileNotFoundException e) {
-      //context.addMessage(CompilerMessageCategory.ERROR, e.getMessage(), null, -1, -1);
+      messageHandler.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, e));
       return null;
     } catch (Exception e) {
-//      context.addMessage(CompilerMessageCategory.ERROR, jangarooSdkName +
-//        " not correctly set up or not compatible with this Jangaroo IDEA plugin: " + e.getMessage(),
-//        null, -1, -1);
+      // Jangaroo SDK not correctly set up or not compatible with this Jangaroo IDEA plugin: 
+      messageHandler.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, e));
       return null;
     }
     jooc.setConfig(configuration);
     jooc.setLog(log);
     return jooc.run();
-  }
-
-  public static List<String> getJarFileNames(String jangarooSdkName) {
-    return Arrays.asList("C:/Users/fwienber/.m2/repository/net/jangaroo/jangaroo-compiler/2.0.8/jangaroo-compiler-2.0.8.jar",
-      "C:/Users/fwienber/.m2/repository/net/jangaroo/exml-compiler/2.0.8/exml-compiler-2.0.8.jar",
-      "C:/Users/fwienber/.m2/repository/net/jangaroo/properties-compiler/2.0.8/properties-compiler-2.0.8.jar");
-//    // TODO: JPS Jangaroo SDK!
-//    JpsSdk jangarooSdk = project.getSdkReferencesTable().getSdkReference(JpsJavaSdkType.INSTANCE);
-//    if (jangarooSdk == null) {
-//      throw new IllegalStateException("Jangaroo SDK '" + jangarooSdkName + "' not found.");
-//    }
-//    // TODO:
-//    File[] files = jangarooSdk.getSdkProperties()...;
-//    List<String> jarFileNames = new ArrayList<String>(files.length);
-//    for (File file : files) {
-//      String filename = file.getPath();
-//      if (filename.endsWith("!/")) {
-//        filename = filename.substring(0, filename.length() - "!/".length());
-//      }
-//      jarFileNames.add(filename);
-//    }
-//    return jarFileNames;
   }
 
   @Nullable
