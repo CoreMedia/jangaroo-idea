@@ -438,6 +438,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/idea-plugin/jangaroo-0.9.iml" filepath="$PROJECT_DIR$/idea-plugin/jangaroo-0.9.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jangaroo-api/jangaroo-api.iml" filepath="$PROJECT_DIR$/jangaroo-api/jangaroo-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/jangaroo-jps-plugin/jangaroo-jps-plugin.iml" filepath="$PROJECT_DIR$/jangaroo-jps-plugin/jangaroo-jps-plugin.iml" />
     </modules>
   </component>
