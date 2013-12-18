@@ -12,15 +12,17 @@
  * express or implied. See the License for the specific language 
  * governing permissions and limitations under the License.
  */
-package net.jangaroo.ide.idea.exml;
+package net.jangaroo.ide.idea.jps.exml;
 
 import net.jangaroo.exml.config.ValidationMode;
 import net.jangaroo.ide.idea.jps.util.IdeaFileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.ex.JpsElementBase;
 
 /**
  * IDEA serialization adapter of JoocConfiguration. 
  */
-public class ExmlcConfigurationBean {
+public class ExmlcConfigurationBean extends JpsElementBase<ExmlcConfigurationBean> {
   private static final String DEFAULT_GENERATED_SOURCES_DIRECTORY = "target/generated-sources/joo";
   private static final String DEFAULT_GENERATED_TEST_SOURCES_DIRECTORY = "target/generated-test-sources/joo";
   private static final String DEFAULT_GENERATED_RESOURCES_DIRECTORY = "target/generated-resources/joo";
@@ -50,6 +52,26 @@ public class ExmlcConfigurationBean {
   public ValidationMode validationMode = ValidationMode.OFF;
 
   public ExmlcConfigurationBean() {
+  }
+
+  public ExmlcConfigurationBean(String configClassPackage, String generatedSourcesDirectory, String generatedTestSourcesDirectory, String generatedResourcesDirectory, boolean showCompilerInfoMessages, ValidationMode validationMode) {
+    this.configClassPackage = configClassPackage;
+    this.generatedSourcesDirectory = generatedSourcesDirectory;
+    this.generatedTestSourcesDirectory = generatedTestSourcesDirectory;
+    this.generatedResourcesDirectory = generatedResourcesDirectory;
+    this.showCompilerInfoMessages = showCompilerInfoMessages;
+    this.validationMode = validationMode;
+  }
+
+  @NotNull
+  @Override
+  public ExmlcConfigurationBean createCopy() {
+    return new ExmlcConfigurationBean(configClassPackage, generatedSourcesDirectory, generatedTestSourcesDirectory,
+      generatedResourcesDirectory, showCompilerInfoMessages, validationMode);
+  }
+
+  @Override
+  public void applyChanges(@NotNull ExmlcConfigurationBean modified) {
   }
 
   public void init(String outputPrefix) {

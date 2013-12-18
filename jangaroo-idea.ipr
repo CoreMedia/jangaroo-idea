@@ -16,6 +16,7 @@
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-collections-3.2.1.jar" />
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/args4j-2.0.16.jar" />
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-configuration-1.6.jar" />
+        <element id="file-copy" path="$MAVEN_REPOSITORY$/org/freemarker/freemarker/2.3.15/freemarker-2.3.15.jar" />
       </root>
     </artifact>
   </component>
@@ -490,6 +491,48 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES />
+    </library>
+    <library name="net.jangaroo:exml-compiler:2.0.8" type="repository">
+      <properties maven-id="net.jangaroo:exml-compiler:2.0.8" />
+      <CLASSES>
+        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-api-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/args4j-2.0.16.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/freemarker-2.3.15.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jtidy-4aug2000r7-dev.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/ant-1.8.2.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/ant-launcher-1.8.2.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/java-cup-10k.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES>
+        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-2.0.8-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-api-2.0.8-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="net.jangaroo:jangaroo-compiler:2.0.8" type="repository">
+      <properties maven-id="net.jangaroo:jangaroo-compiler:2.0.8" />
+      <CLASSES>
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/args4j-2.0.16.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/java-cup-10k.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/ant-1.8.2.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/ant-launcher-1.8.2.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES>
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8-sources.jar!/" />
+      </SOURCES>
     </library>
   </component>
 </project>

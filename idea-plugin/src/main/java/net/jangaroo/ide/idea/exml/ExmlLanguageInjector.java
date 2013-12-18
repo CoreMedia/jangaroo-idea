@@ -47,6 +47,7 @@ import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
 import net.jangaroo.ide.idea.AbstractCompiler;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.AS3Type;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;

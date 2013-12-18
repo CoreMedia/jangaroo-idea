@@ -17,8 +17,11 @@ import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
+import net.jangaroo.ide.idea.jps.exml.ExmlBuilder;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
+import net.jangaroo.jooc.api.FilePosition;
 import net.jangaroo.jooc.api.Jooc;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,8 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * An IDEA wrapper for Jangaroo's EXML compiler "exmlc".
@@ -105,7 +106,7 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
     ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
     updateFileLocations(exmlConfiguration, module, files, forTests);
     exmlConfiguration.setLog(new IdeaCompileLog(context));
-    copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration, forTests);
+    ExmlBuilder.copyFromBeanToConfiguration(exmlcConfigurationBean, exmlConfiguration, forTests);
     Exmlc exmlc = getExmlc(joocConfigurationBean.jangarooSdkName, exmlConfiguration, context);
     if (exmlc == null) {
       return null;
@@ -147,21 +148,10 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
   private static void addMessageForExmlcException(@NotNull CompileContext context, @NotNull ExmlcException e, VirtualFile fallbackFile) {
     // EXML compiler has the bad habit of wrapping ExmlcExceptions, but the line / column information may be contained
     // in the wrapped exception, so collect the best info we can get:
-    File file = null;
-    int line = -1;
-    int column = -1;
-    for (Throwable current = e; current instanceof ExmlcException; current = current.getCause()) {
-      ExmlcException exmlcException = (ExmlcException)current;
-      if (exmlcException.getFile() != null) {
-        file = exmlcException.getFile();
-      }
-      if (exmlcException.getLine() != -1) {
-        line = exmlcException.getLine();
-      }
-      if (exmlcException.getColumn() != -1) {
-        column = exmlcException.getColumn();
-      }
-    }
+    FilePosition filePosition = ExmlBuilder.extractFilePosition(e);
+    File file = filePosition.getFileName() == null ? null : new File(filePosition.getFileName());
+    int line = filePosition.getLine();
+    int column = filePosition.getColumn();
     VirtualFile virtualFile = file == null ? null : LocalFileSystem.getInstance().findFileByIoFile(file);
     if (virtualFile == null) {
       virtualFile = fallbackFile;
@@ -186,13 +176,6 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
 
   private static Logger getLog() {
     return Logger.getInstance("ExmlCompiler");
-  }
-
-  private static void copyFromBeanToConfiguration(ExmlcConfigurationBean exmlcConfigurationBean, ExmlConfiguration exmlConfiguration, boolean forTests) {
-    exmlConfiguration.setOutputDirectory(new File(toPath(forTests ? exmlcConfigurationBean.getGeneratedTestSourcesDirectory() : exmlcConfigurationBean.getGeneratedSourcesDirectory())));
-    exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
-    exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
-    exmlConfiguration.setValidationMode(exmlcConfigurationBean.validationMode);
   }
 
 }

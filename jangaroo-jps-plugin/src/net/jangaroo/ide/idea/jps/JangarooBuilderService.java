@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.jps;
 
+import net.jangaroo.ide.idea.jps.exml.ExmlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.builders.BuildTargetType;
 import org.jetbrains.jps.incremental.BuilderService;
@@ -21,7 +22,7 @@ public class JangarooBuilderService extends BuilderService {
   @NotNull
   @Override
   public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {
-    return Arrays.asList(new JangarooBuilder());
+    return Arrays.asList(new JangarooBuilder(), new ExmlBuilder());
   }
 
 }

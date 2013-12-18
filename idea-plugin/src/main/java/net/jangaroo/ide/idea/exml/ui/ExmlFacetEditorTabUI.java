@@ -19,7 +19,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import net.jangaroo.exml.config.ValidationMode;
-import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 
 import javax.swing.*;
 

@@ -24,6 +24,7 @@ import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 

@@ -12,6 +12,7 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.util.PairConsumer;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.config.ValidationMode;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.CompilerUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.jdom.Element;

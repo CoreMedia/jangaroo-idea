@@ -30,7 +30,7 @@ import net.jangaroo.ide.idea.JangarooFacetType;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.exml.ExmlCompiler;
 import net.jangaroo.ide.idea.exml.ExmlFacetType;
-import net.jangaroo.ide.idea.exml.ExmlcConfigurationBean;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.util.OutputSinkItem;
 import net.jangaroo.jooc.api.Jooc;

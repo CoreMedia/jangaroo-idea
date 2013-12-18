@@ -45,8 +45,6 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
   public boolean showCompilerInfoMessages = false;
   public PublicApiViolationsMode publicApiViolationsMode;
 
-  static final JpsElementChildRole<JoocConfigurationBean> ROLE = JpsElementChildRoleBase.create("Jangaroo Compiler Configuration");
-
   public String jangarooSdk;
 
   public JoocConfigurationBean() {
@@ -64,12 +62,6 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
 
   @Override
   public void applyChanges(@NotNull JoocConfigurationBean jpsJangarooSettings) {
-  }
-
-  @NotNull
-  public static JoocConfigurationBean getSettings(@NotNull JpsModule module) {
-    JoocConfigurationBean settings = module.getContainer().getChild(ROLE);
-    return settings == null ? new JoocConfigurationBean() : settings;
   }
 
   public boolean isDebug() {

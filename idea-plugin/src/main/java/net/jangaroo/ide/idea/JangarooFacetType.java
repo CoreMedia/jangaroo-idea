@@ -32,12 +32,12 @@ import javax.swing.*;
  */
 public class JangarooFacetType extends FacetType<JangarooFacet, JangarooFacetConfiguration> {
 
-  public static final FacetTypeId<JangarooFacet> ID = new FacetTypeId<JangarooFacet>(JangarooModelSerializerExtension.JANGAROO_STRING_ID);
+  public static final FacetTypeId<JangarooFacet> ID = new FacetTypeId<JangarooFacet>(JangarooModelSerializerExtension.JANGAROO_FACET_ID);
   public static final JangarooFacetType INSTANCE = new JangarooFacetType();
   public static final String JANGAROO_FACET_ICON_URL = "/net/jangaroo/jooley-16x16.png";
 
   public JangarooFacetType() {
-    super(ID, JangarooModelSerializerExtension.JANGAROO_STRING_ID, "Jangaroo");
+    super(ID, JangarooModelSerializerExtension.JANGAROO_FACET_ID, "Jangaroo");
   }
 
   public JangarooFacetConfiguration createDefaultConfiguration() {

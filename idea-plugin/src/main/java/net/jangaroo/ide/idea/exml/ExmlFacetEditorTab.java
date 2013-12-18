@@ -17,6 +17,7 @@ package net.jangaroo.ide.idea.exml;
 import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.openapi.options.ConfigurationException;
 import net.jangaroo.ide.idea.exml.ui.ExmlFacetEditorTabUI;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import org.jetbrains.annotations.Nls;
 
 import javax.swing.*;
