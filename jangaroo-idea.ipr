@@ -17,6 +17,8 @@
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/args4j-2.0.16.jar" />
         <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-configuration-1.6.jar" />
         <element id="file-copy" path="$MAVEN_REPOSITORY$/org/freemarker/freemarker/2.3.15/freemarker-2.3.15.jar" />
+        <element id="file-copy" path="$MAVEN_REPOSITORY$/commons-lang/commons-lang/2.4/commons-lang-2.4.jar" />
+        <element id="file-copy" path="$MAVEN_REPOSITORY$/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar" />
       </root>
     </artifact>
   </component>

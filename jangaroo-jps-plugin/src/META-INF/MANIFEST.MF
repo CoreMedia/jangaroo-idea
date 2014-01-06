@@ -2,5 +2,5 @@ Manifest-Version: 1.0
 Class-Path: jangaroo-compiler-api-1.0.1.jar exml-compiler-api-1.0.1.ja
  r properties-compiler-api-1.0.1.jar jangaroo-utils-1.0.1.jar commons-
  io-2.0.1.jar java-cup-10k.jar commons-collections-3.2.1.jar args4j-2.
- 0.16.jar jangaroo-compiler-2.0.8.jar commons-configuration-1.6.jar fr
- eemarker-2.3.15.jar
+ 0.16.jar jangaroo-compiler-2.0.8.jar commons-configuration-1.6.jar co
+ mmons-lang-2.4.jar commons-logging-1.1.1.jar freemarker-2.3.15.jar

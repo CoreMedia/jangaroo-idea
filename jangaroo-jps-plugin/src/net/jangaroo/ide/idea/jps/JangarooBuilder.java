@@ -60,18 +60,21 @@ public class JangarooBuilder extends ModuleLevelBuilder {
 
   private static final String JOOC_BUILDER_NAME = "jooc";
   
-  public static final FileFilter AS_SOURCES_FILTER =
-    SystemInfo.isFileSystemCaseSensitive?
+  public static final FileFilter AS_SOURCES_FILTER = createSuffixFileFilter(Jooc.AS_SUFFIX);
+
+  public static FileFilter createSuffixFileFilter(final String suffix) {
+    return SystemInfo.isFileSystemCaseSensitive?
     new FileFilter() {
       public boolean accept(File file) {
-        return file.getPath().endsWith(Jooc.AS_SUFFIX);
+        return file.getPath().endsWith(suffix);
       }
     } :
     new FileFilter() {
       public boolean accept(File file) {
-        return StringUtil.endsWithIgnoreCase(file.getPath(), Jooc.AS_SUFFIX);
+        return StringUtil.endsWithIgnoreCase(file.getPath(), suffix);
       }
     };
+  }
 
   public JangarooBuilder() {
     super(BuilderCategory.TRANSLATOR);
@@ -187,14 +190,15 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     joocConfig.setAllowDuplicateLocalVariables(joocConfigurationBean.allowDuplicateLocalVariables);
     joocConfig.setEnableAssertions(joocConfigurationBean.enableAssertions);
     joocConfig.setApiOutputDirectory(forTests ? null : joocConfigurationBean.getApiOutputDirectory());
-    updateFileLocations(joocConfig, module, sourceFiles, forTests);
+    updateFileLocations(joocConfig, module, forTests);
+    joocConfig.setSourceFiles(sourceFiles.get(forTests));
     joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
     joocConfig.setOutputDirectory(forTests ? joocConfigurationBean.getTestOutputDirectory() : joocConfigurationBean.getOutputDirectory());
     joocConfig.setPublicApiViolationsMode(joocConfigurationBean.publicApiViolationsMode);
     return joocConfig;
   }
 
-  public static void updateFileLocations(FileLocations fileLocations, JpsModule module, Map<Boolean, List<File>> sourceFiles, boolean forTests) {
+  public static void updateFileLocations(FileLocations fileLocations, JpsModule module, boolean forTests) {
     Collection<File> classPath = new LinkedHashSet<File>();
     Collection<File> sourcePath = new LinkedHashSet<File>();
     addToClassOrSourcePath(module, classPath, sourcePath, forTests);
@@ -204,7 +208,6 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     } catch (IOException e) {
       throw new RuntimeException("while constructing Jangaroo source path", e);
     }
-    fileLocations.setSourceFiles(sourceFiles.get(forTests));
   }
 
   public static void addToClassOrSourcePath(JpsModule module, Collection<File> classPath, Collection<File> sourcePath, boolean forTests) {
