@@ -11,7 +11,6 @@ import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
 import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.jps.util.JpsCompileLog;
 import net.jangaroo.jooc.api.FilePosition;
-import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
@@ -34,9 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -104,8 +101,8 @@ public class ExmlBuilder extends ModuleLevelBuilder {
   public ExitCode build(CompileContext context, ModuleChunk chunk,
                         DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
                         OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
-    final Map<JpsModule, List<File>> filesToCompile = JangarooBuilder.getFilesToCompile(EXML_BUILDER_NAME,
-      EXMLC_SOURCES_FILTER, context, dirtyFilesHolder);
+    final Map<JpsModule, Map<Boolean, List<File>>> filesToCompile = JangarooBuilder.getFilesToCompile(
+      EXMLC_SOURCES_FILTER, dirtyFilesHolder);
 
     if (!filesToCompile.isEmpty()) {
       for (ModuleBuildTarget moduleBuildTarget : chunk.getTargets()) {
@@ -173,25 +170,12 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     messageHandler.processMessage(compilerMessage);
   }
 
-  protected ExmlConfiguration getExmlcConfiguration(JpsModule module, List<File> sourceFiles, boolean forTests) {
+  protected ExmlConfiguration getExmlcConfiguration(JpsModule module, Map<Boolean, List<File>> sourceFiles, boolean forTests) {
     ExmlcConfigurationBean exmlcConfigurationBean = JangarooModelSerializerExtension.getExmlcSettings(module);
     ExmlConfiguration exmlcConfig = new ExmlConfiguration();
-    updateFileLocations(exmlcConfig, module, sourceFiles, forTests);
+    JangarooBuilder.updateFileLocations(exmlcConfig, module, sourceFiles, forTests);
     copyFromBeanToConfiguration(exmlcConfigurationBean, exmlcConfig, forTests);
     return exmlcConfig;
-  }
-
-  protected void updateFileLocations(FileLocations fileLocations, JpsModule module, List<File> sourceFiles, boolean forTests) {
-    Collection<File> classPath = new LinkedHashSet<File>();
-    Collection<File> sourcePath = new LinkedHashSet<File>();
-    JangarooBuilder.addToClassOrSourcePath(module, classPath, sourcePath, forTests);
-    fileLocations.setClassPath(new ArrayList<File>(classPath));
-    try {
-      fileLocations.setSourcePath(new ArrayList<File>(sourcePath));
-    } catch (IOException e) {
-      throw new RuntimeException("while constructing Jangaroo source path", e);
-    }
-    fileLocations.setSourceFiles(sourceFiles);
   }
 
   public static Exmlc loadExmlc(MessageHandler messageHandler, List<String> jarPaths, ExmlConfiguration configuration) {

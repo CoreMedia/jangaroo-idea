@@ -16,9 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.FileProcessor;
-import org.jetbrains.jps.builders.java.JavaBuilderUtil;
 import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
-import org.jetbrains.jps.builders.logging.ProjectBuilderLogger;
 import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.MessageHandler;
@@ -29,12 +27,17 @@ import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.java.JpsJavaDependencyExtension;
+import org.jetbrains.jps.model.java.JpsJavaDependencyScope;
+import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
 import org.jetbrains.jps.model.library.sdk.JpsSdk;
 import org.jetbrains.jps.model.module.JpsDependencyElement;
 import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
+import org.jetbrains.jps.model.module.JpsModuleDependency;
+import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
 import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
 
 import java.io.File;
@@ -83,10 +86,8 @@ public class JangarooBuilder extends ModuleLevelBuilder {
                         DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
                         OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
 
-    final Map<JpsModule, List<File>> filesToCompile = getFilesToCompile(
-      JOOC_BUILDER_NAME,
+    final Map<JpsModule, Map<Boolean, List<File>>> filesToCompile = getFilesToCompile(
       AS_SOURCES_FILTER,
-      context,
       dirtyFilesHolder
     );
 
@@ -106,19 +107,13 @@ public class JangarooBuilder extends ModuleLevelBuilder {
           continue;
         }
         List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
-        JoocConfiguration joocConfiguration = getJoocConfiguration(module, filesToCompile.get(module), false);
-        Jooc jooc = getJooc(context, jarPaths, joocConfiguration, compileLog);
-        if (jooc == null) {
-          return ExitCode.ABORT;
+        ExitCode result = compile(context, outputConsumer, filesToCompile, compileLog, moduleBuildTarget, module, jarPaths, false);
+        if (result != null) {
+          return result;
         }
-        CompilationResult compilationResult = compile(moduleBuildTarget, jooc, outputConsumer);
-        if (compilationResult.getResultCode() == CompilationResult.RESULT_CODE_COMPILATION_FAILED) {
-          // TODO: add error (maybe the logger already did that)?
-          return ExitCode.ABORT;
-        }
-        if (compilationResult.getResultCode() != CompilationResult.RESULT_CODE_OK) {
-          // TODO: we used the compiler incorrectly. log or throw internal error?
-          return ExitCode.ABORT;
+        result = compile(context, outputConsumer, filesToCompile, compileLog, moduleBuildTarget, module, jarPaths, true);
+        if (result != null) {
+          return result;
         }
       }
       return ExitCode.OK;
@@ -127,49 +122,63 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return ExitCode.NOTHING_DONE;
   }
 
+  private ExitCode compile(CompileContext context, OutputConsumer outputConsumer, Map<JpsModule, Map<Boolean, List<File>>> filesToCompile, JpsCompileLog compileLog, ModuleBuildTarget moduleBuildTarget, JpsModule module, List<String> jarPaths, boolean forTests) throws IOException {
+
+
+    JoocConfiguration joocConfiguration = getJoocConfiguration(module, filesToCompile.get(module), forTests);
+    Jooc jooc = getJooc(context, jarPaths, joocConfiguration, compileLog);
+    if (jooc == null) {
+      return ExitCode.ABORT;
+    }
+    CompilationResult compilationResult = compile(moduleBuildTarget, jooc, outputConsumer);
+    if (compilationResult.getResultCode() == CompilationResult.RESULT_CODE_COMPILATION_FAILED) {
+      // TODO: add error (maybe the logger already did that)?
+      return ExitCode.ABORT;
+    }
+    if (compilationResult.getResultCode() != CompilationResult.RESULT_CODE_OK) {
+      // TODO: we used the compiler incorrectly. log or throw internal error?
+      return ExitCode.ABORT;
+    }
+    return null;
+  }
+
   private CompilationResult compile(ModuleBuildTarget moduleBuildTarget, Jooc jooc,
                                     OutputConsumer outputConsumer) throws IOException {
     CompilationResult compilationResult = jooc.run();
     for (Map.Entry<File, File> sourceToTarget : compilationResult.getOutputFileMap().entrySet()) {
-      outputConsumer.registerOutputFile(moduleBuildTarget, sourceToTarget.getValue(),
-        Collections.singleton(sourceToTarget.getKey().getPath()));
+      if (sourceToTarget.getValue() != null) { // only non-native classes!
+        outputConsumer.registerOutputFile(moduleBuildTarget, sourceToTarget.getValue(),
+          Collections.singleton(sourceToTarget.getKey().getPath()));
+      }
     }
     return compilationResult;
   }
 
-  public static Map<JpsModule, List<File>> getFilesToCompile(String builderName, final FileFilter sourcesFilter,
-                                                             CompileContext context,
-                                                             DirtyFilesHolder<JavaSourceRootDescriptor,
-                                                               ModuleBuildTarget> dirtyFilesHolder) throws IOException {
-    final Map<JpsModule, List<File>> filesToCompile = new HashMap<JpsModule, List<File>>();
+  public static Map<JpsModule, Map<Boolean, List<File>>> getFilesToCompile(final FileFilter sourcesFilter,
+                                                                           DirtyFilesHolder<JavaSourceRootDescriptor,
+                                                                             ModuleBuildTarget> dirtyFilesHolder) throws IOException {
+    // a map of files, grouped by module first, then by test sources (true) versus non-test sources (false)
+    final Map<JpsModule, Map<Boolean, List<File>>> filesToCompile = new HashMap<JpsModule, Map<Boolean, List<File>>>();
 
     dirtyFilesHolder.processDirtyFiles(new FileProcessor<JavaSourceRootDescriptor, ModuleBuildTarget>() {
       public boolean apply(ModuleBuildTarget target, File file, JavaSourceRootDescriptor descriptor) throws IOException {
         if (sourcesFilter.accept(file)) {
           JpsModule module = target.getModule();
           if (!filesToCompile.containsKey(module)) {
-            filesToCompile.put(module, new ArrayList<File>());
+            Map<Boolean, List<File>> filesAndTestFiles = new HashMap<Boolean, List<File>>(2);
+            filesAndTestFiles.put(false, new ArrayList<File>());
+            filesAndTestFiles.put(true, new ArrayList<File>());
+            filesToCompile.put(module, filesAndTestFiles);
           }
-          filesToCompile.get(module).add(file);
+          filesToCompile.get(module).get(target.isTests()).add(file);
         }
         return true;
       }
     });
-
-    if (JavaBuilderUtil.isCompileJavaIncrementally(context)) {
-      final ProjectBuilderLogger logger = context.getLoggingManager().getProjectBuilderLogger();
-      if (logger.isEnabled()) {
-        for (List<File> files : filesToCompile.values()) {
-          if (files.size() > 0) {
-            logger.logCompiledFiles(files, builderName, "Compiling files:");
-          }
-        }
-      }
-    }
     return filesToCompile;
   }
 
-  protected JoocConfiguration getJoocConfiguration(JpsModule module, List<File> sourceFiles, boolean forTests) {
+  protected JoocConfiguration getJoocConfiguration(JpsModule module, Map<Boolean, List<File>> sourceFiles, boolean forTests) {
     JoocConfigurationBean joocConfigurationBean = JangarooModelSerializerExtension.getJoocSettings(module);
     JoocConfiguration joocConfig = new JoocConfiguration();
     joocConfig.setVerbose(joocConfigurationBean.verbose);
@@ -184,7 +193,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return joocConfig;
   }
 
-  protected void updateFileLocations(FileLocations fileLocations, JpsModule module, List<File> sourceFiles, boolean forTests) {
+  public static void updateFileLocations(FileLocations fileLocations, JpsModule module, Map<Boolean, List<File>> sourceFiles, boolean forTests) {
     Collection<File> classPath = new LinkedHashSet<File>();
     Collection<File> sourcePath = new LinkedHashSet<File>();
     addToClassOrSourcePath(module, classPath, sourcePath, forTests);
@@ -194,19 +203,37 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     } catch (IOException e) {
       throw new RuntimeException("while constructing Jangaroo source path", e);
     }
-    fileLocations.setSourceFiles(sourceFiles);
+    fileLocations.setSourceFiles(sourceFiles.get(forTests));
   }
 
   public static void addToClassOrSourcePath(JpsModule module, Collection<File> classPath, Collection<File> sourcePath, boolean forTests) {
-    for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
+    JavaSourceRootType sourceRootType = forTests ? JavaSourceRootType.TEST_SOURCE : JavaSourceRootType.SOURCE;
+    for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(sourceRootType)) {
       sourcePath.add(sourceRoot.getFile());
     }
+    if (forTests) {
+      for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(JavaSourceRootType.SOURCE)) {
+        classPath.add(sourceRoot.getFile());
+      }
+    }
+    JpsJavaExtensionService javaExtensionService = JpsJavaExtensionService.getInstance();
     List<JpsDependencyElement> dependencies = module.getDependenciesList().getDependencies();
     for (JpsDependencyElement dependency : dependencies) {
-      if (dependency instanceof JpsLibraryDependency) {
-        JpsLibrary library = ((JpsLibraryDependency)dependency).getLibrary();
-        if (library != null) {
-          classPath.addAll(library.getFiles(JpsOrderRootType.COMPILED));
+      JpsJavaDependencyExtension dependencyExtension = javaExtensionService.getDependencyExtension(dependency);
+      if (dependencyExtension == null || dependencyExtension.getScope() == JpsJavaDependencyScope.COMPILE || 
+        dependencyExtension.getScope() == JpsJavaDependencyScope.TEST && forTests) {
+        if (dependency instanceof JpsLibraryDependency) {
+          JpsLibrary library = ((JpsLibraryDependency)dependency).getLibrary();
+          if (library != null) {
+            classPath.addAll(library.getFiles(JpsOrderRootType.COMPILED));
+          }
+        } else if (dependency instanceof JpsModuleDependency) {
+          JpsModule otherModule = ((JpsModuleDependency)dependency).getModule();
+          if (otherModule != null) {
+            for (JpsModuleSourceRoot sourceRoot : otherModule.getSourceRoots(JavaSourceRootType.SOURCE)) {
+              classPath.add(sourceRoot.getFile());
+            }
+          }
         }
       }
     }
