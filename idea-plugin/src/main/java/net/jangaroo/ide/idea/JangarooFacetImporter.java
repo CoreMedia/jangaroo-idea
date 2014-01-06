@@ -274,9 +274,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
           ApplicationManager.getApplication().runWriteAction(new Runnable() {
             @Override
             public void run() {
-              ModifiableRootModel modifiableModel = ModuleRootManager.getInstance(module).getModifiableModel();
-              modifiableModel.setSdk(jangarooSdk);
-              modifiableModel.commit();
+              if (!module.isDisposed()) {
+                ModifiableRootModel modifiableModel = ModuleRootManager.getInstance(module).getModifiableModel();
+                modifiableModel.setSdk(jangarooSdk);
+                modifiableModel.commit();
+              }
             }
           });
         }
