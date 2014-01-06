@@ -7,8 +7,6 @@ import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.compiler.IntermediateOutputCompiler;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.roots.OrderEntry;
-import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -27,13 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * An IDEA wrapper for Jangaroo's EXML compiler "exmlc".
@@ -57,32 +49,6 @@ public class ExmlCompiler extends AbstractCompiler implements IntermediateOutput
       }
     }
     return null;
-  }
-
-  static String findDependentModuleZipFileName(OrderEntry orderEntry) throws IOException {
-    VirtualFile[] files = orderEntry.getFiles(OrderRootType.CLASSES);
-    // check that library is not empty:
-    for (VirtualFile file : files) {
-      // TODO: make it work for classes, not only for jars!
-      String filename = file.getPath();
-      if (filename.endsWith("!/")) { // it is a jar:
-        return filename.substring(0, filename.length() - "!/".length());
-      }
-    }
-    return null;
-  }
-
-  static Set<ZipEntry> findXsdZipEntries(ZipFile zipFile) throws IOException {
-    // find a *.xsd in jar's root folder:
-    Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
-    Set<ZipEntry> result = new LinkedHashSet<ZipEntry>();
-    while (enumeration.hasMoreElements()) {
-      ZipEntry zipEntry = enumeration.nextElement();
-      if (!zipEntry.isDirectory() && zipEntry.getName().indexOf('/') == -1 && zipEntry.getName().endsWith(".xsd")) {
-        result.add(zipEntry);
-      }
-    }
-    return result;
   }
 
   @Override

@@ -9,6 +9,8 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
+import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PairConsumer;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.config.ValidationMode;
@@ -30,7 +32,9 @@ import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,11 +146,11 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
           ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(((ModuleOrderEntry)orderEntry).getModule());
           mapXsdResources(resourceMap, exmlConfig);
         } else {
-          String zipFileName = ExmlCompiler.findDependentModuleZipFileName(orderEntry);
+          String zipFileName = findDependentModuleZipFileName(orderEntry);
           if (zipFileName != null) {
             ZipFile zipFile = new ZipFile(zipFileName);
             String zipFilePath = zipFileName + "!/";
-            Set<ZipEntry> xsdZipEntries = ExmlCompiler.findXsdZipEntries(zipFile);
+            Set<ZipEntry> xsdZipEntries = findXsdZipEntries(zipFile);
             for (ZipEntry xsdZipEntry : xsdZipEntries) {
               mapXsdResource(resourceMap, zipFilePath, xsdZipEntry.getName());
             }
@@ -177,6 +181,32 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   private static void mapXsdResource(Map<String, String> resourceMap, String path, String xsdFileName) {
     String namespace = Exmlc.EXML_CONFIG_URI_PREFIX + CompilerUtils.removeExtension(xsdFileName);
     resourceMap.put(namespace, path + xsdFileName);
+  }
+
+  private static String findDependentModuleZipFileName(OrderEntry orderEntry) throws IOException {
+    VirtualFile[] files = orderEntry.getFiles(OrderRootType.CLASSES);
+    // check that library is not empty:
+    for (VirtualFile file : files) {
+      // TODO: make it work for classes, not only for jars!
+      String filename = file.getPath();
+      if (filename.endsWith("!/")) { // it is a jar:
+        return filename.substring(0, filename.length() - "!/".length());
+      }
+    }
+    return null;
+  }
+
+  private static Set<ZipEntry> findXsdZipEntries(ZipFile zipFile) throws IOException {
+    // find a *.xsd in jar's root folder:
+    Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+    Set<ZipEntry> result = new LinkedHashSet<ZipEntry>();
+    while (enumeration.hasMoreElements()) {
+      ZipEntry zipEntry = enumeration.nextElement();
+      if (!zipEntry.isDirectory() && zipEntry.getName().indexOf('/') == -1 && zipEntry.getName().endsWith(".xsd")) {
+        result.add(zipEntry);
+      }
+    }
+    return result;
   }
 
 }
