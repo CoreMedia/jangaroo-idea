@@ -25,6 +25,7 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.java.JpsJavaDependencyExtension;
@@ -231,6 +232,9 @@ public class JangarooBuilder extends ModuleLevelBuilder {
           JpsModule otherModule = ((JpsModuleDependency)dependency).getModule();
           if (otherModule != null) {
             for (JpsModuleSourceRoot sourceRoot : otherModule.getSourceRoots(JavaSourceRootType.SOURCE)) {
+              classPath.add(sourceRoot.getFile());
+            }
+            for (JpsModuleSourceRoot sourceRoot : otherModule.getSourceRoots(JavaResourceRootType.RESOURCE)) {
               classPath.add(sourceRoot.getFile());
             }
           }
