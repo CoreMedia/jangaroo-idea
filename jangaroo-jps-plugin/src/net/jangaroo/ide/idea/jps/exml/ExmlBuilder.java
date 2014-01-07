@@ -107,6 +107,9 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     return ExitCode.NOTHING_DONE;
   }
 
+  /**
+   * Generate AS from properties and EXML for one module.
+   */
   private void build(CompileContext context, Map<JpsModule, Map<Boolean, List<File>>> propertiesFilesToCompile,
                      Map<JpsModule, Map<Boolean, List<File>>> exmlFilesToCompile, ModuleBuildTarget moduleBuildTarget,
                      OutputConsumer outputConsumer) throws IOException {
@@ -118,23 +121,26 @@ public class ExmlBuilder extends ModuleLevelBuilder {
       return;
     }
     List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
-    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, false);
-    if (exmlcConfiguration != null) {
-      exmlcConfiguration.setLog(new JpsCompileLog(EXML_BUILDER_NAME, context));
+    JpsCompileLog log = new JpsCompileLog(EXML_BUILDER_NAME, context);
 
-      Map<Boolean, List<File>> propertiesFilesAndTestFiles = propertiesFilesToCompile.get(module);
-      if (propertiesFilesAndTestFiles != null) {
-        exmlcConfiguration.setSourceFiles(propertiesFilesAndTestFiles.get(false));
-        Propc propc = loadPropc(context, jarPaths, exmlcConfiguration);
-        compileProperties(moduleBuildTarget, propc, context, outputConsumer);
-      }
+    boolean forTests = moduleBuildTarget.isTests();
+    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, forTests);
+    exmlcConfiguration.setLog(log);
 
-      Map<Boolean, List<File>> exmlFilesAndTestFiles = exmlFilesToCompile.get(module);
-      if (exmlFilesAndTestFiles != null) {
-        exmlcConfiguration.setSourceFiles(exmlFilesAndTestFiles.get(false));
-        Exmlc exmlc = loadExmlc(context, jarPaths, exmlcConfiguration);
-        compileExml(moduleBuildTarget, exmlc, context, outputConsumer);
-      }
+    // invoke properties compiler for module:
+    Map<Boolean, List<File>> propertiesFilesAndTestFiles = propertiesFilesToCompile.get(module);
+    if (propertiesFilesAndTestFiles != null) {
+      exmlcConfiguration.setSourceFiles(propertiesFilesAndTestFiles.get(forTests));
+      Propc propc = loadPropc(context, jarPaths, exmlcConfiguration);
+      compileProperties(moduleBuildTarget, propc, context, outputConsumer);
+    }
+
+    // invoke EXML compiler for module:
+    Map<Boolean, List<File>> exmlFilesAndTestFiles = exmlFilesToCompile.get(module);
+    if (exmlFilesAndTestFiles != null) {
+      exmlcConfiguration.setSourceFiles(exmlFilesAndTestFiles.get(forTests));
+      Exmlc exmlc = loadExmlc(context, jarPaths, exmlcConfiguration);
+      compileExml(moduleBuildTarget, exmlc, context, outputConsumer);
     }
   }
 
@@ -172,14 +178,28 @@ public class ExmlBuilder extends ModuleLevelBuilder {
           processExmlcException(messageHandler, sourceFile, e);
         }
       }
-      try {
-        File xsdFile = exmlc.generateXsd();
-        if (xsdFile == null || exmlc.getConfig().getLog().hasErrors()) {
-          return;
+      if (!moduleBuildTarget.isTests()) {
+        try {
+          // The config class registry in the current ExmlConfiguration contains too many classes (also from other
+          // modules), and thus cannot be reused. We have to create a clean copy.
+          // TODO: remove this when bug is fixed in EXML compiler!
+          ExmlConfiguration exmlConfiguration = new ExmlConfiguration();
+          exmlConfiguration.setLog(exmlc.getConfig().getLog());
+          exmlConfiguration.setConfigClassPackage(exmlc.getConfig().getConfigClassPackage());
+          exmlConfiguration.setOutputDirectory(exmlc.getConfig().getOutputDirectory());
+          exmlConfiguration.setResourceOutputDirectory(exmlc.getConfig().getResourceOutputDirectory());
+          exmlConfiguration.setSourcePath(exmlc.getConfig().getSourcePath());
+          exmlConfiguration.setClassPath(exmlc.getConfig().getClassPath());
+          exmlc.setConfig(exmlConfiguration);
+
+          File xsdFile = exmlc.generateXsd();
+          if (xsdFile == null || exmlc.getConfig().getLog().hasErrors()) {
+            return;
+          }
+          outputConsumer.registerOutputFile(moduleBuildTarget, xsdFile, allCompiledSourceFiles);
+        } catch (ExmlcException e) {
+          processExmlcException(messageHandler, null, e);
         }
-        outputConsumer.registerOutputFile(moduleBuildTarget, xsdFile, allCompiledSourceFiles);
-      } catch (ExmlcException e) {
-        processExmlcException(messageHandler, null, e);
       }
     }
   }
@@ -195,6 +215,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     messageHandler.processMessage(compilerMessage);
   }
 
+  @NotNull
   protected ExmlConfiguration getExmlcConfiguration(JpsModule module, boolean forTests) {
     ExmlcConfigurationBean exmlcConfigurationBean = JangarooModelSerializerExtension.getExmlcSettings(module);
     ExmlConfiguration exmlcConfig = new ExmlConfiguration();
