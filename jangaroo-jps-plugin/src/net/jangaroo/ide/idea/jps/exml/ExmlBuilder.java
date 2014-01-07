@@ -99,32 +99,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
 
     if (!propertiesFilesToCompile.isEmpty() || !exmlFilesToCompile.isEmpty()) {
       for (ModuleBuildTarget moduleBuildTarget : chunk.getTargets()) {
-        JpsModule module = moduleBuildTarget.getModule();
-        JpsSdk sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
-        if (sdk == null) {
-          context.processMessage(new CompilerMessage(EXML_BUILDER_NAME, BuildMessage.Kind.WARNING,
-            String.format("Jangaroo module %s does not have a Jangaroo SDK.", module.getName())));
-          continue;
-        }
-        List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
-        ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, false);
-        if (exmlcConfiguration != null) {
-          exmlcConfiguration.setLog(new JpsCompileLog(EXML_BUILDER_NAME, context));
-
-          Map<Boolean, List<File>> propertiesFilesAndTestFiles = propertiesFilesToCompile.get(module);
-          if (propertiesFilesAndTestFiles != null) {
-            exmlcConfiguration.setSourceFiles(propertiesFilesAndTestFiles.get(false));
-            Propc propc = loadPropc(context, jarPaths, exmlcConfiguration);
-            compileProperties(moduleBuildTarget, propc, context, outputConsumer);
-          }
-
-          Map<Boolean, List<File>> exmlFilesAndTestFiles = exmlFilesToCompile.get(module);
-          if (exmlFilesAndTestFiles != null) {
-            exmlcConfiguration.setSourceFiles(exmlFilesAndTestFiles.get(false));
-            Exmlc exmlc = loadExmlc(context, jarPaths, exmlcConfiguration);
-            compileExml(moduleBuildTarget, exmlc, context, outputConsumer);
-          }
-        }
+        build(context, propertiesFilesToCompile, exmlFilesToCompile, moduleBuildTarget, outputConsumer);
       }
       return ExitCode.OK;
     }
@@ -132,13 +107,48 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     return ExitCode.NOTHING_DONE;
   }
 
+  private void build(CompileContext context, Map<JpsModule, Map<Boolean, List<File>>> propertiesFilesToCompile,
+                     Map<JpsModule, Map<Boolean, List<File>>> exmlFilesToCompile, ModuleBuildTarget moduleBuildTarget,
+                     OutputConsumer outputConsumer) throws IOException {
+    JpsModule module = moduleBuildTarget.getModule();
+    JpsSdk sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
+    if (sdk == null) {
+      context.processMessage(new CompilerMessage(EXML_BUILDER_NAME, BuildMessage.Kind.WARNING,
+        String.format("Jangaroo module %s does not have a Jangaroo SDK.", module.getName())));
+      return;
+    }
+    List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
+    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, false);
+    if (exmlcConfiguration != null) {
+      exmlcConfiguration.setLog(new JpsCompileLog(EXML_BUILDER_NAME, context));
+
+      Map<Boolean, List<File>> propertiesFilesAndTestFiles = propertiesFilesToCompile.get(module);
+      if (propertiesFilesAndTestFiles != null) {
+        exmlcConfiguration.setSourceFiles(propertiesFilesAndTestFiles.get(false));
+        Propc propc = loadPropc(context, jarPaths, exmlcConfiguration);
+        compileProperties(moduleBuildTarget, propc, context, outputConsumer);
+      }
+
+      Map<Boolean, List<File>> exmlFilesAndTestFiles = exmlFilesToCompile.get(module);
+      if (exmlFilesAndTestFiles != null) {
+        exmlcConfiguration.setSourceFiles(exmlFilesAndTestFiles.get(false));
+        Exmlc exmlc = loadExmlc(context, jarPaths, exmlcConfiguration);
+        compileExml(moduleBuildTarget, exmlc, context, outputConsumer);
+      }
+    }
+  }
+
   private void compileProperties(ModuleBuildTarget moduleBuildTarget, Propc propc, CompileContext context,
-                                 OutputConsumer outputConsumer) throws IOException {
+                                 OutputConsumer outputConsumer) {
     List<File> sourceFiles = propc.getConfig().getSourceFiles();
     for (File sourceFile : sourceFiles) {
-      File generatedPropertiesClass = propc.generate(sourceFile);
-      // getLog().info("properties->as: " + fileUrl + " -> " + generatedPropertiesClass.getPath());
-      outputConsumer.registerOutputFile(moduleBuildTarget, generatedPropertiesClass, Collections.singleton(sourceFile.getPath()));
+      try {
+        File generatedPropertiesClass = propc.generate(sourceFile);
+        // getLog().info("properties->as: " + fileUrl + " -> " + generatedPropertiesClass.getPath());
+        outputConsumer.registerOutputFile(moduleBuildTarget, generatedPropertiesClass, Collections.singleton(sourceFile.getPath()));
+      } catch (IOException e) {
+        context.processMessage(new CompilerMessage(PROPERTIES_BUILDER_NAME, e));
+      }
     }
   }
 
