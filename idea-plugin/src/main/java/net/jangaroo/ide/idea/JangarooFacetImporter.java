@@ -1,6 +1,5 @@
 package net.jangaroo.ide.idea;
 
-import com.intellij.facet.FacetManager;
 import com.intellij.javaee.facet.JavaeeFacet;
 import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
 import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
@@ -9,12 +8,10 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.packaging.artifacts.Artifact;
 import com.intellij.packaging.artifacts.ArtifactManager;
 import com.intellij.packaging.artifacts.ModifiableArtifact;
@@ -23,9 +20,6 @@ import com.intellij.packaging.elements.CompositePackagingElement;
 import com.intellij.packaging.elements.PackagingElement;
 import com.intellij.packaging.elements.PackagingElementResolvingContext;
 import com.intellij.packaging.impl.elements.ArchivePackagingElement;
-import com.intellij.packaging.impl.elements.ArtifactPackagingElement;
-import com.intellij.packaging.impl.elements.DirectoryPackagingElement;
-import com.intellij.packaging.impl.elements.LibraryPackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
 import com.intellij.util.PairConsumer;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
@@ -55,10 +49,8 @@ import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
 
@@ -69,7 +61,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   private static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
   public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   private static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
-  private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
+  public static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
+  private static final String JOO_CLASSES_PATH = "joo/classes";
 
   public JangarooFacetImporter() {
     super(JpsJangarooSdkType.JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID, JangarooFacetType.INSTANCE, DEFAULT_JANGAROO_FACET_NAME);
@@ -194,7 +187,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
 
-    String jooClassesPath = "joo/classes";
+    String jooClassesPath = JOO_CLASSES_PATH;
     boolean isJangaroo2 = jangarooSdkVersion != null && jangarooSdkVersion.startsWith("2.");
     if (isJangaroo2 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesPath;
@@ -212,7 +205,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (!testOutputDir.isAbsolute()) {
       testOutputDir = new File(mavenProjectModel.getDirectory(), testOutputDirectory);
     }
-    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, "joo/classes").getAbsolutePath());
+    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, JOO_CLASSES_PATH).getAbsolutePath());
 
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {
@@ -302,75 +295,83 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
           // find the IDEA exploded Web artifact for this Jangaroo-enabled Web app module:
           final Artifact artifact = getExplodedWebArtifact(webModule);
           if (artifact != null) {
-            // instruct IDEA to build the Web app on make:
             final ArtifactManager artifactManager = ArtifactManager.getInstance(project);
-            if (!artifact.isBuildOnMake()) {
-              ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                  ApplicationManager.getApplication().runWriteAction(new Runnable() {
-                    public void run() {
-                      ModifiableArtifactModel modifiableArtifactModel = artifactManager.createModifiableModel();
-                      final ModifiableArtifact modifiableArtifact = modifiableArtifactModel.getOrCreateModifiableArtifact(artifact);
-                      modifiableArtifact.setBuildOnMake(true);
-                      modifiableArtifactModel.commit();
-                    }
-                  });
-                }
-              });
-            }
 
-            // get all Jangaroo Facets used by this Web app:
-            Set<JangarooFacet> dependencies = getTransitiveJangarooDependencies(jangarooFacet);
-            // remove all Jangaroo Facets already contained in some overlay:
-            Set<JangarooFacet> overlays = findTransitiveJangarooOverlays(artifactManager, artifact);
-            for (JangarooFacet overlay : overlays) {
-              dependencies.remove(overlay);
-              dependencies.removeAll(getTransitiveJangarooDependencies(overlay));
-            }
-            // add the remaining modules' Jangaroo packaging output to the Web app's root directory:
-            CompositePackagingElement<?> rootDirectory = artifact.getRootElement();
-            removeJangarooJarsFromWebInfLib(project, rootDirectory);
-            for (JangarooFacet dependency : dependencies) {
-              rootDirectory.addOrFindChild(new JangarooPackagingOutputElement(project, dependency));
+            // add the remaining modules' Jangaroo compile output to the Web app's root directory:
+            CompositePackagingElement<?> webInfDir = artifact.getRootElement().findCompositeChild("WEB-INF");
+            if (webInfDir != null) {
+              CompositePackagingElement<?> libDir = webInfDir.findCompositeChild("lib");
+              if (libDir != null) {
+                PackagingElementResolvingContext resolvingContext = artifactManager.getResolvingContext();
+                Collection<ArchivePackagingElement> jangarooArchives = findJangarooArchives(resolvingContext, libDir);
+                if (!jangarooArchives.isEmpty()) {
+                  createJangarooPackagingOutputElements(artifact, resolvingContext, jangarooArchives);
+                  libDir.removeChildren(jangarooArchives);
+                  ensureBuildOnMake(artifact, artifactManager);
+                }
+              }
             }
           }
         }
       });
     }
 
-    private static void removeJangarooJarsFromWebInfLib(Project project, CompositePackagingElement<?> rootDirectory) {
-      DirectoryPackagingElement libDir = rootDirectory.addOrFindChild(new DirectoryPackagingElement("WEB-INF")).addOrFindChild(new DirectoryPackagingElement("lib"));
-      PackagingElementResolvingContext packagingElementResolvingContext = ArtifactManager.getInstance(project).getResolvingContext();
-      ModuleManager moduleManager = ModuleManager.getInstance(project);
-      Collection<PackagingElement<?>> toBeRemovedLibraries = new ArrayList<PackagingElement<?>>();
-      for (PackagingElement packagingElement : libDir.getChildren()) {
-        if (packagingElement instanceof LibraryPackagingElement) {
-          Library library = ((LibraryPackagingElement)packagingElement).findLibrary(packagingElementResolvingContext);
-          if (library != null) {
-            String libraryName = library.getName();
-            if (libraryName != null && libraryName.contains(":jangaroo:")) {
-              toBeRemovedLibraries.add(packagingElement);
-            }
-          }
-        } else if (packagingElement instanceof ArchivePackagingElement) {
-          List<PackagingElement<?>> archiveChildren = ((ArchivePackagingElement)packagingElement).getChildren();
-          if (!archiveChildren.isEmpty()) {
-            PackagingElement<?> modulePackagingElement = archiveChildren.get(0);
-            if (modulePackagingElement instanceof ModuleOutputPackagingElement) {
-              String moduleName = ((ModuleOutputPackagingElement)modulePackagingElement).getModuleName();
-              if (moduleName != null) {
-                Module module = moduleManager.findModuleByName(moduleName);
-                if (module != null) {
-                  if (JangarooFacet.ofModule(module) != null) {
-                    toBeRemovedLibraries.add(packagingElement);
-                  }
-                }
+    private static void createJangarooPackagingOutputElements(Artifact artifact,
+                                                              PackagingElementResolvingContext resolvingContext,
+                                                              Collection<ArchivePackagingElement> jangarooArchives) {
+      CompositePackagingElement<?> rootBeer = artifact.getRootElement();
+      for (ArchivePackagingElement archivePackagingElement : jangarooArchives) {
+        Module jarModule = getModuleOfArchive(archivePackagingElement, resolvingContext);
+        JangarooFacet jangarooFacet = JangarooFacet.ofModule(jarModule);
+        PackagingElement<?> jangarooPackagingOutputElement =
+          new JangarooPackagingOutputElement(resolvingContext.getProject(), jangarooFacet);
+        rootBeer.addOrFindChild(jangarooPackagingOutputElement);
+      }
+    }
+
+    private static void ensureBuildOnMake(final Artifact artifact, final ArtifactManager artifactManager) {
+      // instruct IDEA to build the Web app on make:
+      if (!artifact.isBuildOnMake()) {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+          public void run() {
+            ApplicationManager.getApplication().runWriteAction(new Runnable() {
+              public void run() {
+                ModifiableArtifactModel modifiableArtifactModel = artifactManager.createModifiableModel();
+                final ModifiableArtifact modifiableArtifact = modifiableArtifactModel.getOrCreateModifiableArtifact(artifact);
+                modifiableArtifact.setBuildOnMake(true);
+                modifiableArtifactModel.commit();
               }
-            }
+            });
+          }
+        });
+      }
+    }
+
+    private static Collection<ArchivePackagingElement> findJangarooArchives(PackagingElementResolvingContext resolvingContext,
+                                                                            CompositePackagingElement<?> directory) {
+      Collection<ArchivePackagingElement> toBeRemovedLibraries = new ArrayList<ArchivePackagingElement>();
+      for (PackagingElement packagingElement : directory.getChildren()) {
+        if (packagingElement instanceof ArchivePackagingElement) {
+          ArchivePackagingElement archivePackagingElement = (ArchivePackagingElement)packagingElement;
+          Module module = getModuleOfArchive(archivePackagingElement, resolvingContext);
+          if (JangarooFacet.ofModule(module) != null) {
+            toBeRemovedLibraries.add(archivePackagingElement);
           }
         }
       }
-      libDir.removeChildren(toBeRemovedLibraries);
+      return toBeRemovedLibraries;
+    }
+
+    private static Module getModuleOfArchive(ArchivePackagingElement archivePackagingElement,
+                                             PackagingElementResolvingContext resolvingContext) {
+      List<PackagingElement<?>> archiveChildren = archivePackagingElement.getChildren();
+      if (archiveChildren.size() == 1) {
+        PackagingElement<?> moduleOutputPackagingElement = archiveChildren.get(0);
+        if (moduleOutputPackagingElement instanceof ModuleOutputPackagingElement) {
+          return ((ModuleOutputPackagingElement)moduleOutputPackagingElement).findModule(resolvingContext);
+        }
+      }
+      return null;
     }
 
     private static Artifact getExplodedWebArtifact(Module module) {
@@ -397,46 +398,5 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       return null;
     }
 
-    private static Set<JangarooFacet> findTransitiveJangarooOverlays(ArtifactManager artifactManager, Artifact artifact) {
-      Set<JangarooFacet> overlays = new LinkedHashSet<JangarooFacet>();
-      for (PackagingElement<?> packagingElement : artifact.getRootElement().getChildren()) {
-        if (packagingElement instanceof ArtifactPackagingElement) {
-          String artifactName = ((ArtifactPackagingElement) packagingElement).getArtifactName();
-          if (artifactName != null) {
-            Artifact overlayArtifact = artifactManager.findArtifact(artifactName);
-            if (overlayArtifact != null) {
-              Module overlayModule = findModule(artifactManager, overlayArtifact);
-              if (overlayModule != null) {
-                JangarooFacet overlayJangarooFacet = findJangarooFacet(overlayModule);
-                if (overlayJangarooFacet != null) {
-                  overlays.add(overlayJangarooFacet);
-                }
-                overlays.addAll(findTransitiveJangarooOverlays(artifactManager, overlayArtifact));
-              }
-            }
-          }
-        }
-      }
-      return overlays;
-    }
-
-    private static Set<JangarooFacet> getTransitiveJangarooDependencies(JangarooFacet jangarooFacet) {
-      return collectTransitiveJangarooDependencies(jangarooFacet, new LinkedHashSet<JangarooFacet>());
-    }
-
-    private static Set<JangarooFacet> collectTransitiveJangarooDependencies(JangarooFacet jangarooFacet, Set<JangarooFacet> dependencies) {
-      dependencies.add(jangarooFacet);
-      for (Module directDependency : ModuleRootManager.getInstance(jangarooFacet.getModule()).getDependencies()) {
-        JangarooFacet dependentModuleJangarooFacet = findJangarooFacet(directDependency);
-        if (dependentModuleJangarooFacet != null) {
-          collectTransitiveJangarooDependencies(dependentModuleJangarooFacet, dependencies);
-        }
-      }
-      return dependencies;
-    }
-
-    private static JangarooFacet findJangarooFacet(Module module) {
-      return FacetManager.getInstance(module).findFacet(JangarooFacetType.ID, DEFAULT_JANGAROO_FACET_NAME);
-    }
   }
 }
