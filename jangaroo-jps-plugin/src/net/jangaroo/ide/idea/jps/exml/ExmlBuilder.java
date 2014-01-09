@@ -151,6 +151,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
         File generatedPropertiesClass = propc.generate(sourceFile);
         // getLog().info("properties->as: " + fileUrl + " -> " + generatedPropertiesClass.getPath());
         outputConsumer.registerOutputFile(moduleBuildTarget, generatedPropertiesClass, JangarooBuilder.toSingletonPath(sourceFile));
+        FSOperations.markDirty(context, generatedPropertiesClass);
       } catch (IOException e) {
         context.processMessage(new CompilerMessage(PROPERTIES_BUILDER_NAME, e));
       }
