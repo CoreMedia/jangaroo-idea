@@ -11,6 +11,7 @@ import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.serialization.JDomSerializationUtil;
 import org.jetbrains.jps.model.serialization.JpsModelSerializerExtension;
+import org.jetbrains.jps.model.serialization.artifact.JpsPackagingElementSerializer;
 import org.jetbrains.jps.model.serialization.facet.JpsFacetSerializer;
 import org.jetbrains.jps.model.serialization.library.JpsSdkPropertiesSerializer;
 
@@ -37,6 +38,12 @@ public class JangarooModelSerializerExtension extends JpsModelSerializerExtensio
   public static ExmlcConfigurationBean getExmlcSettings(@NotNull JpsModule module) {
     ExmlcConfigurationBean settings = module.getContainer().getChild(EXMLC_CONFIG);
     return settings == null ? new ExmlcConfigurationBean() : settings;
+  }
+
+  @NotNull
+  @Override
+  public List<? extends JpsPackagingElementSerializer<?>> getPackagingElementSerializers() {
+    return Collections.singletonList(new JpsResourcesModuleOutputPackagingElementSerializer());
   }
 
   @NotNull
