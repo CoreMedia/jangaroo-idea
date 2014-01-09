@@ -16,6 +16,7 @@ import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
 import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.CompileContext;
+import org.jetbrains.jps.incremental.FSOperations;
 import org.jetbrains.jps.incremental.MessageHandler;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
@@ -32,7 +33,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -91,15 +91,16 @@ public class ExmlBuilder extends ModuleLevelBuilder {
   public ExitCode build(CompileContext context, ModuleChunk chunk,
                         DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
                         OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
-    final Map<JpsModule, Map<Boolean, List<File>>> propertiesFilesToCompile = JangarooBuilder.getFilesToCompile(
+    Map<ModuleBuildTarget, List<File>> propertiesFilesToCompile = JangarooBuilder.getFilesToCompile(
       PROPC_SOURCES_FILTER, dirtyFilesHolder);
 
-    final Map<JpsModule, Map<Boolean, List<File>>> exmlFilesToCompile = JangarooBuilder.getFilesToCompile(
+    Map<ModuleBuildTarget, List<File>> exmlFilesToCompile = JangarooBuilder.getFilesToCompile(
       EXMLC_SOURCES_FILTER, dirtyFilesHolder);
 
     if (!propertiesFilesToCompile.isEmpty() || !exmlFilesToCompile.isEmpty()) {
       for (ModuleBuildTarget moduleBuildTarget : chunk.getTargets()) {
-        build(context, propertiesFilesToCompile, exmlFilesToCompile, moduleBuildTarget, outputConsumer);
+        build(context, propertiesFilesToCompile.get(moduleBuildTarget), exmlFilesToCompile.get(moduleBuildTarget),
+          moduleBuildTarget, outputConsumer);
       }
       return ExitCode.OK;
     }
@@ -110,8 +111,8 @@ public class ExmlBuilder extends ModuleLevelBuilder {
   /**
    * Generate AS from properties and EXML for one module.
    */
-  private void build(CompileContext context, Map<JpsModule, Map<Boolean, List<File>>> propertiesFilesToCompile,
-                     Map<JpsModule, Map<Boolean, List<File>>> exmlFilesToCompile, ModuleBuildTarget moduleBuildTarget,
+  private void build(CompileContext context, List<File> propertiesFilesToCompile,
+                     List<File> exmlFilesToCompile, ModuleBuildTarget moduleBuildTarget,
                      OutputConsumer outputConsumer) throws IOException {
     JpsModule module = moduleBuildTarget.getModule();
     JpsSdk sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
@@ -128,17 +129,15 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     exmlcConfiguration.setLog(log);
 
     // invoke properties compiler for module:
-    Map<Boolean, List<File>> propertiesFilesAndTestFiles = propertiesFilesToCompile.get(module);
-    if (propertiesFilesAndTestFiles != null) {
-      exmlcConfiguration.setSourceFiles(propertiesFilesAndTestFiles.get(forTests));
+    if (propertiesFilesToCompile != null) {
+      exmlcConfiguration.setSourceFiles(propertiesFilesToCompile);
       Propc propc = loadPropc(context, jarPaths, exmlcConfiguration);
       compileProperties(moduleBuildTarget, propc, context, outputConsumer);
     }
 
     // invoke EXML compiler for module:
-    Map<Boolean, List<File>> exmlFilesAndTestFiles = exmlFilesToCompile.get(module);
-    if (exmlFilesAndTestFiles != null) {
-      exmlcConfiguration.setSourceFiles(exmlFilesAndTestFiles.get(forTests));
+    if (exmlFilesToCompile != null) {
+      exmlcConfiguration.setSourceFiles(exmlFilesToCompile);
       Exmlc exmlc = loadExmlc(context, jarPaths, exmlcConfiguration);
       compileExml(moduleBuildTarget, exmlc, context, outputConsumer);
     }
@@ -151,14 +150,14 @@ public class ExmlBuilder extends ModuleLevelBuilder {
       try {
         File generatedPropertiesClass = propc.generate(sourceFile);
         // getLog().info("properties->as: " + fileUrl + " -> " + generatedPropertiesClass.getPath());
-        outputConsumer.registerOutputFile(moduleBuildTarget, generatedPropertiesClass, Collections.singleton(sourceFile.getPath()));
+        outputConsumer.registerOutputFile(moduleBuildTarget, generatedPropertiesClass, JangarooBuilder.toSingletonPath(sourceFile));
       } catch (IOException e) {
         context.processMessage(new CompilerMessage(PROPERTIES_BUILDER_NAME, e));
       }
     }
   }
 
-  private void compileExml(ModuleBuildTarget moduleBuildTarget, Exmlc exmlc, MessageHandler messageHandler,
+  private void compileExml(ModuleBuildTarget moduleBuildTarget, Exmlc exmlc, CompileContext context,
                            OutputConsumer outputConsumer) throws IOException {
     List<File> sourceFiles = exmlc.getConfig().getSourceFiles();
     if (!sourceFiles.isEmpty()) {
@@ -166,16 +165,19 @@ public class ExmlBuilder extends ModuleLevelBuilder {
       for (File sourceFile : sourceFiles) {
         try {
           File generatedConfigClass = exmlc.generateConfigClass(sourceFile);
+          outputConsumer.registerOutputFile(moduleBuildTarget, generatedConfigClass, JangarooBuilder.toSingletonPath(sourceFile));
+          FSOperations.markDirty(context, generatedConfigClass);
+
           File generatedTargetClass = exmlc.generateComponentClass(sourceFile);
           // getLog().info("exml->as (config): " + fileUrl + " -> " + generatedConfigClass.getPath());
-          outputConsumer.registerOutputFile(moduleBuildTarget, generatedConfigClass, Collections.singleton(sourceFile.getPath()));
           if (generatedTargetClass != null) {
             // getLog().info("exml->as (target): " + fileUrl + " -> " + generatedTargetClass.getPath());
-            outputConsumer.registerOutputFile(moduleBuildTarget, generatedTargetClass, Collections.singleton(sourceFile.getPath()));
+            outputConsumer.registerOutputFile(moduleBuildTarget, generatedTargetClass, JangarooBuilder.toSingletonPath(sourceFile));
+            FSOperations.markDirty(context, generatedTargetClass);
           }
           allCompiledSourceFiles.add(sourceFile.getPath());
         } catch (ExmlcException e) {
-          processExmlcException(messageHandler, sourceFile, e);
+          processExmlcException(context, sourceFile, e);
         }
       }
       if (!moduleBuildTarget.isTests()) {
@@ -198,7 +200,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
           }
           outputConsumer.registerOutputFile(moduleBuildTarget, xsdFile, allCompiledSourceFiles);
         } catch (ExmlcException e) {
-          processExmlcException(messageHandler, null, e);
+          processExmlcException(context, null, e);
         }
       }
     }
