@@ -53,8 +53,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="net.jangaroo:exml-compiler:2.0.8" level="project" />
-    <orderEntry type="library" name="net.jangaroo:jangaroo-compiler:2.0.8" level="project" />
   </component>
 </module>
 
