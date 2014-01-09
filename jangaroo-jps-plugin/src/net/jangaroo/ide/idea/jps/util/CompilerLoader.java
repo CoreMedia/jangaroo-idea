@@ -21,21 +21,21 @@ public class CompilerLoader {
   private static final Map<List<String>,ClassLoader> CLASS_LOADER_BY_JAR_FILES_CACHE = new HashMap<List<String>, ClassLoader>();
 
   public static Jooc loadJooc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    return (Jooc)instantiateClass("net.jangaroo.jooc.Jooc", jarFileNames);
+    return instantiateClass(Jooc.class, "net.jangaroo.jooc.Jooc", jarFileNames);
   }
 
   public static Exmlc loadExmlc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    return (Exmlc)instantiateClass("net.jangaroo.exml.compiler.Exmlc", jarFileNames);
+    return instantiateClass(Exmlc.class, "net.jangaroo.exml.compiler.Exmlc", jarFileNames);
   }
 
   public static Propc loadPropc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    return (Propc)instantiateClass("net.jangaroo.properties.PropertyClassGenerator", jarFileNames);
+    return instantiateClass(Propc.class, "net.jangaroo.properties.PropertyClassGenerator", jarFileNames);
   }
 
-  private static Object instantiateClass(String mainClassName, List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+  private static <T> T instantiateClass(Class<T> compilerInterface, String mainClassName, List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
     ClassLoader jooClassLoader = getClassLoader(jarFileNames);
     Class<?> joocClass = jooClassLoader.loadClass(mainClassName);
-    return joocClass.newInstance();
+    return compilerInterface.cast(joocClass.newInstance());
   }
 
   private static ClassLoader getClassLoader(List<String> jarFileNames) throws FileNotFoundException {
