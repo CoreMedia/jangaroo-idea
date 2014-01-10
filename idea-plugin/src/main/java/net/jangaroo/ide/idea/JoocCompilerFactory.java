@@ -4,39 +4,31 @@ import com.intellij.openapi.compiler.*;
 import com.intellij.openapi.compiler.Compiler;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
-import net.jangaroo.ide.idea.exml.ExmlCompiler;
-import net.jangaroo.ide.idea.properties.PropertiesCompiler;
+import net.jangaroo.exml.api.Exmlc;
+import net.jangaroo.jooc.api.Jooc;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-
 /**
- * Factory for all Jangaroo compilers:
+ * Since IDEA 13, compilation is done by "external build" (JPS), so we just use the
+ * compiler manager to register compilable file extensions for
  * <ul>
- *   <li>AS3->JS Compiler "jooc"</li>
- *   <li>EXML->AS3 Compiler "exmlc"</li>
- *   <li>properties->AS3 Compiler "propc"</li>
+ *   <li>as: "jooc"</li>
+ *   <li>exml: "exmlc"</li>
+ *   <li>properties: "propc"</li>
  * </ul>
- * Because they are translating compilers, we cannot use IDEA's usual Compiler extension point.
- * Instead, we implement a CompilerFactory to get hold of the compiler manager, but do not
- * actually return anything, but register the translating compilers directly.
  */
 public class JoocCompilerFactory implements CompilerFactory {
 
   public Compiler[] createCompilers(@NotNull CompilerManager compilerManager) {
-    registerCompiler(compilerManager, new JangarooCompiler());
-    registerCompiler(compilerManager, new ExmlCompiler());
-    registerCompiler(compilerManager, new PropertiesCompiler());
+    addCompilableFileType(compilerManager, Jooc.AS_SUFFIX_NO_DOT);
+    addCompilableFileType(compilerManager, Exmlc.EXML_SUFFIX.substring(1));
+    addCompilableFileType(compilerManager, "properties");
     return new Compiler[0]; // already registered the compilers ourselves
   }
 
-  private static void registerCompiler(CompilerManager compilerManager, AbstractCompiler compiler) {
-    FileType inputFileType = FileTypeManager.getInstance().getFileTypeByExtension(compiler.getInputFileSuffix());
-    FileType outputFileType = FileTypeManager.getInstance().getFileTypeByExtension(compiler.getOutputFileSuffix());
+  private static void addCompilableFileType(CompilerManager compilerManager, String inputFileSuffix) {
+    FileType inputFileType = FileTypeManager.getInstance().getFileTypeByExtension(inputFileSuffix);
     compilerManager.addCompilableFileType(inputFileType);
-    compilerManager.addTranslatingCompiler(compiler,
-      Collections.<FileType>singleton(inputFileType),
-      Collections.<FileType>singleton(outputFileType));
   }
 
 }

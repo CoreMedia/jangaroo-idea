@@ -25,7 +25,6 @@ import com.intellij.xml.impl.schema.XmlElementDescriptorImpl;
 import com.intellij.xml.util.XmlUtil;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
-import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,7 +82,7 @@ public class ComponentXmlElementDescriptorProvider implements XmlElementDescript
           String packageName = ExmlUtils.parsePackageFromNamespace(getNamespace());
           if (packageName != null) {
             String className = CompilerUtils.qName(packageName, getName());
-            JSClass asClass = AbstractCompiler.getASClass(parentTag, className);
+            JSClass asClass = ExmlLanguageInjector.getASClass(parentTag, className);
             if (asClass != null && asClass.isValid()) {
               // found ActionScript class.
               String targetClassName = className;

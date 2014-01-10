@@ -143,7 +143,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     for (OrderEntry orderEntry : orderEntries) {
       try {
         if (orderEntry instanceof ModuleOrderEntry) {
-          ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(((ModuleOrderEntry)orderEntry).getModule());
+          ExmlcConfigurationBean exmlConfig = ExmlFacet.getExmlConfig(((ModuleOrderEntry)orderEntry).getModule());
           mapXsdResources(resourceMap, exmlConfig);
         } else {
           String zipFileName = findDependentModuleZipFileName(orderEntry);
@@ -160,7 +160,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         // ignore
       }
     }
-    ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
+    ExmlcConfigurationBean exmlConfig = ExmlFacet.getExmlConfig(module);
     mapXsdResources(resourceMap, exmlConfig);
     return resourceMap;
   }

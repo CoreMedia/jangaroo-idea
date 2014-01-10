@@ -16,6 +16,7 @@ package net.jangaroo.ide.idea.exml;
 
 import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSVariable;
@@ -46,7 +47,6 @@ import com.intellij.psi.xml.XmlText;
 import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
-import net.jangaroo.ide.idea.AbstractCompiler;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.AS3Type;
 import net.jangaroo.utils.CompilerUtils;
@@ -91,7 +91,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
       if (module == null) {
         return;
       }
-      ExmlcConfigurationBean exmlConfig = ExmlCompiler.getExmlConfig(module);
+      ExmlcConfigurationBean exmlConfig = ExmlFacet.getExmlConfig(module);
       if (exmlConfig == null) {
         return;
       }
@@ -228,7 +228,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
           if (configPackageName != null) {
             attributeConfigClassName = CompilerUtils.qName(configPackageName, xmlTag.getLocalName());
             // since EXML update, this may be a target class, so try to find the reference to the config class:
-            JSClass asClass = AbstractCompiler.getASClass(xmlTag, attributeConfigClassName);
+            JSClass asClass = getASClass(xmlTag, attributeConfigClassName);
             if (asClass != null) {
               JSFunction asConstructor = asClass.getConstructor();
               if (asConstructor != null) {
@@ -237,7 +237,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
                   String configClassNameCandidate = parameters[0].getType().getResolvedTypeText();
                   if (!"Object".equals(configClassNameCandidate)) {
                     attributeConfigClassName = configClassNameCandidate;
-                    asClass = AbstractCompiler.getASClass(xmlTag, attributeConfigClassName);
+                    asClass = getASClass(xmlTag, attributeConfigClassName);
                   }
                 }
               }
@@ -286,6 +286,11 @@ public class ExmlLanguageInjector implements LanguageInjector {
           TextRange.from(1, text.length());      // cut off quotes only ("...")
       injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix, code.toString());
     }
+  }
+
+  public static JSClass getASClass(PsiElement context, String className) {
+    PsiElement asClass = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver().findClassByQName(className, context);
+    return asClass instanceof JSClass ? (JSClass)asClass : null;
   }
 
   private String getRelevantText(PsiLanguageInjectionHost languageInjectionHost) {
