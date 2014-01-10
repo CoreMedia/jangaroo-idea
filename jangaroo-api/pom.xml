@@ -36,44 +36,9 @@
       <version>1.0.1</version>
     </dependency>
     <dependency>
-      <groupId>edu.princeton.cup</groupId>
-      <artifactId>java-cup</artifactId>
-      <version>10k</version>
-    </dependency>
-    <dependency>
       <groupId>args4j</groupId>
       <artifactId>args4j</artifactId>
       <version>2.0.16</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>1.6</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-      <version>3.2.1</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.4</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.freemarker</groupId>
-      <artifactId>freemarker</artifactId>
-      <version>2.3.15</version>
     </dependency>
   </dependencies>
 

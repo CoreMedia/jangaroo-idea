@@ -21,7 +21,7 @@
     <facetType implementation="net.jangaroo.ide.idea.JangarooFacetType"/>
     <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
     <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
-    <compileServer.plugin classpath="jps/jangaroo-jps-plugin.jar"/>
+    <compileServer.plugin classpath="jangaroo-jps-plugin.jar"/>
 
     <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
     <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>

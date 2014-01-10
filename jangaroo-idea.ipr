@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ArtifactManager">
     <artifact build-on-make="true" name="jangaroo-jps-plugin:jar">
-      <output-path>$USER_HOME$/.IntelliJIdea12/system/plugins-sandbox/plugins/jangaroo-0.9/lib/jps</output-path>
+      <output-path>$PROJECT_DIR$/jangaroo-jps-plugin/out</output-path>
       <root id="root">
         <element id="archive" name="jangaroo-jps-plugin.jar">
           <element id="directory" name="META-INF">
@@ -10,15 +10,6 @@
           </element>
           <element id="module-output" name="jangaroo-jps-plugin" />
         </element>
-        <element id="library" level="project" name="jangaroo-api-1.0.1" />
-        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-io-2.0.1.jar" />
-        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/java-cup-10k.jar" />
-        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-collections-3.2.1.jar" />
-        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/args4j-2.0.16.jar" />
-        <element id="file-copy" path="$USER_HOME$/.IntelliJIdea12/config/plugins/jangaroo-0.9/lib/commons-configuration-1.6.jar" />
-        <element id="file-copy" path="$MAVEN_REPOSITORY$/org/freemarker/freemarker/2.3.15/freemarker-2.3.15.jar" />
-        <element id="file-copy" path="$MAVEN_REPOSITORY$/commons-lang/commons-lang/2.4/commons-lang-2.4.jar" />
-        <element id="file-copy" path="$MAVEN_REPOSITORY$/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar" />
       </root>
     </artifact>
   </component>
@@ -313,11 +304,6 @@
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
         </XML>
-        <ADDITIONAL_INDENT_OPTIONS fileType="groovy">
-          <option name="INDENT_SIZE" value="2" />
-          <option name="CONTINUATION_INDENT_SIZE" value="2" />
-          <option name="TAB_SIZE" value="8" />
-        </ADDITIONAL_INDENT_OPTIONS>
         <ADDITIONAL_INDENT_OPTIONS fileType="gsp">
           <option name="INDENT_SIZE" value="2" />
           <option name="CONTINUATION_INDENT_SIZE" value="2" />
@@ -341,6 +327,16 @@
           <option name="DOWHILE_BRACE_FORCE" value="3" />
           <option name="WHILE_BRACE_FORCE" value="3" />
           <option name="FOR_BRACE_FORCE" value="3" />
+          <option name="PARENT_SETTINGS_INSTALLED" value="true" />
+          <indentOptions>
+            <option name="INDENT_SIZE" value="2" />
+            <option name="CONTINUATION_INDENT_SIZE" value="2" />
+            <option name="TAB_SIZE" value="8" />
+          </indentOptions>
+        </codeStyleSettings>
+        <codeStyleSettings language="Groovy">
+          <option name="SPACE_AFTER_TYPE_CAST" value="false" />
+          <option name="WRAP_COMMENTS" value="true" />
           <option name="PARENT_SETTINGS_INSTALLED" value="true" />
           <indentOptions>
             <option name="INDENT_SIZE" value="2" />
@@ -429,8 +425,10 @@
       <words>
         <w>exml</w>
         <w>exmlc</w>
+        <w>jooc</w>
         <w>lifecycle</w>
         <w>packagings</w>
+        <w>propc</w>
       </words>
     </dictionary>
   </component>
@@ -491,51 +489,10 @@
         <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/1.0.1/exml-compiler-api-1.0.1.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/1.0.1/properties-compiler-api-1.0.1.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/1.0.1/jangaroo-utils-1.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />
-    </library>
-    <library name="net.jangaroo:exml-compiler:2.0.8" type="repository">
-      <properties maven-id="net.jangaroo:exml-compiler:2.0.8" />
-      <CLASSES>
-        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-api-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/args4j-2.0.16.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/freemarker-2.3.15.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jtidy-4aug2000r7-dev.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/ant-1.8.2.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/ant-launcher-1.8.2.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/java-cup-10k.jar!/" />
-      </CLASSES>
-      <JAVADOC />
-      <SOURCES>
-        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-2.0.8-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/exml-compiler-api-2.0.8-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8-sources.jar!/" />
-      </SOURCES>
-    </library>
-    <library name="net.jangaroo:jangaroo-compiler:2.0.8" type="repository">
-      <properties maven-id="net.jangaroo:jangaroo-compiler:2.0.8" />
-      <CLASSES>
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/args4j-2.0.16.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/java-cup-10k.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/ant-1.8.2.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/ant-launcher-1.8.2.jar!/" />
-      </CLASSES>
-      <JAVADOC />
-      <SOURCES>
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-2.0.8-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-compiler-api-2.0.8-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/jangaroo-utils-2.0.8-sources.jar!/" />
-      </SOURCES>
     </library>
   </component>
 </project>

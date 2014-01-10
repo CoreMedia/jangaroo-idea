@@ -16,7 +16,6 @@ import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.config.ValidationMode;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.CompilerUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
@@ -31,6 +30,7 @@ import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -170,7 +170,12 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
       String generatedResourcesPath = toPath(exmlConfig.getGeneratedResourcesDirectory()) + File.separator;
       File generatedResourcesDirectory = new File(generatedResourcesPath);
       if (generatedResourcesDirectory.exists()) {
-        String[] xsdFiles = generatedResourcesDirectory.list(new SuffixFileFilter(".xsd"));
+        String[] xsdFiles = generatedResourcesDirectory.list(new FilenameFilter() {
+          @Override
+          public boolean accept(File dir, String name) {
+            return name.toLowerCase().endsWith(".xsd");
+          }
+        });
         for (String xsdFile : xsdFiles) {
           mapXsdResource(resourceMap, generatedResourcesPath, xsdFile);
         }

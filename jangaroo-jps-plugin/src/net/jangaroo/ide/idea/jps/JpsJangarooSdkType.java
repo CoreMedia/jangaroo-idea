@@ -22,10 +22,20 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   public static final String JANGAROO_SDK_TYPE_ID = "Jangaroo SDK";
   private static final Pattern JANGAROO_COMPILER_API_JAR_PATTERN =
     Pattern.compile("^" + JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+\\.[0-9]+(\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
-  private static final String[] JANGAROO_API_JAR_ARTIFACTS = new String[]{
+  private static final String[] JANGAROO_COMPILER_ARTIFACT_IDS = new String[]{
     "jangaroo-compiler",
     "exml-compiler",
     "properties-compiler"
+  };
+  public static final String[] JANGAROO_3RD_PARTY_JARS = new String[]{
+    "edu.princeton.cup:java-cup:10k",
+    "args4j:args4j:2.0.16",
+    "commons-configuration:commons-configuration:1.6",
+    "commons-io:commons-io:2.0.1",
+    "commons-collections:commons-collections:3.2.1",
+    "commons-lang:commons-lang:2.4",
+    "commons-logging:commons-logging:1.1.1",
+    "org.freemarker:freemarker:2.3.15",
   };
 
   public static List<String> getSdkJarPaths(JpsSdk sdk) {
@@ -40,8 +50,12 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
     if (mavenVersion != null) {
       sdkVersion = mavenVersion;
       File rootDirectory = sdkRootDir.getParentFile().getParentFile().getParentFile().getParentFile();
-      for (String jangarooApiJarArtifact : JANGAROO_API_JAR_ARTIFACTS) {
+      for (String jangarooApiJarArtifact : JANGAROO_COMPILER_ARTIFACT_IDS) {
         jarPaths.add(getJangarooArtifact(rootDirectory, jangarooApiJarArtifact, mavenVersion).getPath());
+      }
+      for (String jangaroo3rdPartyJar : JANGAROO_3RD_PARTY_JARS) {
+        String[] parts = jangaroo3rdPartyJar.split(":");
+        jarPaths.add(getArtifactFile(rootDirectory, parts[0], parts[1], parts[2], "jar").getPath());
       }
     } else {
       // check Jangaroo SDK download layout:
@@ -52,7 +66,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
           sdkVersion = null;
         } else {
           String fileSuffix = sdkVersion + "-jar-with-dependencies";
-          for (String jangarooApiJarArtifact : JANGAROO_API_JAR_ARTIFACTS) {
+          for (String jangarooApiJarArtifact : JANGAROO_COMPILER_ARTIFACT_IDS) {
             jarPaths.add(getArtifactPath(binDirFile, jangarooApiJarArtifact, fileSuffix));
           }
         }
