@@ -18,6 +18,7 @@ import com.intellij.facet.Facet;
 import com.intellij.facet.FacetManager;
 import com.intellij.facet.FacetType;
 import com.intellij.openapi.module.Module;
+import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,5 +33,10 @@ public class ExmlFacet extends Facet<ExmlFacetConfiguration> {
 
   public static ExmlFacet ofModule(@Nullable Module module) {
     return module == null ? null : FacetManager.getInstance(module).getFacetByType(ExmlFacetType.ID);
+  }
+
+  public static ExmlcConfigurationBean getExmlConfig(Module module) {
+    ExmlFacet exmlFacet = ofModule(module);
+    return exmlFacet == null ? null : exmlFacet.getConfiguration().getState();
   }
 }

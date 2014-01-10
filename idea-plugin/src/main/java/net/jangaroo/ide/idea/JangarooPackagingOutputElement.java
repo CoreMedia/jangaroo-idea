@@ -4,8 +4,6 @@ import com.intellij.compiler.ant.Generator;
 import com.intellij.facet.pointers.FacetPointer;
 import com.intellij.facet.pointers.FacetPointersManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.packaging.artifacts.ArtifactType;
 import com.intellij.packaging.elements.*;
 import com.intellij.packaging.impl.ui.DelegatedPackagingElementPresentation;
@@ -13,7 +11,6 @@ import com.intellij.packaging.ui.ArtifactEditorContext;
 import com.intellij.packaging.ui.PackagingElementPresentation;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,26 +40,9 @@ public class JangarooPackagingOutputElement extends PackagingElement<JangarooPac
                                                      @NotNull PackagingElementResolvingContext resolvingContext,
                                                      @NotNull ArtifactIncrementalCompilerContext compilerContext,
                                                      @NotNull ArtifactType artifactType) {
-    JangarooFacet facet = (JangarooFacet)myFacetPointer.getFacet();
-    if (facet != null) {
-      File outputDirectory = facet.getConfiguration().getState().getOutputDirectory(); // ./scripts/classes
-      if (outputDirectory != null) {
-        outputDirectory = outputDirectory.getParentFile(); // ./scripts
-        if (outputDirectory != null) {
-          outputDirectory = outputDirectory.getParentFile(); // .
-          if (outputDirectory != null && outputDirectory.exists()) {
-            VirtualFile outputRoot = LocalFileSystem.getInstance().findFileByIoFile(outputDirectory);
-            if (outputRoot != null) {
-              creator.addDirectoryCopyInstructions(outputRoot);
-              return;
-            }
-          }
-        }
-      }
-      AbstractCompiler.getLog().warn("Output folder not available for Jangaroo output of module " + facet.getModule().getName() + ".");
-    }
+    // No longer invoked in IDEA 13. Instead, serialized and handed over to JPS JVM,
+    // where it is deserialized by JpsJangarooSdkPropertiesSerializer.
   }
-
 
   public String toString() {
     return (new StringBuilder()).append("jangaroo-compiler-output:").append(myFacetPointer.getFacetName()).append("(")
