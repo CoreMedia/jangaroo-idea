@@ -290,7 +290,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
 
   public static JSClass getASClass(PsiElement context, String className) {
     PsiElement asClass = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver().findClassByQName(className, context);
-    return asClass instanceof JSClass ? (JSClass)asClass : null;
+    return asClass instanceof JSClass && asClass.isValid() ? (JSClass)asClass : null;
   }
 
   private String getRelevantText(PsiLanguageInjectionHost languageInjectionHost) {
@@ -374,10 +374,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
     XmlTag[] subTags = exmlComponentTag.getSubTags();
     XmlTag componentTag = findNonExmlNamespaceTag(subTags);
     if (componentTag != null) {
-      XmlElementDescriptor descriptor = componentTag.getDescriptor();
-      if (descriptor instanceof ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor) {
-        return ((ComponentXmlElementDescriptorProvider.ComponentXmlElementDescriptor)descriptor).getTargetClassName();
-      }
+      return ExmlElementGotoDeclarationHandler.findTargetClassName(componentTag);
     }
     return null;
   }

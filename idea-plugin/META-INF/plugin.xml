@@ -29,7 +29,7 @@
     <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
     <languageInjector implementation="net.jangaroo.ide.idea.exml.ExmlLanguageInjector"/>
     <languageInjector implementation="net.jangaroo.ide.idea.sith.SithLanguageInjector"/>
-    <xml.elementDescriptorProvider implementation="net.jangaroo.ide.idea.exml.ComponentXmlElementDescriptorProvider"/>
+    <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.ExmlElementGotoDeclarationHandler" order="FIRST"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
