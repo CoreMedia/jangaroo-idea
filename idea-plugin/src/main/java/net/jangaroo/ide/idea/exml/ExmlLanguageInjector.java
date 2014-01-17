@@ -44,7 +44,6 @@ import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.psi.xml.XmlText;
-import com.intellij.xml.XmlElementDescriptor;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
@@ -273,7 +272,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
         codePrefix = flush(code);
         code.append(";");
       }
-      code.append("  super(config);");
+      //code.append("  super(config);"); // causes exceptions in IDEA 13 when superclass has no 1-arg-constructor!
       code
         .append("}\n")     // constructor {
         .append("\n}\n")   // class {
