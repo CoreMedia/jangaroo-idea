@@ -25,6 +25,7 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
@@ -33,6 +34,7 @@ import org.jetbrains.jps.model.java.JpsJavaDependencyScope;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
+import org.jetbrains.jps.model.library.JpsTypedLibrary;
 import org.jetbrains.jps.model.library.sdk.JpsSdk;
 import org.jetbrains.jps.model.module.JpsDependencyElement;
 import org.jetbrains.jps.model.module.JpsLibraryDependency;
@@ -104,16 +106,8 @@ public class JangarooBuilder extends ModuleLevelBuilder {
 
       JpsCompileLog compileLog = new JpsCompileLog(JOOC_BUILDER_NAME, context);
       for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
-        JpsModule module = moduleBuildTarget.getModule();
-        JpsSdk sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
-        if (sdk == null) {
-          context.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, BuildMessage.Kind.WARNING,
-            String.format("Jangaroo module %s does not have a Jangaroo SDK.", module.getName())));
-          continue;
-        }
-        List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
         ExitCode result = compile(context, outputConsumer, filesToCompile.get(moduleBuildTarget), compileLog,
-          moduleBuildTarget, module, jarPaths);
+          moduleBuildTarget);
         if (result != null) {
           return result;
         }
@@ -125,9 +119,19 @@ public class JangarooBuilder extends ModuleLevelBuilder {
   }
 
   private ExitCode compile(CompileContext context, OutputConsumer outputConsumer, List<File> filesToCompile,
-                           JpsCompileLog compileLog, ModuleBuildTarget moduleBuildTarget,
-                           JpsModule module, List<String> jarPaths) throws IOException {
-    JoocConfiguration joocConfiguration = getJoocConfiguration(module, filesToCompile, moduleBuildTarget.isTests());
+                           JpsCompileLog compileLog, ModuleBuildTarget moduleBuildTarget) throws IOException {
+    JpsModule module = moduleBuildTarget.getModule();
+    JoocConfigurationBean joocConfigurationBean = JangarooModelSerializerExtension.getJoocSettings(module);
+    if (joocConfigurationBean == null) {
+      return null; // no Jangaroo Facet in this module: skip silently!
+    }
+    List<String> jarPaths = getJangarooSdkJarPath(joocConfigurationBean, module);
+    if (jarPaths == null) {
+      context.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, BuildMessage.Kind.WARNING,
+        String.format("Jangaroo module %s does not have a valid Jangaroo SDK. Compilation skipped.", module.getName())));
+      return ExitCode.ABORT;
+    }
+    JoocConfiguration joocConfiguration = getJoocConfiguration(joocConfigurationBean, module, filesToCompile, moduleBuildTarget.isTests());
     Jooc jooc = getJooc(context, jarPaths, joocConfiguration, compileLog);
     if (jooc == null) {
       return ExitCode.ABORT;
@@ -142,6 +146,17 @@ public class JangarooBuilder extends ModuleLevelBuilder {
       return ExitCode.ABORT;
     }
     return null;
+  }
+
+  @Nullable
+  public static List<String> getJangarooSdkJarPath(JoocConfigurationBean joocConfigurationBean, JpsModule module) {
+    JpsTypedLibrary<JpsSdk<JpsDummyElement>> jangarooSdkLibrary = module.getProject().getModel().getGlobal().getLibraryCollection()
+      .findLibrary(joocConfigurationBean.jangarooSdkName, JpsJangarooSdkType.INSTANCE);
+    if (jangarooSdkLibrary == null) {
+      return null;
+    }
+    JpsSdk<JpsDummyElement> sdk = jangarooSdkLibrary.getProperties();
+    return JpsJangarooSdkType.getSdkJarPaths(sdk);
   }
 
   private CompilationResult compile(ModuleBuildTarget moduleBuildTarget, Jooc jooc,
@@ -179,8 +194,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return filesToCompile;
   }
 
-  protected JoocConfiguration getJoocConfiguration(JpsModule module, List<File> sourceFiles, boolean forTests) {
-    JoocConfigurationBean joocConfigurationBean = JangarooModelSerializerExtension.getJoocSettings(module);
+  protected JoocConfiguration getJoocConfiguration(JoocConfigurationBean joocConfigurationBean, JpsModule module, List<File> sourceFiles, boolean forTests) {
     JoocConfiguration joocConfig = new JoocConfiguration();
     joocConfig.setVerbose(joocConfigurationBean.verbose);
     joocConfig.setDebugMode(joocConfigurationBean.isDebug() ? joocConfigurationBean.isDebugSource() ? DebugMode.SOURCE : DebugMode.LINES : null);

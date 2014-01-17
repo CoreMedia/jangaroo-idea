@@ -169,8 +169,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         return;
       }
       jangarooSdkVersion = jangarooSdk.getVersionString();
-      ModuleRootManager.getInstance(module).getModifiableModel().setSdk(jangarooSdk);
-      postTasks.add(new SetJangarooSdkTask(module, jangarooSdk));
     }
     jooConfig.allowDuplicateLocalVariables = getBooleanConfigurationValue(mavenProjectModel, "allowDuplicateLocalVariables", jooConfig.allowDuplicateLocalVariables);
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
@@ -250,35 +248,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     result.consume(defaultDir, type);
   }
 
-  
-  private static class SetJangarooSdkTask implements MavenProjectsProcessorTask {
-    private Module module;
-    private Sdk jangarooSdk;
-
-    public SetJangarooSdkTask(Module module, Sdk jangarooSdk) {
-      this.module = module;
-      this.jangarooSdk = jangarooSdk;
-    }
-
-    @Override
-    public void perform(Project project, MavenEmbeddersManager embeddersManager, MavenConsole console, MavenProgressIndicator indicator) throws MavenProcessCanceledException {
-      ApplicationManager.getApplication().invokeLater(new Runnable() {
-        public void run() {
-          ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            @Override
-            public void run() {
-              if (!module.isDisposed()) {
-                ModifiableRootModel modifiableModel = ModuleRootManager.getInstance(module).getModifiableModel();
-                modifiableModel.setSdk(jangarooSdk);
-                modifiableModel.commit();
-              }
-            }
-          });
-        }
-      });
-    }
-  }
-  
   private static class AddJangarooPackagingOutputToExplodedWebArtifactsTask implements MavenProjectsProcessorTask {
     private final JangarooFacet jangarooFacet;
 

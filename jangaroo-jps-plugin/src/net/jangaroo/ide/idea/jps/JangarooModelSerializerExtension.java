@@ -6,6 +6,7 @@ import com.intellij.util.xmlb.XmlSerializer;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.JpsElementChildRole;
 import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.module.JpsModule;
@@ -28,16 +29,14 @@ public class JangarooModelSerializerExtension extends JpsModelSerializerExtensio
   private static final JpsElementChildRole<JoocConfigurationBean> JOOC_CONFIG = JpsElementChildRoleBase.create("Jangaroo Compiler Configuration");
   private static final JpsElementChildRole<ExmlcConfigurationBean> EXMLC_CONFIG = JpsElementChildRoleBase.create("EXML Compiler Configuration");
 
-  @NotNull
+  @Nullable
   public static JoocConfigurationBean getJoocSettings(@NotNull JpsModule module) {
-    JoocConfigurationBean settings = module.getContainer().getChild(JOOC_CONFIG);
-    return settings == null ? new JoocConfigurationBean() : settings;
+    return module.getContainer().getChild(JOOC_CONFIG);
   }
 
-  @NotNull
+  @Nullable
   public static ExmlcConfigurationBean getExmlcSettings(@NotNull JpsModule module) {
-    ExmlcConfigurationBean settings = module.getContainer().getChild(EXMLC_CONFIG);
-    return settings == null ? new ExmlcConfigurationBean() : settings;
+    return module.getContainer().getChild(EXMLC_CONFIG);
   }
 
   @NotNull

@@ -5,12 +5,13 @@ import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
 import net.jangaroo.ide.idea.jps.JangarooBuilder;
 import net.jangaroo.ide.idea.jps.JangarooModelSerializerExtension;
-import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
+import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.jps.util.JpsCompileLog;
 import net.jangaroo.jooc.api.FilePosition;
 import net.jangaroo.properties.api.Propc;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
@@ -23,7 +24,6 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
-import org.jetbrains.jps.model.library.sdk.JpsSdk;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.xml.sax.SAXParseException;
 
@@ -54,7 +54,8 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     super(BuilderCategory.SOURCE_GENERATOR);
   }
 
-  public static void copyFromBeanToConfiguration(ExmlcConfigurationBean exmlcConfigurationBean, ExmlConfiguration exmlConfiguration, boolean forTests) {
+  public static void copyFromBeanToConfiguration(@NotNull ExmlcConfigurationBean exmlcConfigurationBean,
+                                                 @NotNull ExmlConfiguration exmlConfiguration, boolean forTests) {
     exmlConfiguration.setOutputDirectory(new File(toPath(forTests ? exmlcConfigurationBean.getGeneratedTestSourcesDirectory() : exmlcConfigurationBean.getGeneratedSourcesDirectory())));
     exmlConfiguration.setResourceOutputDirectory(new File(toPath(exmlcConfigurationBean.getGeneratedResourcesDirectory())));
     exmlConfiguration.setConfigClassPackage(exmlcConfigurationBean.getConfigClassPackage());
@@ -115,17 +116,24 @@ public class ExmlBuilder extends ModuleLevelBuilder {
                      List<File> exmlFilesToCompile, ModuleBuildTarget moduleBuildTarget,
                      OutputConsumer outputConsumer) throws IOException {
     JpsModule module = moduleBuildTarget.getModule();
-    JpsSdk sdk = module.getSdk(JpsJangarooSdkType.INSTANCE);
-    if (sdk == null) {
-      context.processMessage(new CompilerMessage(EXML_BUILDER_NAME, BuildMessage.Kind.WARNING,
-        String.format("Jangaroo module %s does not have a Jangaroo SDK.", module.getName())));
+    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, moduleBuildTarget.isTests());
+    if (exmlcConfiguration == null) {
+      return; // no EXML Facet in this module: skip silently!
+    }
+    JoocConfigurationBean joocConfigurationBean = JangarooModelSerializerExtension.getJoocSettings(module);
+    if (joocConfigurationBean == null) {
+      context.processMessage(new CompilerMessage(EXML_BUILDER_NAME, BuildMessage.Kind.ERROR,
+        String.format("EXML module %s does not have a Jangaroo Facet.", module.getName())));
       return;
     }
-    List<String> jarPaths = JpsJangarooSdkType.getSdkJarPaths(sdk);
+
+    List<String> jarPaths = JangarooBuilder.getJangarooSdkJarPath(joocConfigurationBean, module);
+    if (jarPaths == null) {
+      return; // no Jangaroo SDK: JangarooBuilder must already have reported this problem, so skip silently!
+    }
+
     JpsCompileLog log = new JpsCompileLog(EXML_BUILDER_NAME, context);
 
-    boolean forTests = moduleBuildTarget.isTests();
-    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, forTests);
     exmlcConfiguration.setLog(log);
 
     // invoke properties compiler for module:
@@ -218,9 +226,12 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     messageHandler.processMessage(compilerMessage);
   }
 
-  @NotNull
+  @Nullable
   protected ExmlConfiguration getExmlcConfiguration(JpsModule module, boolean forTests) {
     ExmlcConfigurationBean exmlcConfigurationBean = JangarooModelSerializerExtension.getExmlcSettings(module);
+    if (exmlcConfigurationBean == null) {
+      return null;
+    }
     ExmlConfiguration exmlcConfig = new ExmlConfiguration();
     JangarooBuilder.updateFileLocations(exmlcConfig, module, forTests);
     copyFromBeanToConfiguration(exmlcConfigurationBean, exmlcConfig, forTests);
