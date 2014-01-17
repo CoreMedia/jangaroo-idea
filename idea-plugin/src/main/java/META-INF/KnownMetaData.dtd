@@ -8,12 +8,14 @@
 <!ELEMENT ArrayElementType EMPTY>
 <!ATTLIST ArrayElementType
   _DEFAULT_ CDATA "Object"
+  elementType CDATA "Object"
 >
 <!ELEMENT Bindable EMPTY>
 <!ATTLIST Bindable
   event CDATA #IMPLIED
   style CDATA #IMPLIED
 >
+<!ELEMENT Clear EMPTY>
 <!ELEMENT DataBindingInfo EMPTY>
 <!ELEMENT RequiresDataBinding EMPTY>
 <!ELEMENT DefaultTriggerEvent EMPTY>
@@ -56,12 +58,19 @@
   advancedAntiAliasing CDATA #IMPLIED 
   embedAsCFF CDATA #IMPLIED 
   unicodeRange CDATA #IMPLIED 
+
+  encoding CDATA #IMPLIED
+  exportSymbol CDATA #IMPLIED
+  original CDATA #IMPLIED
+  skinClass CDATA "Object"
+  sourceList CDATA #IMPLIED
+  flashType (true|false) #IMPLIED
   >
   
 <!ELEMENT Event EMPTY>
 <!ATTLIST Event
   name CDATA #REQUIRED
-  type CDATA "flash.events.Event"
+  type CDATA "flash.events.Event,starling.events.Event"
   deprecatedMessage CDATA #IMPLIED
   deprecatedReplacement CDATA #IMPLIED
   deprecatedSince CDATA #IMPLIED
@@ -74,13 +83,15 @@
 <!ELEMENT ExcludeClass EMPTY>
 <!ELEMENT Frame EMPTY>
 <!ATTLIST Frame
-  factoryClass CDATA #REQUIRED
+  factoryClass CDATA "Object"
+  extraClass CDATA "Object"
 >
 <!ELEMENT HostComponent EMPTY>
 <!ATTLIST HostComponent
   _DEFAULT_ CDATA "spark.components.supportClasses.SkinnableComponent"
 >
 <!ELEMENT IconFile EMPTY>
+<!ELEMENT Inline EMPTY>
 <!ELEMENT Inspectable EMPTY>
 <!ATTLIST Inspectable
   arrayType CDATA "Object"
@@ -148,10 +159,12 @@
   scaleMode CDATA #IMPLIED
   scriptTimeLimit CDATA #IMPLIED
   pageTitle CDATA #IMPLIED
+  quality CDATA #IMPLIED
 >
 <!ELEMENT Transient EMPTY>
 <!ELEMENT Mixin EMPTY>
 
+<!ELEMENT Mock EMPTY>
 <!ELEMENT Inject EMPTY>
 <!ATTLIST Inject
   source CDATA #IMPLIED
@@ -159,10 +172,13 @@
   required (true|false) #IMPLIED
   bind (true|false) #IMPLIED
   twoWay (true|false) #IMPLIED
+  optional (true|false) #IMPLIED
 
   name CDATA #IMPLIED
 
   id CDATA #IMPLIED
+  type CDATA #IMPLIED
+  auto (true|false) #IMPLIED
 >
 
 <!ELEMENT Autowire EMPTY>
@@ -341,6 +357,7 @@
   selector CDATA #IMPLIED
   scope CDATA #IMPLIED
   method CDATA #IMPLIED
+  order CDATA #IMPLIED
 >
 <!ELEMENT MessageBinding EMPTY>
 <!ATTLIST MessageBinding
@@ -379,6 +396,24 @@
   singleton (true|false) #IMPLIED
   id CDATA #IMPLIED
   order CDATA #IMPLIED
+>
+<!ELEMENT Publish EMPTY>
+<!ATTLIST Publish
+  objectId CDATA #IMPLIED
+  scope CDATA #IMPLIED
+  managed CDATA #IMPLIED
+  changeEvent CDATA #IMPLIED
+>
+<!ELEMENT PublishSubscribe EMPTY>
+<!ATTLIST PublishSubscribe
+  objectId CDATA #IMPLIED
+  persistent (true|false) #IMPLIED
+  scope CDATA #IMPLIED
+>
+<!ELEMENT Subscribe EMPTY>
+<!ATTLIST Subscribe
+  objectId CDATA #IMPLIED
+  scope CDATA #IMPLIED
 >
 
 <!-- Jangaroo -->
