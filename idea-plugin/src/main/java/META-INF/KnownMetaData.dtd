@@ -80,6 +80,11 @@
   name CDATA #REQUIRED
   kind (property|method|event|style|effect) #IMPLIED
 >
+<!--
+  Depending on the compiler switch "publicApiViolations", using classes annotated with [ExcludeClass] results in
+  an error, a warning, or is silently allowed.
+  See [PublicApi] annotation and "excludeClassByDefault" compiler switch.
+-->
 <!ELEMENT ExcludeClass EMPTY>
 <!ELEMENT Frame EMPTY>
 <!ATTLIST Frame
@@ -438,6 +443,14 @@
 <!ATTLIST Accessor
   _DEFAULT_ CDATA #IMPLIED
 >
+<!--
+  Annotation for ActionScript classes that Jangaroo should consider public API.
+  If the compiler switch "excludeClassByDefault" is used, the compiler will add an [ExcludeClass] annotation to any
+  API stub whose source class does not contain a [PublicApi] annotation.
+  Depending on the compiler switch "publicApiViolations", using classes annotated with [ExcludeClass] results in
+  an error, a warning, or is silently allowed.
+-->
+<!ELEMENT PublicApi EMPTY>
 <!--
   Annotation for a Sencha Ext JS or Touch config class.
   Specify the target class to be used when instantiating this config object in property "target".
