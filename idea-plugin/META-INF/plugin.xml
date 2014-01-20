@@ -14,6 +14,7 @@
   <depends>JavaScript</depends>
   <depends>org.jetbrains.idea.maven</depends>
   <depends>com.intellij.javaee</depends>
+  <depends>com.intellij.properties</depends>
 
   <extensions defaultExtensionNs="com.intellij">
     <sdkType implementation="net.jangaroo.ide.idea.JangarooSdkType"/>
@@ -30,6 +31,7 @@
     <languageInjector implementation="net.jangaroo.ide.idea.exml.ExmlLanguageInjector"/>
     <languageInjector implementation="net.jangaroo.ide.idea.sith.SithLanguageInjector"/>
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.ExmlElementGotoDeclarationHandler" order="FIRST"/>
+    <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
