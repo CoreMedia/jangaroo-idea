@@ -12,7 +12,9 @@
   <idea-version since-build="IU-133.193"/>
 
   <depends>JavaScript</depends>
+  <depends>com.intellij.flex</depends>
   <depends>org.jetbrains.idea.maven</depends>
+  <depends>org.jetbrains.idea.maven.ext</depends>
   <depends>com.intellij.javaee</depends>
   <depends>com.intellij.properties</depends>
 
