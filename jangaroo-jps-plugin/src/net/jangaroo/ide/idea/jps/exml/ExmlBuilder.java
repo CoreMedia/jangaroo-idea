@@ -33,6 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -158,8 +159,8 @@ public class ExmlBuilder extends ModuleLevelBuilder {
       try {
         File generatedPropertiesClass = propc.generate(sourceFile);
         // getLog().info("properties->as: " + fileUrl + " -> " + generatedPropertiesClass.getPath());
-        outputConsumer.registerOutputFile(moduleBuildTarget, generatedPropertiesClass, JangarooBuilder.toSingletonPath(sourceFile));
-        FSOperations.markDirty(context, generatedPropertiesClass);
+        registerOutputFile(outputConsumer, moduleBuildTarget, context, generatedPropertiesClass,
+          JangarooBuilder.toSingletonPath(sourceFile));
       } catch (IOException e) {
         context.processMessage(new CompilerMessage(PROPERTIES_BUILDER_NAME, e));
       }
@@ -174,15 +175,13 @@ public class ExmlBuilder extends ModuleLevelBuilder {
       for (File sourceFile : sourceFiles) {
         try {
           File generatedConfigClass = exmlc.generateConfigClass(sourceFile);
-          outputConsumer.registerOutputFile(moduleBuildTarget, generatedConfigClass, JangarooBuilder.toSingletonPath(sourceFile));
-          FSOperations.markDirty(context, generatedConfigClass);
+          registerOutputFile(outputConsumer, moduleBuildTarget, context, generatedConfigClass, JangarooBuilder.toSingletonPath(sourceFile));
 
           File generatedTargetClass = exmlc.generateComponentClass(sourceFile);
           // getLog().info("exml->as (config): " + fileUrl + " -> " + generatedConfigClass.getPath());
           if (generatedTargetClass != null) {
             // getLog().info("exml->as (target): " + fileUrl + " -> " + generatedTargetClass.getPath());
-            outputConsumer.registerOutputFile(moduleBuildTarget, generatedTargetClass, JangarooBuilder.toSingletonPath(sourceFile));
-            FSOperations.markDirty(context, generatedTargetClass);
+            registerOutputFile(outputConsumer, moduleBuildTarget, context, generatedTargetClass, JangarooBuilder.toSingletonPath(sourceFile));
           }
           allCompiledSourceFiles.add(sourceFile.getPath());
         } catch (ExmlcException e) {
@@ -204,10 +203,10 @@ public class ExmlBuilder extends ModuleLevelBuilder {
           exmlc.setConfig(exmlConfiguration);
 
           File xsdFile = exmlc.generateXsd();
-          if (xsdFile == null || exmlc.getConfig().getLog().hasErrors()) {
+          if (xsdFile == null || !xsdFile.exists()) {
             return;
           }
-          outputConsumer.registerOutputFile(moduleBuildTarget, xsdFile, allCompiledSourceFiles);
+          registerOutputFile(outputConsumer, moduleBuildTarget, context, xsdFile, allCompiledSourceFiles);
         } catch (ExmlcException e) {
           processExmlcException(context, null, e);
         }
@@ -268,6 +267,13 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     }
     exmlc.setConfig(configuration);
     return exmlc;
+  }
+
+  private static void registerOutputFile(OutputConsumer outputConsumer, ModuleBuildTarget moduleBuildTarget,
+                                         CompileContext context, File generatedFile, Collection<String> sourcePaths)
+    throws IOException {
+    outputConsumer.registerOutputFile(moduleBuildTarget, generatedFile, sourcePaths);
+    FSOperations.markDirty(context, generatedFile);
   }
 
   @NotNull
