@@ -47,7 +47,7 @@ public class FindExmlUsagesHandlerFactory extends FindUsagesHandlerFactory {
 
   @Override
   public boolean canFindUsages(@NotNull PsiElement element) {
-    if (!element.getContainingFile().getName().endsWith(Exmlc.EXML_SUFFIX)) {
+    if (element.getContainingFile() == null || !element.getContainingFile().getName().endsWith(Exmlc.EXML_SUFFIX)) {
       return false;
     }
     if (element instanceof XmlFile) {
