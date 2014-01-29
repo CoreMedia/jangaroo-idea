@@ -173,7 +173,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
         String[] xsdFiles = generatedResourcesDirectory.list(new FilenameFilter() {
           @Override
           public boolean accept(File dir, String name) {
-            return name.toLowerCase().endsWith(".xsd");
+            return name.toLowerCase().endsWith(XSD.FILE_SUFFIX);
           }
         });
         for (String xsdFile : xsdFiles) {
