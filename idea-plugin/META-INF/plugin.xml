@@ -34,6 +34,7 @@
     <languageInjector implementation="net.jangaroo.ide.idea.sith.SithLanguageInjector"/>
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.ExmlElementGotoDeclarationHandler" order="FIRST"/>
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
+    <findUsagesHandlerFactory implementation="net.jangaroo.ide.idea.exml.FindExmlUsagesHandlerFactory" order="FIRST"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
