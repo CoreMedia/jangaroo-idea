@@ -43,4 +43,10 @@
     <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
   </extensions>
 
+  <project-components>
+    <component>
+      <implementation-class>net.jangaroo.ide.idea.JangarooProjectComponent</implementation-class>
+    </component>
+  </project-components>
+
 </idea-plugin>

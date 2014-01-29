@@ -25,6 +25,7 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.incremental.messages.CustomBuilderMessage;
 import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
@@ -61,9 +62,10 @@ import java.util.Set;
  */
 public class JangarooBuilder extends ModuleLevelBuilder {
 
-  private static final String JOOC_BUILDER_NAME = "jooc";
+  public static final String BUILDER_NAME = "jooc";
   
   public static final FileFilter AS_SOURCES_FILTER = createSuffixFileFilter(Jooc.AS_SUFFIX);
+  public static final String FILE_INVALIDATION_BUILDER_MESSAGE = "FILE_INVALIDATION";
 
   public static FileFilter createSuffixFileFilter(final String suffix) {
     return SystemInfo.isFileSystemCaseSensitive?
@@ -104,7 +106,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
         return ExitCode.ABORT;
       }
 
-      JpsCompileLog compileLog = new JpsCompileLog(JOOC_BUILDER_NAME, context);
+      JpsCompileLog compileLog = new JpsCompileLog(BUILDER_NAME, context);
       for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
         ExitCode result = compile(context, outputConsumer, filesToCompile.get(moduleBuildTarget), compileLog,
           moduleBuildTarget);
@@ -127,7 +129,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     }
     List<String> jarPaths = getJangarooSdkJarPath(joocConfigurationBean, module);
     if (jarPaths == null) {
-      context.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, BuildMessage.Kind.WARNING,
+      context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.WARNING,
         String.format("Jangaroo module %s does not have a valid Jangaroo SDK. Compilation skipped.", module.getName())));
       return ExitCode.ABORT;
     }
@@ -275,11 +277,11 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     try {
       jooc = CompilerLoader.loadJooc(jarPaths);
     } catch (FileNotFoundException e) {
-      messageHandler.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, e));
+      messageHandler.processMessage(new CompilerMessage(BUILDER_NAME, e));
       return null;
     } catch (Exception e) {
       // Jangaroo SDK not correctly set up or not compatible with this Jangaroo IDEA plugin: 
-      messageHandler.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, e));
+      messageHandler.processMessage(new CompilerMessage(BUILDER_NAME, e));
       return null;
     }
     jooc.setConfig(configuration);
@@ -293,7 +295,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     for (ModuleBuildTarget target : chunk.getTargets()) {
       File moduleOutputDir = target.getOutputDir();
       if (moduleOutputDir == null) {
-        context.processMessage(new CompilerMessage(JOOC_BUILDER_NAME, BuildMessage.Kind.ERROR, "Output directory not specified for module " + target.getModule().getName()));
+        context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.ERROR, "Output directory not specified for module " + target.getModule().getName()));
         return null;
       }
       String moduleOutputPath = FileUtil.toCanonicalPath(moduleOutputDir.getPath());
@@ -309,4 +311,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return "Jangaroo Compiler";
   }
 
+  public static void processFileInvalidationMessage(CompileContext context, File file) {
+    context.processMessage(new CustomBuilderMessage(BUILDER_NAME, FILE_INVALIDATION_BUILDER_MESSAGE, file.getPath()));
+  }
 }

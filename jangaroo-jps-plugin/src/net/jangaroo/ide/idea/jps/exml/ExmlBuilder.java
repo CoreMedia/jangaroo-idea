@@ -274,6 +274,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     throws IOException {
     outputConsumer.registerOutputFile(moduleBuildTarget, generatedFile, sourcePaths);
     FSOperations.markDirty(context, generatedFile);
+    JangarooBuilder.processFileInvalidationMessage(context, generatedFile);
   }
 
   @NotNull
