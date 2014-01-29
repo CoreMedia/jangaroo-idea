@@ -1,0 +1,26 @@
+package ${PACKAGE_NAME}#if (${PACKAGE_NAME} != "") #end{
+
+public class ${NAME} extends Enum {
+
+    public static const FOO:${NAME} = new ${NAME}();
+
+    /**
+     * An array containing all ${NAME} enums.
+     */
+    [ArrayElementType("${PACKAGE_NAME}#if (${PACKAGE_NAME} != "").#end${NAME}")]
+    public static const values:Array = collectValues(${NAME});
+    
+    /**
+     * Return the ${NAME} with the given name.
+     *
+     * @param name the name of the ${NAME}
+     * @return the ${NAME}
+     */
+    public static function named(name:String):${NAME} {
+      return namedIn(name, ${NAME});
+    }
+
+    function ${NAME}() {
+    } 
+}
+}
