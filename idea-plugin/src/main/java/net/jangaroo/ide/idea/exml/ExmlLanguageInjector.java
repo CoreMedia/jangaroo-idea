@@ -22,6 +22,7 @@ import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSVariable;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
+import com.intellij.lang.javascript.psi.resolve.ResolveResultSink;
 import com.intellij.lang.javascript.psi.resolve.SinkResolveProcessor;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -244,7 +245,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
             if (attributeValue instanceof XmlText && asClass != null) {
               // check whether type of config attribute is "Array", then disable type check as Arrays can hold anything:
               // find declaration of "attributeName" get or set method:
-              SinkResolveProcessor propertyResolveProcessor = new SinkResolveProcessor(attributeName);
+              SinkResolveProcessor propertyResolveProcessor = new SinkResolveProcessor<ResolveResultSink>(new ResolveResultSink(asClass, attributeName));
               propertyResolveProcessor.setToProcessHierarchy(true);
               propertyResolveProcessor.setToProcessMembers(true);
               if (!asClass.processDeclarations(propertyResolveProcessor, ResolveState.initial(), asClass, asClass)) {
@@ -252,7 +253,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
                 final String propertyType;
                 if (result instanceof JSFunction) {
                   JSFunction method = (JSFunction)result;
-                  propertyType = method.isSetProperty() ? JSResolveUtil.getTypeFromSetAccessor(method).toString()
+                  propertyType = method.isSetProperty() ? JSResolveUtil.getTypeFromSetAccessor(method).getTypeText()
                     : method.getReturnTypeString();
                 } else if (result instanceof JSVariable) {
                   propertyType = ((JSVariable)result).getTypeString();

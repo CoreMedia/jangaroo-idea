@@ -9,7 +9,7 @@
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net"
           logo="/net/jangaroo/jooley-16x16.png">Jangaroo</vendor>
-  <idea-version since-build="IU-133.193"/>
+  <idea-version since-build="IU-135.909"/>
 
   <depends>JavaScript</depends>
   <depends>com.intellij.flex</depends>
