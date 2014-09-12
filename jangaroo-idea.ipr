@@ -470,12 +470,12 @@
   </component>
   <component name="WebServicesPlugin" addRequiredLibraries="true" />
   <component name="libraryTable">
-    <library name="jangaroo-api-1.0.1">
+    <library name="jangaroo-api-1.0.3">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/1.0.1/jangaroo-compiler-api-1.0.1.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/1.0.1/exml-compiler-api-1.0.1.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/1.0.1/properties-compiler-api-1.0.1.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/1.0.1/jangaroo-utils-1.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/1.0.3/jangaroo-compiler-api-1.0.3.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/1.0.3/exml-compiler-api-1.0.3.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/1.0.3/properties-compiler-api-1.0.3.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/1.0.3/jangaroo-utils-1.0.3.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
       </CLASSES>
       <JAVADOC />
