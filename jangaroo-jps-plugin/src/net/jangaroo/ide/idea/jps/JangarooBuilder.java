@@ -203,7 +203,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     joocConfig.setAllowDuplicateLocalVariables(joocConfigurationBean.allowDuplicateLocalVariables);
     joocConfig.setEnableAssertions(joocConfigurationBean.enableAssertions);
     joocConfig.setApiOutputDirectory(forTests ? null : joocConfigurationBean.getApiOutputDirectory());
-    updateFileLocations(joocConfig, module, forTests);
+    updateFileLocations(joocConfig, module, forTests, true);
     joocConfig.setSourceFiles(sourceFiles);
     joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
     joocConfig.setOutputDirectory(forTests ? joocConfigurationBean.getTestOutputDirectory() : joocConfigurationBean.getOutputDirectory());
@@ -211,10 +211,11 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return joocConfig;
   }
 
-  public static void updateFileLocations(FileLocations fileLocations, JpsModule module, boolean forTests) {
+  public static void updateFileLocations(FileLocations fileLocations, JpsModule module,
+                                         boolean forTests, boolean compileGeneratedSources) {
     Collection<File> classPath = new LinkedHashSet<File>();
     Collection<File> sourcePath = new LinkedHashSet<File>();
-    addToClassOrSourcePath(module, classPath, sourcePath, forTests);
+    addToClassOrSourcePath(module, classPath, sourcePath, forTests, compileGeneratedSources);
     fileLocations.setClassPath(new ArrayList<File>(classPath));
     try {
       fileLocations.setSourcePath(new ArrayList<File>(sourcePath));
@@ -223,10 +224,15 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     }
   }
 
-  public static void addToClassOrSourcePath(JpsModule module, Collection<File> classPath, Collection<File> sourcePath, boolean forTests) {
+  public static void addToClassOrSourcePath(JpsModule module, Collection<File> classPath, Collection<File> sourcePath,
+                                            boolean forTests, boolean compileGeneratedSources) {
     JavaSourceRootType sourceRootType = forTests ? JavaSourceRootType.TEST_SOURCE : JavaSourceRootType.SOURCE;
     for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : module.getSourceRoots(sourceRootType)) {
-      sourcePath.add(sourceRoot.getFile());
+      if (compileGeneratedSources || !sourceRoot.getProperties().isForGeneratedSources()) {
+        sourcePath.add(sourceRoot.getFile());
+      } else {
+        classPath.add(sourceRoot.getFile());
+      }
     }
     // special case: the deprecated src/main/joo-api directory is still used, but in IDEA 13 it is no longer a source,
     // but a resource directory!

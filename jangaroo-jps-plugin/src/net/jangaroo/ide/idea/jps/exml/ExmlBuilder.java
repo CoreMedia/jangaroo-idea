@@ -232,7 +232,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
       return null;
     }
     ExmlConfiguration exmlcConfig = new ExmlConfiguration();
-    JangarooBuilder.updateFileLocations(exmlcConfig, module, forTests);
+    JangarooBuilder.updateFileLocations(exmlcConfig, module, forTests, false);
     copyFromBeanToConfiguration(exmlcConfigurationBean, exmlcConfig, forTests);
     return exmlcConfig;
   }
