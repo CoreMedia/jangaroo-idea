@@ -1,14 +1,13 @@
 <!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
-<idea-plugin url="http://www.jangaroo.net" version="2">
+<idea-plugin url="https://github.com/CoreMedia/jangaroo-idea/wiki" version="2">
   <name>Jangaroo 0.9</name>
   <id>net.jangaroo.idea.0.9</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 13.
+    A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 14.
   </description>
   <version>0.30-SNAPSHOT</version>
   <vendor url="http://www.jangaroo.net"
-          email="info@jangaroo.net"
-          logo="/net/jangaroo/jooley-16x16.png">Jangaroo</vendor>
+          email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version since-build="IU-139.1117"/>
 
   <depends>JavaScript</depends>
