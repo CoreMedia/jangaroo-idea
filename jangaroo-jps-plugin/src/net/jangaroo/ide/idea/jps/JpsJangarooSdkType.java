@@ -21,7 +21,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   public static final String JANGAROO_SDK_TYPE_ID = "Jangaroo SDK";
   private static final Pattern JANGAROO_COMPILER_API_JAR_PATTERN =
-    Pattern.compile("^" + JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+\\.[0-9]+(\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
+    Pattern.compile("^" + JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+(\\.[0-9]+\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
   private static final String[] JANGAROO_COMPILER_ARTIFACT_IDS = new String[]{
     "jangaroo-compiler",
     "exml-compiler",

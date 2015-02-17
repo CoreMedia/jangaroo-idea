@@ -186,8 +186,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
 
     String jooClassesPath = JOO_CLASSES_PATH;
-    boolean isJangaroo2 = jangarooSdkVersion != null && jangarooSdkVersion.startsWith("2.");
-    if (isJangaroo2 && !isWar) {
+    boolean isJangaroo2or3 = jangarooSdkVersion != null && (jangarooSdkVersion.startsWith("2.") || jangarooSdkVersion.startsWith("3"));
+    if (isJangaroo2or3 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesPath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
