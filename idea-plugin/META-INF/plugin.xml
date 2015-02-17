@@ -11,6 +11,7 @@
   <idea-version since-build="IU-139.1117"/>
 
   <depends>JavaScript</depends>
+  <depends>JavaScriptDebugger</depends>
   <depends>com.intellij.flex</depends>
   <depends>org.jetbrains.idea.maven</depends>
   <depends>org.jetbrains.idea.maven.ext</depends>
@@ -40,6 +41,10 @@
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
     <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
     <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
+  </extensions>
+
+  <extensions defaultExtensionNs="com.jetbrains">
+    <javaScriptDebugAware implementation="net.jangaroo.ide.idea.debugger.JangarooJavaScriptDebugAware"/>
   </extensions>
 
   <project-components>
