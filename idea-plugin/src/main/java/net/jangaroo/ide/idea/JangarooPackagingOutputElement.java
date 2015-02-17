@@ -36,14 +36,6 @@ public class JangarooPackagingOutputElement extends PackagingElement<JangarooPac
   }
 
 
-  public void computeIncrementalCompilerInstructions(@NotNull IncrementalCompilerInstructionCreator creator,
-                                                     @NotNull PackagingElementResolvingContext resolvingContext,
-                                                     @NotNull ArtifactIncrementalCompilerContext compilerContext,
-                                                     @NotNull ArtifactType artifactType) {
-    // No longer invoked in IDEA 13. Instead, serialized and handed over to JPS JVM,
-    // where it is deserialized by JpsJangarooSdkPropertiesSerializer.
-  }
-
   public String toString() {
     return (new StringBuilder()).append("jangaroo-compiler-output:").append(myFacetPointer.getFacetName()).append("(")
       .append(myFacetPointer.getModuleName()).append(")").toString();
