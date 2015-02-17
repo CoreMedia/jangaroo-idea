@@ -22,6 +22,7 @@ import org.jetbrains.jps.incremental.MessageHandler;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
+import org.jetbrains.jps.incremental.fs.CompilationRound;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.model.module.JpsModule;
@@ -273,7 +274,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
                                          CompileContext context, File generatedFile, Collection<String> sourcePaths)
     throws IOException {
     outputConsumer.registerOutputFile(moduleBuildTarget, generatedFile, sourcePaths);
-    FSOperations.markDirty(context, generatedFile);
+    FSOperations.markDirty(context, CompilationRound.CURRENT, generatedFile);
     JangarooBuilder.processFileInvalidationMessage(context, generatedFile);
   }
 
