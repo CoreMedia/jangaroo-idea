@@ -18,27 +18,32 @@
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>jangaroo-compiler-api</artifactId>
-      <version>1.0.3</version>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>exml-compiler-api</artifactId>
-      <version>1.0.3</version>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>properties-compiler-api</artifactId>
-      <version>1.0.3</version>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>jangaroo-utils</artifactId>
-      <version>1.0.3</version>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>args4j</groupId>
       <artifactId>args4j</artifactId>
       <version>2.0.16</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.javascript</groupId>
+      <artifactId>closure-compiler</artifactId>
+      <version>v20150126</version>
     </dependency>
   </dependencies>
 
