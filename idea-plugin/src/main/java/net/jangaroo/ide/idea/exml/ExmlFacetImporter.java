@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PairConsumer;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.config.ValidationMode;
+import net.jangaroo.ide.idea.JangarooFacetImporter;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,7 +60,19 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    return findExmlMavenPlugin(mavenProjectModel) != null;
+    MavenPlugin exmlMavenPlugin = findExmlMavenPlugin(mavenProjectModel);
+    return exmlMavenPlugin != null
+      && isApplicableVersion(JangarooFacetImporter.getMajorVersion(exmlMavenPlugin.getVersion()));
+  }
+
+  protected boolean isApplicableVersion(int majorVersion) {
+    return 0 <= majorVersion && majorVersion <= 3;
+  }
+
+  @Override
+  public void getSupportedPackagings(Collection<String> result) {
+    super.getSupportedPackagings(result);
+    result.add(JangarooFacetImporter.JANGAROO_PACKAGING_TYPE);
   }
 
   private MavenPlugin findExmlMavenPlugin(MavenProject mavenProjectModel) {
