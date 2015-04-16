@@ -19,9 +19,9 @@ import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSParameter;
+import com.intellij.lang.javascript.psi.JSType;
 import com.intellij.lang.javascript.psi.JSVariable;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
-import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.lang.javascript.psi.resolve.ResolveResultSink;
 import com.intellij.lang.javascript.psi.resolve.SinkResolveProcessor;
 import com.intellij.openapi.diagnostic.Logger;
@@ -103,7 +103,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
             injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(1, text.length()), "import ", ";");
           } else {
             if (isBaseClassAttribute(attributeValue) || isDeclarationTypeAttribute(attributeValue) ||
-              isDeclarationValueAttribute(attributeValue) || ExmlUtils.isCodeExpression(text)) {
+              isDeclarationValueAttribute(attributeValue) || CompilerUtils.isCodeExpression(text)) {
               injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
             }
           }
@@ -149,7 +149,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
       } else {
         text = getRelevantText(attributeValue);
       }
-      boolean isCodeExpression = ExmlUtils.isCodeExpression(text);
+      boolean isCodeExpression = CompilerUtils.isCodeExpression(text);
       String superClassName = isCodeExpression || attributeValue instanceof XmlText ? findSuperClass(exmlComponentTag) : null;
 
       // find and append imports:
@@ -234,10 +234,13 @@ public class ExmlLanguageInjector implements LanguageInjector {
               if (asConstructor != null) {
                 JSParameter[] parameters = asConstructor.getParameterList().getParameters();
                 if (parameters.length > 0 & "config".equals(parameters[0].getName())) {
-                  String configClassNameCandidate = parameters[0].getType().getResolvedTypeText();
-                  if (!"Object".equals(configClassNameCandidate)) {
-                    attributeConfigClassName = configClassNameCandidate;
-                    asClass = getASClass(xmlTag, attributeConfigClassName);
+                  JSType configClassCandidate = parameters[0].getType();
+                  if (configClassCandidate != null) {
+                    String configClassNameCandidate = configClassCandidate.getResolvedTypeText();
+                    if (!"Object".equals(configClassNameCandidate)) {
+                      attributeConfigClassName = configClassNameCandidate;
+                      asClass = getASClass(xmlTag, attributeConfigClassName);
+                    }
                   }
                 }
               }
@@ -253,7 +256,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
                 final String propertyType;
                 if (result instanceof JSFunction) {
                   JSFunction method = (JSFunction)result;
-                  propertyType = method.isSetProperty() ? JSResolveUtil.getTypeFromSetAccessor(method).getTypeText()
+                  propertyType = method.isSetProperty()
+                    ? getTypeFromSetAccessor(method)
                     : method.getReturnTypeString();
                 } else if (result instanceof JSVariable) {
                   propertyType = ((JSVariable)result).getTypeString();
@@ -286,6 +290,16 @@ public class ExmlLanguageInjector implements LanguageInjector {
           TextRange.from(1, text.length());      // cut off quotes only ("...")
       injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix, code.toString());
     }
+  }
+
+  /*
+   * Do *not* reuse JSResolveUtil, because there are incompatible API changes between IDEA 14.0 and 14.1!
+   */
+  @Nullable
+  private static String getTypeFromSetAccessor(JSFunction fun) {
+    JSParameter[] jsParameters = fun.getParameters();
+    JSParameter parameter = jsParameters.length == 1 ? jsParameters[0] : null;
+    return parameter != null ? parameter.getTypeString() : null;
   }
 
   public static JSClass getASClass(PsiElement context, String className) {
@@ -349,8 +363,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
         String value = constantNameTypeValue[2];
         if (value != null) {
           code.append(" = ");
-          if (ExmlUtils.isCodeExpression(value)) {
-            value = ExmlUtils.getCodeExpression(value);
+          if (CompilerUtils.isCodeExpression(value)) {
+            value = CompilerUtils.getCodeExpression(value);
           }
           code.append(value);
         }
