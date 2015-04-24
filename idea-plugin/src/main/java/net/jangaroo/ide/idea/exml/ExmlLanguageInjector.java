@@ -16,7 +16,6 @@ package net.jangaroo.ide.idea.exml;
 
 import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
-import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSType;
@@ -27,11 +26,7 @@ import com.intellij.lang.javascript.psi.resolve.SinkResolveProcessor;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.InjectedLanguagePlaces;
 import com.intellij.psi.LanguageInjector;
@@ -47,6 +42,7 @@ import com.intellij.psi.xml.XmlTag;
 import com.intellij.psi.xml.XmlText;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
+import net.jangaroo.ide.idea.Utils;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.AS3Type;
 import net.jangaroo.utils.CompilerUtils;
@@ -63,22 +59,6 @@ import java.util.Set;
  */
 public class ExmlLanguageInjector implements LanguageInjector {
 
-  static String getModuleRelativePath(Project project, VirtualFile file) {
-    final Module module = getModuleForFile(project, file);
-    if (module != null) {
-      for (VirtualFile sourceRoot : ModuleRootManager.getInstance(module).getSourceRoots()) {
-        if (VfsUtil.isAncestor(sourceRoot, file, false)) {
-          return VfsUtil.getRelativePath(file, sourceRoot, '.');
-        }
-      }
-    }
-    return "";
-  }
-
-  private static Module getModuleForFile(Project project, VirtualFile file) {
-    return ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(file);
-  }
-
   public void getLanguagesToInject(@NotNull PsiLanguageInjectionHost psiLanguageInjectionHost, @NotNull InjectedLanguagePlaces injectedLanguagePlaces) {
     PsiFile psiFile = psiLanguageInjectionHost.getContainingFile();
     if (psiFile.getName().endsWith(Exmlc.EXML_SUFFIX)
@@ -87,7 +67,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
       if (exmlFile == null) {
         return;
       }
-      Module module = getModuleForFile(psiFile.getProject(), exmlFile);
+      Module module = Utils.getModuleForFile(psiFile.getProject(), exmlFile);
       if (module == null) {
         return;
       }
@@ -137,7 +117,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
 
       // find relative path to source root to determine package name:
       VirtualFile packageDir = exmlFile.getParent();
-      String packageName = packageDir == null ? "" : getModuleRelativePath(module.getProject(), packageDir);
+      String packageName = packageDir == null ? "" : Utils.getModuleRelativeSourcePath(module.getProject(), packageDir, '.');
       String className = exmlFile.getNameWithoutExtension();
 
       StringBuilder code = new StringBuilder();
@@ -228,7 +208,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
           if (configPackageName != null) {
             attributeConfigClassName = CompilerUtils.qName(configPackageName, xmlTag.getLocalName());
             // since EXML update, this may be a target class, so try to find the reference to the config class:
-            JSClass asClass = getASClass(xmlTag, attributeConfigClassName);
+            JSClass asClass = Utils.getActionScriptClass(xmlTag, attributeConfigClassName);
             if (asClass != null) {
               JSFunction asConstructor = asClass.getConstructor();
               if (asConstructor != null) {
@@ -239,7 +219,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
                     String configClassNameCandidate = configClassCandidate.getResolvedTypeText();
                     if (!"Object".equals(configClassNameCandidate)) {
                       attributeConfigClassName = configClassNameCandidate;
-                      asClass = getASClass(xmlTag, attributeConfigClassName);
+                      asClass = Utils.getActionScriptClass(xmlTag, attributeConfigClassName);
                     }
                   }
                 }
@@ -300,11 +280,6 @@ public class ExmlLanguageInjector implements LanguageInjector {
     JSParameter[] jsParameters = fun.getParameters();
     JSParameter parameter = jsParameters.length == 1 ? jsParameters[0] : null;
     return parameter != null ? parameter.getTypeString() : null;
-  }
-
-  public static JSClass getASClass(PsiElement context, String className) {
-    PsiElement asClass = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver().findClassByQName(className, context);
-    return asClass instanceof JSClass && asClass.isValid() ? (JSClass)asClass : null;
   }
 
   private String getRelevantText(PsiLanguageInjectionHost languageInjectionHost) {

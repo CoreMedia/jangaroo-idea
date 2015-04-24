@@ -28,6 +28,7 @@ import com.intellij.util.Processor;
 import com.intellij.xml.util.XmlPsiUtil;
 import com.intellij.xml.util.XmlUtil;
 import net.jangaroo.exml.api.Exmlc;
+import net.jangaroo.ide.idea.Utils;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.ide.idea.jps.util.IdeaFileUtils;
 import net.jangaroo.utils.CompilerUtils;
@@ -132,7 +133,7 @@ public class FindExmlUsagesHandlerFactory extends FindUsagesHandlerFactory {
                                                         String configClassName,
                                                         final List<PsiElement> generatedDeclarations) {
     final String attributeName = element.getValue();
-    JSClass configClass = ExmlLanguageInjector.getASClass(element, configClassName);
+    JSClass configClass = Utils.getActionScriptClass(element, configClassName);
     if (configClass != null) {
       JSFunction attributeSetter = configClass.findFunctionByNameAndKind(attributeName, JSFunction.FunctionKind.SETTER);
       if (attributeSetter != null) {
@@ -174,11 +175,11 @@ public class FindExmlUsagesHandlerFactory extends FindUsagesHandlerFactory {
   }
 
   private void addGeneratedDeclarationsOfExmlFile(XmlTag xsdRootTag, String elementName, String configClassName, List<PsiElement> generatedDeclarations) {
-    JSClass configClass = ExmlLanguageInjector.getASClass(xsdRootTag, configClassName);
+    JSClass configClass = Utils.getActionScriptClass(xsdRootTag, configClassName);
     if (configClass != null) {
       String targetClassName = ExmlElementGotoDeclarationHandler.findTargetClassName(configClass);
       if (targetClassName != null) {
-        JSClass targetClass = ExmlLanguageInjector.getASClass(configClass, targetClassName);
+        JSClass targetClass = Utils.getActionScriptClass(configClass, targetClassName);
         if (targetClass != null) {
           generatedDeclarations.add(targetClass);
         }

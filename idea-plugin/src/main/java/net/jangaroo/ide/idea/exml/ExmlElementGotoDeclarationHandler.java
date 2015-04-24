@@ -26,6 +26,7 @@ import com.intellij.psi.xml.XmlTag;
 import com.intellij.psi.xml.XmlToken;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.utils.ExmlUtils;
+import net.jangaroo.ide.idea.Utils;
 import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,7 +59,7 @@ public class ExmlElementGotoDeclarationHandler implements GotoDeclarationHandler
     }
     String configClassName = targetName[0];
     String configPropertyName = targetName.length > 1 ? targetName[1] : null;
-    JSClass configClass = ExmlLanguageInjector.getASClass(resolvedTag, configClassName);
+    JSClass configClass = Utils.getActionScriptClass(resolvedTag, configClassName);
     if (configClass != null) {
       // found config class that should have an [ExtConfig(target="...")] annotation:
       String targetClassName = findTargetClassName(configClass);
@@ -77,7 +78,7 @@ public class ExmlElementGotoDeclarationHandler implements GotoDeclarationHandler
         }
       }
       if (targetClassName != null) {
-        JSClass targetClass = ExmlLanguageInjector.getASClass(resolvedTag, targetClassName);
+        JSClass targetClass = Utils.getActionScriptClass(resolvedTag, targetClassName);
         if (targetClass != null) {
           return new PsiElement[]{configClass, targetClass};
         }
@@ -176,7 +177,7 @@ public class ExmlElementGotoDeclarationHandler implements GotoDeclarationHandler
     String packageName = ExmlUtils.parsePackageFromNamespace(xmlTag.getNamespace());
     if (packageName != null) {
       String className = CompilerUtils.qName(packageName, xmlTag.getLocalName());
-      JSClass asClass = ExmlLanguageInjector.getASClass(xmlTag, className);
+      JSClass asClass = Utils.getActionScriptClass(xmlTag, className);
       if (asClass != null) {
         return asClass;
       }
