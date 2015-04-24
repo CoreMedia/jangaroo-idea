@@ -45,6 +45,7 @@
 
   <extensions defaultExtensionNs="com.jetbrains">
     <javaScriptDebugAware implementation="net.jangaroo.ide.idea.debugger.JangarooJavaScriptDebugAware"/>
+    <fileUrlMapper implementation="net.jangaroo.ide.idea.debugger.JangarooFileUrlMapper"/>
   </extensions>
 
   <project-components>
