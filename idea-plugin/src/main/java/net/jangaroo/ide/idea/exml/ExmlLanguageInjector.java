@@ -96,6 +96,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
             injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
           } else if (isExmlElement(parentTag, Exmlc.EXML_DESCRIPTION_NODE_NAME)) {
             injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(0, xmlText.getTextRange().getLength()), "/**", "*/");
+          } else {
+            injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
           }
         }
       } catch (Throwable t) {
@@ -115,6 +117,18 @@ public class ExmlLanguageInjector implements LanguageInjector {
     XmlTag exmlComponentTag = ((XmlFile)attributeValue.getContainingFile()).getRootTag();
     if (exmlComponentTag != null) {
 
+      String text;
+      if (attributeValue instanceof XmlAttributeValue) {
+        text = ((XmlAttributeValue)attributeValue).getValue();
+      } else {
+        text = getRelevantText(attributeValue);
+        if (text.trim().length() == 0) {
+          // ignore white-space-only text nodes
+          return;
+        }
+      }
+      boolean isCodeExpression = CompilerUtils.isCodeExpression(text);
+
       // find relative path to source root to determine package name:
       VirtualFile packageDir = exmlFile.getParent();
       String packageName = packageDir == null ? "" : Utils.getModuleRelativeSourcePath(module.getProject(), packageDir, '.');
@@ -123,13 +137,6 @@ public class ExmlLanguageInjector implements LanguageInjector {
       StringBuilder code = new StringBuilder();
       code.append(String.format("package %s {\n", packageName));
 
-      String text;
-      if (attributeValue instanceof XmlAttributeValue) {
-        text = ((XmlAttributeValue)attributeValue).getValue();
-      } else {
-        text = getRelevantText(attributeValue);
-      }
-      boolean isCodeExpression = CompilerUtils.isCodeExpression(text);
       String superClassName = isCodeExpression || attributeValue instanceof XmlText ? findSuperClass(exmlComponentTag) : null;
 
       // find and append imports:
@@ -186,7 +193,11 @@ public class ExmlLanguageInjector implements LanguageInjector {
         } else if (attributeValue instanceof XmlText) {
           XmlTag parentTag = ((XmlText)attributeValue).getParentTag();
           if (parentTag != null) {
-            XmlTag attributeTag = parentTag.getParentTag();
+            final boolean insideExmlObject = isExmlElement(parentTag, Exmlc.EXML_OBJECT_NODE_NAME);
+            if (!insideExmlObject && !isCodeExpression) {
+              return;
+            }
+            XmlTag attributeTag = insideExmlObject ? parentTag.getParentTag() : parentTag;
             if (attributeTag != null) {
               attributeName = attributeTag.getLocalName();
               if (attributeTag.getSubTags().length > 1) {
@@ -199,7 +210,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
           }
         }
         if (attributeName == null) {
-          // nothing found?!
+          // not inside an attribute element: bail out
           return;
         }
         String attributeConfigClassName = "Object";
@@ -264,6 +275,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
         .append("\n}\n");  // package {
 
       TextRange textRange = isCodeExpression ?
+        attributeValue instanceof XmlText ?
+        TextRange.from(1, text.length() - 1) : // cut off braces ({...})
         TextRange.from(2, text.length() - 2) : // cut off quotes and braces ("{...}")
         attributeValue instanceof XmlText ?
           attributeValue.createLiteralTextEscaper().getRelevantTextRange() :
