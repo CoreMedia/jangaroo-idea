@@ -284,7 +284,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
         ? attributeValue.createLiteralTextEscaper().getRelevantTextRange()
         : TextRange.from(1, text.length());      // cut off quotes ("...")
       if (isCodeExpression) {
-        textRange = textRange.shiftRight(1).grown(-1); // cut off braces ({...})
+        textRange = textRange.shiftRight(1).grown(-2); // cut off braces ({...})
       }
       injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix, code.toString());
     }
