@@ -138,19 +138,20 @@ public class ExmlLanguageInjector implements LanguageInjector {
       code.append(String.format("package %s {\n", packageName));
 
       String superClassName = isCodeExpression || attributeValue instanceof XmlText ? findSuperClass(exmlComponentTag) : null;
+      String configClassName = CompilerUtils.qName(configClassPackage, CompilerUtils.uncapitalize(className));
 
       // find and append imports:
       Set<String> imports = findImports(exmlComponentTag);
       if (superClassName != null) {
         imports.add(superClassName);
       }
+      imports.add(configClassName);
       for (String importName : imports) {
         code.append(String.format("import %s;\n", importName));
       }
 
       code.append(String.format("public class %s", className));
 
-      String configClassName = CompilerUtils.qName(configClassPackage, CompilerUtils.uncapitalize(className));
       String codePrefix = null;
 
       code.append(" extends ");
@@ -176,7 +177,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
 
       if (codePrefix == null) {
         codePrefix = renderDeclarations(exmlComponentTag, code, xmlTag, xmlAttribute,
-          Exmlc.EXML_CONSTANT_NODE_NAME, "public static const");
+          Exmlc.EXML_CONSTANT_NODE_NAME, "public static var"); // "var" to allow later assignment for complex value!
       }
       code.append(String.format("public function %s(config:%s = null){\n", className, configClassName));
       if (codePrefix == null) {
@@ -264,23 +265,27 @@ public class ExmlLanguageInjector implements LanguageInjector {
             }
           }
         }
-        code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName).append(" = ");
+        if (xmlTag != null && (isExmlElement(xmlTag, Exmlc.EXML_VAR_NODE_NAME) || isExmlElement(xmlTag, Exmlc.EXML_CONSTANT_NODE_NAME))) {
+          code.append(xmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_NAME_ATTRIBUTE));
+        } else {
+          code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName);
+        }
+        code.append(" = ");
         codePrefix = flush(code);
         code.append(";");
       }
-      //code.append("  super(config);"); // causes exceptions in IDEA 13 when superclass has no 1-arg-constructor!
+      code.append("  super(config);"); // causes exceptions in IDEA 13 when superclass has no 1-arg-constructor!
       code
         .append("}\n")     // constructor {
         .append("\n}\n")   // class {
         .append("\n}\n");  // package {
 
-      TextRange textRange = isCodeExpression ?
-        attributeValue instanceof XmlText ?
-        TextRange.from(1, text.length() - 1) : // cut off braces ({...})
-        TextRange.from(2, text.length() - 2) : // cut off quotes and braces ("{...}")
-        attributeValue instanceof XmlText ?
-          attributeValue.createLiteralTextEscaper().getRelevantTextRange() :
-          TextRange.from(1, text.length());      // cut off quotes only ("...")
+      TextRange textRange = attributeValue instanceof XmlText
+        ? attributeValue.createLiteralTextEscaper().getRelevantTextRange()
+        : TextRange.from(1, text.length());      // cut off quotes ("...")
+      if (isCodeExpression) {
+        textRange = textRange.shiftRight(1).grown(-1); // cut off braces ({...})
+      }
       injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, textRange, codePrefix, code.toString());
     }
   }
@@ -344,13 +349,14 @@ public class ExmlLanguageInjector implements LanguageInjector {
         }
       }
 
+      code.append(" = ");
       if (i == constantsSize - 1 && editingIndex == 2) {
-        code.append(" = ");
         codePrefix = flush(code);
       } else {
         String value = constantNameTypeValue[2];
-        if (value != null) {
-          code.append(" = ");
+        if (value == null) {
+          code.append("undefined"); // prevent "variable might not have been initialized"!
+        } else {
           if (CompilerUtils.isCodeExpression(value)) {
             value = CompilerUtils.getCodeExpression(value);
           }
