@@ -166,13 +166,15 @@ public class ExmlLanguageInjector implements LanguageInjector {
       XmlAttribute xmlAttribute = getXmlAttribute(attributeValue);
       XmlTag xmlTag = xmlAttribute != null ? xmlAttribute.getParent() : null;
 
-      if (codePrefix == null && xmlTag != null && isExmlElement(xmlTag) && Exmlc.EXML_CFG_NODE_NAME.equals(xmlTag.getLocalName())) {
+      if (codePrefix == null && xmlTag != null && attributeValue instanceof XmlAttributeValue
+        && isAttribute((XmlAttributeValue)attributeValue, Exmlc.EXML_CFG_NODE_NAME, Exmlc.EXML_CFG_TYPE_ATTRIBUTE)) {
         String cfgName = xmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_NAME_ATTRIBUTE);
-        if (cfgName != null && cfgName.length() > 0) {
-          code.append(String.format("public var %s:", cfgName));
-          codePrefix = flush(code);
-          code.append(";");
+        if (cfgName == null || cfgName.isEmpty()) {
+          cfgName = "__anon__";
         }
+        code.append(String.format("public var %s:", cfgName));
+        codePrefix = flush(code);
+        code.append(";");
       }
 
       if (codePrefix == null) {
@@ -267,6 +269,13 @@ public class ExmlLanguageInjector implements LanguageInjector {
         }
         if (xmlTag != null && (isExmlElement(xmlTag, Exmlc.EXML_VAR_NODE_NAME) || isExmlElement(xmlTag, Exmlc.EXML_CONSTANT_NODE_NAME))) {
           code.append(xmlTag.getAttributeValue(Exmlc.EXML_DECLARATION_NAME_ATTRIBUTE));
+        } else if (xmlTag != null && isExmlElement(xmlTag, Exmlc.EXML_CFG_NODE_NAME)) {
+          String cfgType = xmlTag.getAttributeValue(Exmlc.EXML_CFG_TYPE_ATTRIBUTE);
+          if (cfgType == null || cfgType.isEmpty()) {
+            cfgType = AS3Type.ANY.toString();
+          }
+          code.append("var ").append(xmlTag.getAttributeValue(Exmlc.EXML_CFG_NAME_ATTRIBUTE))
+            .append(":").append(cfgType);
         } else {
           code.append("  new ").append(attributeConfigClassName).append("().").append(attributeName);
         }
