@@ -83,38 +83,14 @@
   </component>
   <component name="IdProvider" IDEtalkID="A6F81AA63A6BFA08AAFEDCB553CD4018" />
   <component name="InspectionProjectProfileManager">
-    <profiles>
-      <profile version="1.0" is_locked="false">
-        <option name="myName" value="Project Default" />
-        <option name="myLocal" value="false" />
-        <inspection_tool class="CheckEmptyScriptTag" enabled="true" level="ERROR" enabled_by_default="true" />
-        <inspection_tool class="CheckTagEmptyBody" enabled="false" level="WARNING" enabled_by_default="false" />
-        <inspection_tool class="CssInvalidElementInspection" enabled="true" level="WARNING" enabled_by_default="true" />
-        <inspection_tool class="CssInvalidShorthandPropertyValue" enabled="true" level="WARNING" enabled_by_default="true" />
-        <inspection_tool class="JSUnresolvedVariable" enabled="false" level="WARNING" enabled_by_default="false" />
-        <inspection_tool class="JSUntypedDeclaration" enabled="true" level="INFO" enabled_by_default="true" />
-        <inspection_tool class="NonBlockStatementBodyJS" enabled="true" level="INFO" enabled_by_default="true" />
-        <inspection_tool class="PointlessBooleanExpressionJS" enabled="false" level="WARNING" enabled_by_default="false" />
-        <inspection_tool class="ReuseOfLocalVariableJS" enabled="false" level="INFO" enabled_by_default="false" />
-        <inspection_tool class="UnnecessaryLocalVariableJS" enabled="true" level="WARNING" enabled_by_default="true">
-          <option name="m_ignoreImmediatelyReturnedVariables" value="true" />
-          <option name="m_ignoreAnnotatedVariables" value="false" />
-        </inspection_tool>
-        <inspection_tool class="UnterminatedStatementJS" enabled="true" level="ERROR" enabled_by_default="true">
-          <option name="ignoreSemicolonAtEndOfBlock" value="true" />
-        </inspection_tool>
-      </profile>
-    </profiles>
-    <option name="PROJECT_PROFILE" value="Project Default" />
-    <option name="USE_PROJECT_PROFILE" value="true" />
-    <version value="1.0" />
-    <list size="6">
-      <item index="0" class="java.lang.String" itemvalue="SERVER PROBLEM" />
-      <item index="1" class="java.lang.String" itemvalue="WEAK WARNING" />
-      <item index="2" class="java.lang.String" itemvalue="INFO" />
-      <item index="3" class="java.lang.String" itemvalue="TYPO" />
-      <item index="4" class="java.lang.String" itemvalue="WARNING" />
-      <item index="5" class="java.lang.String" itemvalue="ERROR" />
+    <list size="7">
+      <item index="0" class="java.lang.String" itemvalue="UNUSED ENTRY" />
+      <item index="1" class="java.lang.String" itemvalue="SERVER PROBLEM" />
+      <item index="2" class="java.lang.String" itemvalue="WEAK WARNING" />
+      <item index="3" class="java.lang.String" itemvalue="INFO" />
+      <item index="4" class="java.lang.String" itemvalue="TYPO" />
+      <item index="5" class="java.lang.String" itemvalue="WARNING" />
+      <item index="6" class="java.lang.String" itemvalue="ERROR" />
     </list>
   </component>
   <component name="JavadocGenerationManager">
@@ -473,12 +449,12 @@
   </component>
   <component name="WebServicesPlugin" addRequiredLibraries="true" />
   <component name="libraryTable">
-    <library name="jangaroo-api-3.0.0">
+    <library name="jangaroo-api">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/3.0.0/jangaroo-compiler-api-3.0.0.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/3.0.0/exml-compiler-api-3.0.0.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/3.0.0/properties-compiler-api-3.0.0.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/3.0.0/jangaroo-utils-3.0.0.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/3.0.1/jangaroo-compiler-api-3.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/3.0.1/exml-compiler-api-3.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/3.0.1/properties-compiler-api-3.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/3.0.1/jangaroo-utils-3.0.1.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126.jar!/" />
       </CLASSES>
