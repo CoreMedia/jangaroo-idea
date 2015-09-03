@@ -473,3 +473,30 @@
 <!ATTLIST RestResource
   uriTemplate CDATA #REQUIRED
 >
+<!--
+  Annotation for a property that can also be set by handing
+  in a name-value configuration object to the constructor.
+  A different name (alias) to use in the constructor can be
+  specified via a string attribute like this:
+    [ConstructorParameter("componentId")]
+    public native function set id(value:String):void;
+  A value that must be set on the configuration object to
+  indicate the type to use to instantiate the object later
+  can be given in the attribute "value", like this:
+    [ConstructorParameter(value="box")]
+    public native function get xtype():String;
+-->
+<!ELEMENT ConstructorParameter EMPTY>
+<!ATTLIST ConstructorParameter
+  _DEFAULT_ CDATA #IMPLIED
+  value CDATA #IMPLIED
+>
+<!--
+  Annotation for a property that, instead of receiving
+  instantiated objects, can also receive configuration
+  objects and cares about instantiating them itself.
+  The configuration objects need to have a
+  [ConstructorParameter] with a "value" attribute set
+  so that the right type of object can be instantiated.
+-->
+<!ELEMENT AllowConstructorParameters EMPTY>
