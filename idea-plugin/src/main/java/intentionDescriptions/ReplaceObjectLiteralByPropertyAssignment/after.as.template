@@ -1,0 +1,16 @@
+public class configClass {
+  public var foo:String;
+  public var bar:Number;
+
+  public function configClass(config:Object = null) {
+    this.foo = config.foo;
+    this.bar = config.bar;
+  }
+
+  public static function main():void {
+    var config = new configClass();
+    config.foo = "FOO";
+    config.bar = 12;
+    trace(config);
+  }
+}

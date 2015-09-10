@@ -36,6 +36,16 @@
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
     <findUsagesHandlerFactory implementation="net.jangaroo.ide.idea.exml.FindExmlUsagesHandlerFactory" order="FIRST"/>
     <gotoClassContributor implementation="net.jangaroo.ide.idea.exml.GotoExmlClassContributor"/>
+    <intentionAction>
+      <className>net.jangaroo.ide.idea.exml.ReplaceObjectLiteralByPropertyAssignment</className>
+      <category>ActionScript</category>
+      <descriptionDirectoryName>ReplaceObjectLiteralByPropertyAssignment</descriptionDirectoryName>
+    </intentionAction>
+    <intentionAction>
+      <className>net.jangaroo.ide.idea.exml.ToggleUnTypedPropertyAccess</className>
+      <category>ActionScript</category>
+      <descriptionDirectoryName>ToggleUnTypedPropertyAccess</descriptionDirectoryName>
+    </intentionAction>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
