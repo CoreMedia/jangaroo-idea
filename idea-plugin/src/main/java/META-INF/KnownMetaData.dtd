@@ -473,3 +473,12 @@
 <!ATTLIST RestResource
   uriTemplate CDATA #REQUIRED
 >
+<!ELEMENT InjectFromExtParent EMPTY>
+<!ATTLIST InjectFromExtParent
+  variable CDATA #IMPLIED
+  variableNameConfig CDATA #IMPLIED
+>
+<!ELEMENT ProvideToExtChildren EMPTY>
+<!ATTLIST ProvideToExtChildren
+  variable CDATA #IMPLIED
+>
