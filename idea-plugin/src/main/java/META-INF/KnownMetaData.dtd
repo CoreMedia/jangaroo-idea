@@ -473,6 +473,15 @@
 <!ATTLIST RestResource
   uriTemplate CDATA #REQUIRED
 >
+<!ELEMENT InjectFromExtParent EMPTY>
+<!ATTLIST InjectFromExtParent
+  variable CDATA #IMPLIED
+  variableNameConfig CDATA #IMPLIED
+>
+<!ELEMENT ProvideToExtChildren EMPTY>
+<!ATTLIST ProvideToExtChildren
+  variable CDATA #IMPLIED
+>
 <!--
   Annotation for a property that can also be set by handing
   in a name-value configuration object to the constructor.
