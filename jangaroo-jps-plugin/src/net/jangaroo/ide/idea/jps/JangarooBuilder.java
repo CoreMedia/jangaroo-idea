@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.jps;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
@@ -66,6 +67,7 @@ public class JangarooBuilder extends ModuleLevelBuilder {
   
   public static final FileFilter AS_SOURCES_FILTER = createSuffixFileFilter(Jooc.AS_SUFFIX);
   public static final String FILE_INVALIDATION_BUILDER_MESSAGE = "FILE_INVALIDATION";
+  private final Logger log = Logger.getInstance(JangarooBuilder.class);
 
   public static FileFilter createSuffixFileFilter(final String suffix) {
     return SystemInfo.isFileSystemCaseSensitive?
@@ -134,19 +136,26 @@ public class JangarooBuilder extends ModuleLevelBuilder {
       return ExitCode.ABORT;
     }
     JoocConfiguration joocConfiguration = getJoocConfiguration(joocConfigurationBean, module, filesToCompile, moduleBuildTarget.isTests());
+    log.info(String.format("Compiling module %s...", module.getName()));
+    if (log.isDebugEnabled()) {
+      log.debug(String.format("  module %s classpath=%s, sourcepath=%s, sourcefiles=%s", module.getName(),
+        joocConfiguration.getClassPath(), joocConfiguration.getSourcePath(), joocConfiguration.getSourceFiles()));
+    }
     Jooc jooc = getJooc(context, jarPaths, joocConfiguration, compileLog);
     if (jooc == null) {
+      log.warn(String.format("No Jangaroo build configuration found in module %s.", module.getName()));
       return ExitCode.ABORT;
     }
     CompilationResult compilationResult = compile(moduleBuildTarget, jooc, outputConsumer);
     if (compilationResult.getResultCode() == CompilationResult.RESULT_CODE_COMPILATION_FAILED) {
-      // TODO: add error (maybe the logger already did that)?
+      log.info(String.format("Compilation failed in module %s.", module.getName()));
       return ExitCode.ABORT;
     }
     if (compilationResult.getResultCode() != CompilationResult.RESULT_CODE_OK) {
-      // TODO: we used the compiler incorrectly. log or throw internal error?
+      log.error(String.format("Unexpected compilation reulst %s in module %s.", compilationResult.getResultCode(), module.getName()));
       return ExitCode.ABORT;
     }
+    log.info(String.format("Compilation of module %s completed successfully.", module.getName()));
     return null;
   }
 
