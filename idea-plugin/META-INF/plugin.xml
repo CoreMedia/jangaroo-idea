@@ -65,6 +65,17 @@
     <component>
       <implementation-class>net.jangaroo.ide.idea.JangarooProjectComponent</implementation-class>
     </component>
+    <component>
+      <implementation-class>net.jangaroo.ide.idea.exml.migration.FlexMigrationManager</implementation-class>
+    </component>
   </project-components>
 
+  <actions>
+    <action id="net.jangaroo.ide.idea.exml.migration.MigrateExtJsAction"
+            class="net.jangaroo.ide.idea.exml.migration.MigrateExtJsAction"
+            text="Migrate to Ext AS _6"
+            description="Migrate ActionScript and MXML code from Ext AS 3.4 to Ext AS 6.">
+      <add-to-group group-id="RefactoringMenu4" anchor="after" relative-to-action="Migrate"/>
+    </action>
+  </actions>
 </idea-plugin>

@@ -42,11 +42,11 @@ public class Utils {
   }
 
   @NotNull
-  private static JSClassResolver getActionScriptClassResolver() {
+  public static JSClassResolver getActionScriptClassResolver() {
     return JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver();
   }
 
-  private static boolean isValidActionScriptClass(PsiElement asClass) {
+  public static boolean isValidActionScriptClass(PsiElement asClass) {
     return asClass instanceof JSClass && asClass.isValid();
   }
 
