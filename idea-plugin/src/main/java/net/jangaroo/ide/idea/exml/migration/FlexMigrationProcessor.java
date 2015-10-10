@@ -93,7 +93,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
           usages = FlexMigrationUtil.findPackageUsages(myProject, myPsiMigration, entry.getOldName());
         }
         else {
-          usages = FlexMigrationUtil.findClassUsages(myProject, entry.getOldName());
+          usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, entry.getOldName());
         }
 
         for (UsageInfo usage : usages) {
@@ -105,7 +105,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
       myPsiMigration.finish();
       myPsiMigration = null;
     }
-    return usagesVector.toArray(new MigrationUsageInfo[usagesVector.size()]);
+    return usagesVector.toArray(new UsageInfo[usagesVector.size()]);
   }
 
   protected boolean preprocessUsages(Ref<UsageInfo[]> refUsages) {
