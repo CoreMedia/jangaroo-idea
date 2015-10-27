@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.ModuleChunk;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
+import org.jetbrains.jps.builders.FileProcessor;
 import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
 import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -94,10 +96,10 @@ public class ExmlBuilder extends ModuleLevelBuilder {
   public ExitCode build(CompileContext context, ModuleChunk chunk,
                         DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
                         OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
-    Map<ModuleBuildTarget, List<File>> propertiesFilesToCompile = JangarooBuilder.getFilesToCompile(
+    Map<ModuleBuildTarget, List<File>> propertiesFilesToCompile = getFilesToCompile(
       PROPC_SOURCES_FILTER, dirtyFilesHolder);
 
-    Map<ModuleBuildTarget, List<File>> exmlFilesToCompile = JangarooBuilder.getFilesToCompile(
+    Map<ModuleBuildTarget, List<File>> exmlFilesToCompile = getFilesToCompile(
       EXMLC_SOURCES_FILTER, dirtyFilesHolder);
 
     if (!propertiesFilesToCompile.isEmpty() || !exmlFilesToCompile.isEmpty()) {
@@ -213,6 +215,26 @@ public class ExmlBuilder extends ModuleLevelBuilder {
         }
       }
     }
+  }
+
+  private static Map<ModuleBuildTarget, List<File>> getFilesToCompile(final FileFilter sourcesFilter,
+                                                                     DirtyFilesHolder<JavaSourceRootDescriptor,
+                                                                       ModuleBuildTarget> dirtyFilesHolder) throws IOException {
+    // a map of files, grouped by module first, then by test sources (true) versus non-test sources (false)
+    final Map<ModuleBuildTarget, List<File>> filesToCompile = new HashMap<ModuleBuildTarget, List<File>>();
+
+    dirtyFilesHolder.processDirtyFiles(new FileProcessor<JavaSourceRootDescriptor, ModuleBuildTarget>() {
+      public boolean apply(ModuleBuildTarget target, File file, JavaSourceRootDescriptor descriptor) throws IOException {
+        if (sourcesFilter.accept(file)) {
+          if (!filesToCompile.containsKey(target)) {
+            filesToCompile.put(target, new ArrayList<File>());
+          }
+          filesToCompile.get(target).add(file);
+        }
+        return true;
+      }
+    });
+    return filesToCompile;
   }
 
   private static void processExmlcException(MessageHandler messageHandler, File sourceFile, ExmlcException e) {

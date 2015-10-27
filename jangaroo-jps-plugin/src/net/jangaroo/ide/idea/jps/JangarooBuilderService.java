@@ -2,15 +2,16 @@ package net.jangaroo.ide.idea.jps;
 
 import net.jangaroo.ide.idea.jps.exml.ExmlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.builders.BuildTargetType;
 import org.jetbrains.jps.incremental.BuilderService;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
+import org.jetbrains.jps.incremental.TargetBuilder;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA. User: fwienber Date: 26.11.13 Time: 11:24 To change this template use File | Settings |
- * File Templates.
+ * Factory for JangarooBuilder with target type JangarooBuildTargetType.
  */
 public class JangarooBuilderService extends BuilderService {
 
@@ -18,9 +19,20 @@ public class JangarooBuilderService extends BuilderService {
   }
 
   @NotNull
-  @Override
   public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {
-    return Arrays.asList(new JangarooBuilder(), new ExmlBuilder());
+    return Collections.singletonList(new ExmlBuilder());
+  }
+
+  @NotNull
+  @Override
+  public List<? extends BuildTargetType<?>> getTargetTypes() {
+    return Collections.singletonList(JangarooBuildTargetType.INSTANCE);
+  }
+
+  @NotNull
+  @Override
+  public List<? extends TargetBuilder<?, ?>> createBuilders() {
+    return Collections.singletonList(new JangarooBuilder());
   }
 
 }

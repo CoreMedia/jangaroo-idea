@@ -14,16 +14,14 @@ import net.jangaroo.jooc.config.JoocConfiguration;
 import net.jangaroo.utils.FileLocations;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.ModuleChunk;
+import org.jetbrains.jps.builders.BuildOutputConsumer;
+import org.jetbrains.jps.builders.BuildRootDescriptor;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.builders.FileProcessor;
-import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
-import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.MessageHandler;
-import org.jetbrains.jps.incremental.ModuleBuildTarget;
-import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
+import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.incremental.messages.CustomBuilderMessage;
@@ -60,12 +58,14 @@ import java.util.Set;
 
 /**
  * Jangaroo analog of {@link org.jetbrains.jps.incremental.java.JavaBuilder}.
+ * However, it seems that non-Java-languages need to implement TargetBuilder, not ModuleLevelBuilder,
+ * since the latter does not seem to be work for Flex build configurations.
  */
-public class JangarooBuilder extends ModuleLevelBuilder {
+public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, JangarooBuildTarget> {
 
   public static final String BUILDER_NAME = "jooc";
   
-  public static final FileFilter AS_SOURCES_FILTER = createSuffixFileFilter(Jooc.AS_SUFFIX);
+  public static final FileFilter AS_SOURCES_FILTER = createJangarooSourceFileFilter();
   public static final String FILE_INVALIDATION_BUILDER_MESSAGE = "FILE_INVALIDATION";
   private final Logger log = Logger.getInstance(JangarooBuilder.class);
 
@@ -83,59 +83,62 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     };
   }
 
+  private static FileFilter createJangarooSourceFileFilter() {
+    return SystemInfo.isFileSystemCaseSensitive?
+      new FileFilter() {
+        public boolean accept(File file) {
+          String path = file.getPath();
+          return path.endsWith(Jooc.AS_SUFFIX) || path.endsWith(Jooc.MXML_SUFFIX);
+        }
+      } :
+      new FileFilter() {
+        public boolean accept(File file) {
+          String path = file.getPath();
+          return StringUtil.endsWithIgnoreCase(path, Jooc.AS_SUFFIX) || StringUtil.endsWithIgnoreCase(path, Jooc.MXML_SUFFIX);
+        }
+      };
+  }
+
   public JangarooBuilder() {
-    super(BuilderCategory.TRANSLATOR);
+    super(Collections.singletonList(JangarooBuildTargetType.INSTANCE));
   }
 
   @Override
-  public List<String> getCompilableFileExtensions() {
-    return Collections.singletonList(Jooc.AS_SUFFIX_NO_DOT);
-  }
+  public void build(@NotNull JangarooBuildTarget target, @NotNull DirtyFilesHolder<BuildRootDescriptor, JangarooBuildTarget> dirtyFilesHolder, @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context) throws ProjectBuildException, IOException {
 
-  @Override
-  public ExitCode build(CompileContext context, ModuleChunk chunk,
-                        DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
-                        OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
-
-    final Map<ModuleBuildTarget, List<File>> filesToCompile = getFilesToCompile(
+    final Map<JangarooBuildTarget, List<File>> filesToCompile = getFilesToCompile(
       AS_SOURCES_FILTER,
       dirtyFilesHolder
     );
 
     if (!filesToCompile.isEmpty()) {
-      Map<ModuleBuildTarget, String> finalOutputs = getCanonicalModuleOutputs(context, chunk);
+      Map<JangarooBuildTarget, String> finalOutputs = getCanonicalModuleOutputs(context, filesToCompile.keySet());
       if (finalOutputs == null) {
-        return ExitCode.ABORT;
+        return;
       }
 
       JpsCompileLog compileLog = new JpsCompileLog(BUILDER_NAME, context);
-      for (ModuleBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
-        ExitCode result = compile(context, outputConsumer, filesToCompile.get(moduleBuildTarget), compileLog,
+      for (JangarooBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
+        compile(context, outputConsumer, filesToCompile.get(moduleBuildTarget), compileLog,
           moduleBuildTarget);
-        if (result != null) {
-          return result;
-        }
       }
-      return ExitCode.OK;
     }
-
-    return ExitCode.NOTHING_DONE;
   }
 
-  private ExitCode compile(CompileContext context, OutputConsumer outputConsumer, List<File> filesToCompile,
-                           JpsCompileLog compileLog, ModuleBuildTarget moduleBuildTarget) throws IOException {
-    JpsModule module = moduleBuildTarget.getModule();
+  private boolean compile(CompileContext context, BuildOutputConsumer outputConsumer, List<File> filesToCompile,
+                           JpsCompileLog compileLog, JangarooBuildTarget moduleBuildTarget) throws IOException {
+    JpsModule module = moduleBuildTarget.getBC().getModule();
     JoocConfigurationBean joocConfigurationBean = JangarooModelSerializerExtension.getJoocSettings(module);
     if (joocConfigurationBean == null) {
-      return null; // no Jangaroo Facet in this module: skip silently!
+      return true; // no Jangaroo Facet in this module: skip silently!
     }
     List<String> jarPaths = getJangarooSdkJarPath(joocConfigurationBean, module);
     if (jarPaths == null) {
       context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.WARNING,
         String.format("Jangaroo module %s does not have a valid Jangaroo SDK. Compilation skipped.", module.getName())));
-      return ExitCode.ABORT;
+      return false;
     }
-    JoocConfiguration joocConfiguration = getJoocConfiguration(joocConfigurationBean, module, filesToCompile, moduleBuildTarget.isTests());
+    JoocConfiguration joocConfiguration = getJoocConfiguration(joocConfigurationBean, module, filesToCompile, false /*moduleBuildTarget.isTests()*/);
     log.info(String.format("Compiling module %s...", module.getName()));
     if (log.isDebugEnabled()) {
       log.debug(String.format("  module %s classpath=%s, sourcepath=%s, sourcefiles=%s", module.getName(),
@@ -144,19 +147,19 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     Jooc jooc = getJooc(context, jarPaths, joocConfiguration, compileLog);
     if (jooc == null) {
       log.warn(String.format("No Jangaroo build configuration found in module %s.", module.getName()));
-      return ExitCode.ABORT;
+      return false;
     }
-    CompilationResult compilationResult = compile(moduleBuildTarget, jooc, outputConsumer);
+    CompilationResult compilationResult = compile(jooc, outputConsumer);
     if (compilationResult.getResultCode() == CompilationResult.RESULT_CODE_COMPILATION_FAILED) {
       log.info(String.format("Compilation failed in module %s.", module.getName()));
-      return ExitCode.ABORT;
+      return false;
     }
     if (compilationResult.getResultCode() != CompilationResult.RESULT_CODE_OK) {
       log.error(String.format("Unexpected compilation reulst %s in module %s.", compilationResult.getResultCode(), module.getName()));
-      return ExitCode.ABORT;
+      return false;
     }
     log.info(String.format("Compilation of module %s completed successfully.", module.getName()));
-    return null;
+    return true;
   }
 
   @Nullable
@@ -170,12 +173,12 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return JpsJangarooSdkType.getSdkJarPaths(sdk);
   }
 
-  private CompilationResult compile(ModuleBuildTarget moduleBuildTarget, Jooc jooc,
-                                    OutputConsumer outputConsumer) throws IOException {
+  private CompilationResult compile(Jooc jooc,
+                                    BuildOutputConsumer outputConsumer) throws IOException {
     CompilationResult compilationResult = jooc.run();
     for (Map.Entry<File, File> sourceToTarget : compilationResult.getOutputFileMap().entrySet()) {
       if (sourceToTarget.getValue() != null) { // only non-native classes!
-        outputConsumer.registerOutputFile(moduleBuildTarget, sourceToTarget.getValue(), toSingletonPath(sourceToTarget.getKey()));
+        outputConsumer.registerOutputFile(sourceToTarget.getValue(), toSingletonPath(sourceToTarget.getKey()));
       }
     }
     return compilationResult;
@@ -185,14 +188,14 @@ public class JangarooBuilder extends ModuleLevelBuilder {
     return Collections.singleton(file.getPath());
   }
 
-  public static Map<ModuleBuildTarget, List<File>> getFilesToCompile(final FileFilter sourcesFilter,
-                                                                     DirtyFilesHolder<JavaSourceRootDescriptor,
-                                                                       ModuleBuildTarget> dirtyFilesHolder) throws IOException {
+  public static Map<JangarooBuildTarget, List<File>> getFilesToCompile(final FileFilter sourcesFilter,
+                                                                     DirtyFilesHolder<BuildRootDescriptor,
+                                                                       JangarooBuildTarget> dirtyFilesHolder) throws IOException {
     // a map of files, grouped by module first, then by test sources (true) versus non-test sources (false)
-    final Map<ModuleBuildTarget, List<File>> filesToCompile = new HashMap<ModuleBuildTarget, List<File>>();
+    final Map<JangarooBuildTarget, List<File>> filesToCompile = new HashMap<JangarooBuildTarget, List<File>>();
 
-    dirtyFilesHolder.processDirtyFiles(new FileProcessor<JavaSourceRootDescriptor, ModuleBuildTarget>() {
-      public boolean apply(ModuleBuildTarget target, File file, JavaSourceRootDescriptor descriptor) throws IOException {
+    dirtyFilesHolder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, JangarooBuildTarget>() {
+      public boolean apply(JangarooBuildTarget target, File file, BuildRootDescriptor descriptor) throws IOException {
         if (sourcesFilter.accept(file)) {
           if (!filesToCompile.containsKey(target)) {
             filesToCompile.put(target, new ArrayList<File>());
@@ -305,15 +308,15 @@ public class JangarooBuilder extends ModuleLevelBuilder {
   }
 
   @Nullable
-  public static Map<ModuleBuildTarget, String> getCanonicalModuleOutputs(CompileContext context, ModuleChunk chunk) {
-    Map<ModuleBuildTarget, String> finalOutputs = new HashMap<ModuleBuildTarget, String>();
-    for (ModuleBuildTarget target : chunk.getTargets()) {
-      File moduleOutputDir = target.getOutputDir();
-      if (moduleOutputDir == null) {
-        context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.ERROR, "Output directory not specified for module " + target.getModule().getName()));
+  public static Map<JangarooBuildTarget, String> getCanonicalModuleOutputs(CompileContext context, Collection<JangarooBuildTarget> flexBuildTargets) {
+    Map<JangarooBuildTarget, String> finalOutputs = new HashMap<JangarooBuildTarget, String>();
+    for (JangarooBuildTarget target : flexBuildTargets) {
+      String moduleOutputDir = target.getBC().getOutputFolder();
+      if (moduleOutputDir.isEmpty()) {
+        context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.ERROR, "Output directory not specified for module " + target.getBC().getModule().getName()));
         return null;
       }
-      String moduleOutputPath = FileUtil.toCanonicalPath(moduleOutputDir.getPath());
+      String moduleOutputPath = FileUtil.toCanonicalPath(moduleOutputDir);
       assert moduleOutputPath != null;
       finalOutputs.put(target, moduleOutputPath.endsWith("/") ? moduleOutputPath : moduleOutputPath + "/");
     }
