@@ -50,11 +50,11 @@
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
-    <importer implementation="net.jangaroo.ide.idea.Jangaroo1_2FacetImporter"/>
-    <importer implementation="net.jangaroo.ide.idea.Jangaroo3FacetImporter"/>
+    <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
+    <importer implementation="net.jangaroo.ide.idea.JangarooFlexFacetImporter"/>
     <importer implementation="net.jangaroo.ide.idea.WebResourcesImporter"/>
     <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
-    <importer implementation="net.jangaroo.ide.idea.exml.Exml3FacetImporter"/>
+    <importer implementation="net.jangaroo.ide.idea.exml.ExmlFlexFacetImporter"/>
   </extensions>
 
   <extensions defaultExtensionNs="com.jetbrains">

@@ -55,7 +55,7 @@ import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
 /**
  * A Facet-from-Maven Importer for the Jangaroo Facet type.
  */
-public abstract class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
+public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
   public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
@@ -90,9 +90,7 @@ public abstract class JangarooFacetImporter extends FacetImporter<JangarooFacet,
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
     // fast path for unsupported packagings:
-    ArrayList<String> packagings = new ArrayList<String>();
-    getSupportedPackagings(packagings);
-    if (!packagings.contains(mavenProjectModel.getPackaging())) {
+    if (!isSupportedPackaging(this, mavenProjectModel)) {
       return false;
     }
     // any of the two Jangaroo Maven plugins has to be configured explicitly:
@@ -103,11 +101,14 @@ public abstract class JangarooFacetImporter extends FacetImporter<JangarooFacet,
         "but no jangaroo-maven-plugin or exml-maven-plugin was found. Try repeating 'Reimport All Maven Projects'.",
         NotificationType.WARNING));
     }
-    return jangarooMavenPlugin != null
-      && isApplicableVersion(getMajorVersion(jangarooMavenPlugin.getVersion()));
+    return jangarooMavenPlugin != null;
   }
 
-  protected abstract boolean isApplicableVersion(int majorVersion);
+  public static boolean isSupportedPackaging(FacetImporter facetImporter, MavenProject mavenProjectModel) {
+    ArrayList<String> packagings = new ArrayList<String>();
+    facetImporter.getSupportedPackagings(packagings);
+    return packagings.contains(mavenProjectModel.getPackaging());
+  }
 
   /**
    * Find jangaroo-maven-plugin, or, if not present, exml-maven-plugin, which also activates the
@@ -118,22 +119,24 @@ public abstract class JangarooFacetImporter extends FacetImporter<JangarooFacet,
   protected MavenPlugin findJangarooMavenPlugin(MavenProject mavenProjectModel) {
     MavenPlugin jangarooPlugin = findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
     if (jangarooPlugin == null) {
-      jangarooPlugin = findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
+      jangarooPlugin = findExmlMavenPlugin(mavenProjectModel);
     }
     return jangarooPlugin;
   }
 
+  public static MavenPlugin findExmlMavenPlugin(MavenProject mavenProjectModel) {
+    return findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
+  }
+
   @Override
   public void getSupportedPackagings(Collection<String> result) {
-    super.getSupportedPackagings(result);
-    result.add(JANGAROO_PACKAGING_TYPE);
+    result.add("war");
   }
 
   @Override
   public void getSupportedDependencyTypes(Collection<String> result, SupportedRequestType type) {
     super.getSupportedDependencyTypes(result, type);
     result.add(JANGAROO_DEPENDENCY_TYPE);
-    result.add("jar"); // for Jangaroo 2!
   }
 
   @Override

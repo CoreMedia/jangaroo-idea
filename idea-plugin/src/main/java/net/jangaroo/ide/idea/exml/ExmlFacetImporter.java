@@ -60,23 +60,17 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   public boolean isApplicable(MavenProject mavenProjectModel) {
-    MavenPlugin exmlMavenPlugin = findExmlMavenPlugin(mavenProjectModel);
-    return exmlMavenPlugin != null
-      && isApplicableVersion(JangarooFacetImporter.getMajorVersion(exmlMavenPlugin.getVersion()));
-  }
-
-  protected boolean isApplicableVersion(int majorVersion) {
-    return 0 <= majorVersion && majorVersion <= 3;
+    // fast path for unsupported packagings:
+    if (!JangarooFacetImporter.isSupportedPackaging(this, mavenProjectModel)) {
+      return false;
+    }
+    MavenPlugin exmlMavenPlugin = JangarooFacetImporter.findExmlMavenPlugin(mavenProjectModel);
+    return exmlMavenPlugin != null;
   }
 
   @Override
   public void getSupportedPackagings(Collection<String> result) {
-    super.getSupportedPackagings(result);
-    result.add(JangarooFacetImporter.JANGAROO_PACKAGING_TYPE);
-  }
-
-  private MavenPlugin findExmlMavenPlugin(MavenProject mavenProjectModel) {
-    return findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
+    result.add("war");
   }
 
   protected void setupFacet(ExmlFacet exmlFacet, MavenProject mavenProjectModel) {
