@@ -95,6 +95,10 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
     return id;
   }
 
+  public boolean isTests() {
+    return false; // TODO
+  }
+
   @NotNull
   public JpsFlexBuildConfiguration getBC() {
     return bc;
@@ -272,4 +276,5 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
   public int hashCode() {
     return id.hashCode();
   }
+
 }

@@ -2,7 +2,6 @@ package net.jangaroo.ide.idea.jps;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.jps.util.JpsCompileLog;
@@ -50,7 +49,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -105,23 +103,10 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
 
   @Override
   public void build(@NotNull JangarooBuildTarget target, @NotNull DirtyFilesHolder<BuildRootDescriptor, JangarooBuildTarget> dirtyFilesHolder, @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context) throws ProjectBuildException, IOException {
-
-    final Map<JangarooBuildTarget, List<File>> filesToCompile = getFilesToCompile(
-      AS_SOURCES_FILTER,
-      dirtyFilesHolder
-    );
-
+    final List<File> filesToCompile = getFilesToCompile(target, AS_SOURCES_FILTER, dirtyFilesHolder);
     if (!filesToCompile.isEmpty()) {
-      Map<JangarooBuildTarget, String> finalOutputs = getCanonicalModuleOutputs(context, filesToCompile.keySet());
-      if (finalOutputs == null) {
-        return;
-      }
-
       JpsCompileLog compileLog = new JpsCompileLog(BUILDER_NAME, context);
-      for (JangarooBuildTarget moduleBuildTarget : finalOutputs.keySet()) {
-        compile(context, outputConsumer, filesToCompile.get(moduleBuildTarget), compileLog,
-          moduleBuildTarget);
-      }
+      compile(context, outputConsumer, filesToCompile, compileLog, target);
     }
   }
 
@@ -138,7 +123,7 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
         String.format("Jangaroo module %s does not have a valid Jangaroo SDK. Compilation skipped.", module.getName())));
       return false;
     }
-    JoocConfiguration joocConfiguration = getJoocConfiguration(joocConfigurationBean, module, filesToCompile, false /*moduleBuildTarget.isTests()*/);
+    JoocConfiguration joocConfiguration = getJoocConfiguration(joocConfigurationBean, module, filesToCompile, moduleBuildTarget.isTests());
     log.info(String.format("Compiling module %s...", module.getName()));
     if (log.isDebugEnabled()) {
       log.debug(String.format("  module %s classpath=%s, sourcepath=%s, sourcefiles=%s", module.getName(),
@@ -188,19 +173,17 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
     return Collections.singleton(file.getPath());
   }
 
-  public static Map<JangarooBuildTarget, List<File>> getFilesToCompile(final FileFilter sourcesFilter,
-                                                                     DirtyFilesHolder<BuildRootDescriptor,
-                                                                       JangarooBuildTarget> dirtyFilesHolder) throws IOException {
+  public static List<File> getFilesToCompile(final JangarooBuildTarget jangarooBuildTarget,
+                                             final FileFilter sourcesFilter,
+                                             DirtyFilesHolder<BuildRootDescriptor,
+                                               JangarooBuildTarget> dirtyFilesHolder) throws IOException {
     // a map of files, grouped by module first, then by test sources (true) versus non-test sources (false)
-    final Map<JangarooBuildTarget, List<File>> filesToCompile = new HashMap<JangarooBuildTarget, List<File>>();
+    final List<File> filesToCompile = new ArrayList<File>();
 
     dirtyFilesHolder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, JangarooBuildTarget>() {
       public boolean apply(JangarooBuildTarget target, File file, BuildRootDescriptor descriptor) throws IOException {
-        if (sourcesFilter.accept(file)) {
-          if (!filesToCompile.containsKey(target)) {
-            filesToCompile.put(target, new ArrayList<File>());
-          }
-          filesToCompile.get(target).add(file);
+        if (target.equals(jangarooBuildTarget) && sourcesFilter.accept(file)) {
+          filesToCompile.add(file);
         }
         return true;
       }
@@ -307,22 +290,6 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
     return jooc;
   }
 
-  @Nullable
-  public static Map<JangarooBuildTarget, String> getCanonicalModuleOutputs(CompileContext context, Collection<JangarooBuildTarget> flexBuildTargets) {
-    Map<JangarooBuildTarget, String> finalOutputs = new HashMap<JangarooBuildTarget, String>();
-    for (JangarooBuildTarget target : flexBuildTargets) {
-      String moduleOutputDir = target.getBC().getOutputFolder();
-      if (moduleOutputDir.isEmpty()) {
-        context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.ERROR, "Output directory not specified for module " + target.getBC().getModule().getName()));
-        return null;
-      }
-      String moduleOutputPath = FileUtil.toCanonicalPath(moduleOutputDir);
-      assert moduleOutputPath != null;
-      finalOutputs.put(target, moduleOutputPath.endsWith("/") ? moduleOutputPath : moduleOutputPath + "/");
-    }
-    return finalOutputs;
-  }
-  
   @NotNull
   @Override
   public String getPresentableName() {
