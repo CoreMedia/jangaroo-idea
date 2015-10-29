@@ -1,11 +1,13 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.javaee.ExternalResourceManager;
+import com.intellij.lang.javascript.flex.FlexModuleType;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
@@ -18,6 +20,7 @@ import net.jangaroo.ide.idea.JangarooFacetImporter;
 import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
@@ -68,9 +71,16 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     return exmlMavenPlugin != null;
   }
 
+  @NotNull
+  @Override
+  public ModuleType getModuleType() {
+    return FlexModuleType.getInstance();
+  }
+
   @Override
   public void getSupportedPackagings(Collection<String> result) {
-    result.add("war");
+    super.getSupportedPackagings(result);
+    result.add(JangarooFacetImporter.JANGAROO_PACKAGING_TYPE);
   }
 
   protected void setupFacet(ExmlFacet exmlFacet, MavenProject mavenProjectModel) {

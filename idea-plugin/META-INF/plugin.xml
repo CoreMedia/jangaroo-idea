@@ -51,10 +51,8 @@
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
     <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
-    <importer implementation="net.jangaroo.ide.idea.JangarooFlexFacetImporter"/>
     <importer implementation="net.jangaroo.ide.idea.WebResourcesImporter"/>
     <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
-    <importer implementation="net.jangaroo.ide.idea.exml.ExmlFlexFacetImporter"/>
   </extensions>
 
   <extensions defaultExtensionNs="com.jetbrains">
