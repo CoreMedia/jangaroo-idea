@@ -3,6 +3,8 @@ package net.jangaroo.ide.idea.jps.exml;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
+import net.jangaroo.ide.idea.jps.JangarooBuildTarget;
+import net.jangaroo.ide.idea.jps.JangarooBuildTargetType;
 import net.jangaroo.ide.idea.jps.JangarooBuilder;
 import net.jangaroo.ide.idea.jps.JangarooModelSerializerExtension;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
@@ -12,17 +14,14 @@ import net.jangaroo.jooc.api.FilePosition;
 import net.jangaroo.properties.api.Propc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.ModuleChunk;
+import org.jetbrains.jps.builders.BuildOutputConsumer;
+import org.jetbrains.jps.builders.BuildRootDescriptor;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
-import org.jetbrains.jps.builders.FileProcessor;
-import org.jetbrains.jps.builders.java.JavaSourceRootDescriptor;
-import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.FSOperations;
 import org.jetbrains.jps.incremental.MessageHandler;
-import org.jetbrains.jps.incremental.ModuleBuildTarget;
-import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
+import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.fs.CompilationRound;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
@@ -34,18 +33,16 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
  * Jangaroo analog of {@link org.jetbrains.jps.incremental.java.JavaBuilder}.
  */
-public class ExmlBuilder extends ModuleLevelBuilder {
+public class ExmlBuilder extends TargetBuilder<BuildRootDescriptor, JangarooBuildTarget> {
 
   private static final String EXML_BUILDER_NAME = "exmlc";
   private static final FileFilter EXMLC_SOURCES_FILTER = JangarooBuilder.createSuffixFileFilter(Exmlc.EXML_SUFFIX);
@@ -55,7 +52,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
   private static final FileFilter PROPC_SOURCES_FILTER = JangarooBuilder.createSuffixFileFilter(PROPERTIES_SUFFIX);
 
   public ExmlBuilder() {
-    super(BuilderCategory.SOURCE_GENERATOR);
+    super(Collections.singletonList(JangarooBuildTargetType.INSTANCE));
   }
 
   public static void copyFromBeanToConfiguration(@NotNull ExmlcConfigurationBean exmlcConfigurationBean,
@@ -88,38 +85,26 @@ public class ExmlBuilder extends ModuleLevelBuilder {
   }
 
   @Override
-  public List<String> getCompilableFileExtensions() {
-    return Arrays.asList(Exmlc.EXML_SUFFIX.substring(1), PROPERTIES_SUFFIX.substring(1));
-  }
+  public void build(@NotNull JangarooBuildTarget jangarooBuildTarget, @NotNull DirtyFilesHolder<BuildRootDescriptor, JangarooBuildTarget> dirtyFilesHolder, @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context) throws ProjectBuildException, IOException {
+    List<File> propertiesFilesToCompile = JangarooBuilder.getFilesToCompile(
+      jangarooBuildTarget, PROPC_SOURCES_FILTER, dirtyFilesHolder);
 
-  @Override
-  public ExitCode build(CompileContext context, ModuleChunk chunk,
-                        DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
-                        OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
-    Map<ModuleBuildTarget, List<File>> propertiesFilesToCompile = getFilesToCompile(
-      PROPC_SOURCES_FILTER, dirtyFilesHolder);
-
-    Map<ModuleBuildTarget, List<File>> exmlFilesToCompile = getFilesToCompile(
-      EXMLC_SOURCES_FILTER, dirtyFilesHolder);
+    List<File> exmlFilesToCompile = JangarooBuilder.getFilesToCompile(
+      jangarooBuildTarget, EXMLC_SOURCES_FILTER, dirtyFilesHolder);
 
     if (!propertiesFilesToCompile.isEmpty() || !exmlFilesToCompile.isEmpty()) {
-      for (ModuleBuildTarget moduleBuildTarget : chunk.getTargets()) {
-        build(context, propertiesFilesToCompile.get(moduleBuildTarget), exmlFilesToCompile.get(moduleBuildTarget),
-          moduleBuildTarget, outputConsumer);
-      }
-      return ExitCode.OK;
+        build(context, propertiesFilesToCompile, exmlFilesToCompile,
+          jangarooBuildTarget, outputConsumer);
     }
-
-    return ExitCode.NOTHING_DONE;
   }
 
   /**
    * Generate AS from properties and EXML for one module.
    */
   private void build(CompileContext context, List<File> propertiesFilesToCompile,
-                     List<File> exmlFilesToCompile, ModuleBuildTarget moduleBuildTarget,
-                     OutputConsumer outputConsumer) throws IOException {
-    JpsModule module = moduleBuildTarget.getModule();
+                     List<File> exmlFilesToCompile, JangarooBuildTarget moduleBuildTarget,
+                     BuildOutputConsumer outputConsumer) throws IOException {
+    JpsModule module = moduleBuildTarget.getBC().getModule();
     ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, moduleBuildTarget.isTests());
     if (exmlcConfiguration == null) {
       return; // no EXML Facet in this module: skip silently!
@@ -144,7 +129,7 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     if (propertiesFilesToCompile != null) {
       exmlcConfiguration.setSourceFiles(propertiesFilesToCompile);
       Propc propc = loadPropc(context, jarPaths, exmlcConfiguration);
-      compileProperties(moduleBuildTarget, propc, context, outputConsumer);
+      compileProperties(propc, context, outputConsumer);
     }
 
     // invoke EXML compiler for module:
@@ -155,14 +140,14 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     }
   }
 
-  private void compileProperties(ModuleBuildTarget moduleBuildTarget, Propc propc, CompileContext context,
-                                 OutputConsumer outputConsumer) {
+  private void compileProperties(Propc propc, CompileContext context,
+                                 BuildOutputConsumer outputConsumer) {
     List<File> sourceFiles = propc.getConfig().getSourceFiles();
     for (File sourceFile : sourceFiles) {
       try {
         File generatedPropertiesClass = propc.generate(sourceFile);
         // getLog().info("properties->as: " + fileUrl + " -> " + generatedPropertiesClass.getPath());
-        registerOutputFile(outputConsumer, moduleBuildTarget, context, generatedPropertiesClass,
+        registerOutputFile(outputConsumer, context, generatedPropertiesClass,
           JangarooBuilder.toSingletonPath(sourceFile));
       } catch (IOException e) {
         context.processMessage(new CompilerMessage(PROPERTIES_BUILDER_NAME, e));
@@ -170,21 +155,21 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     }
   }
 
-  private void compileExml(ModuleBuildTarget moduleBuildTarget, Exmlc exmlc, CompileContext context,
-                           OutputConsumer outputConsumer) throws IOException {
+  private void compileExml(JangarooBuildTarget moduleBuildTarget, Exmlc exmlc, CompileContext context,
+                           BuildOutputConsumer outputConsumer) throws IOException {
     List<File> sourceFiles = exmlc.getConfig().getSourceFiles();
     if (!sourceFiles.isEmpty()) {
       List<String> allCompiledSourceFiles = new ArrayList<String>();
       for (File sourceFile : sourceFiles) {
         try {
           File generatedConfigClass = exmlc.generateConfigClass(sourceFile);
-          registerOutputFile(outputConsumer, moduleBuildTarget, context, generatedConfigClass, JangarooBuilder.toSingletonPath(sourceFile));
+          registerOutputFile(outputConsumer, context, generatedConfigClass, JangarooBuilder.toSingletonPath(sourceFile));
 
           File generatedTargetClass = exmlc.generateComponentClass(sourceFile);
           // getLog().info("exml->as (config): " + fileUrl + " -> " + generatedConfigClass.getPath());
           if (generatedTargetClass != null) {
             // getLog().info("exml->as (target): " + fileUrl + " -> " + generatedTargetClass.getPath());
-            registerOutputFile(outputConsumer, moduleBuildTarget, context, generatedTargetClass, JangarooBuilder.toSingletonPath(sourceFile));
+            registerOutputFile(outputConsumer, context, generatedTargetClass, JangarooBuilder.toSingletonPath(sourceFile));
           }
           allCompiledSourceFiles.add(sourceFile.getPath());
         } catch (ExmlcException e) {
@@ -209,32 +194,12 @@ public class ExmlBuilder extends ModuleLevelBuilder {
           if (xsdFile == null || !xsdFile.exists()) {
             return;
           }
-          registerOutputFile(outputConsumer, moduleBuildTarget, context, xsdFile, allCompiledSourceFiles);
+          registerOutputFile(outputConsumer, context, xsdFile, allCompiledSourceFiles);
         } catch (ExmlcException e) {
           processExmlcException(context, null, e);
         }
       }
     }
-  }
-
-  private static Map<ModuleBuildTarget, List<File>> getFilesToCompile(final FileFilter sourcesFilter,
-                                                                     DirtyFilesHolder<JavaSourceRootDescriptor,
-                                                                       ModuleBuildTarget> dirtyFilesHolder) throws IOException {
-    // a map of files, grouped by module first, then by test sources (true) versus non-test sources (false)
-    final Map<ModuleBuildTarget, List<File>> filesToCompile = new HashMap<ModuleBuildTarget, List<File>>();
-
-    dirtyFilesHolder.processDirtyFiles(new FileProcessor<JavaSourceRootDescriptor, ModuleBuildTarget>() {
-      public boolean apply(ModuleBuildTarget target, File file, JavaSourceRootDescriptor descriptor) throws IOException {
-        if (sourcesFilter.accept(file)) {
-          if (!filesToCompile.containsKey(target)) {
-            filesToCompile.put(target, new ArrayList<File>());
-          }
-          filesToCompile.get(target).add(file);
-        }
-        return true;
-      }
-    });
-    return filesToCompile;
   }
 
   private static void processExmlcException(MessageHandler messageHandler, File sourceFile, ExmlcException e) {
@@ -292,10 +257,10 @@ public class ExmlBuilder extends ModuleLevelBuilder {
     return exmlc;
   }
 
-  private static void registerOutputFile(OutputConsumer outputConsumer, ModuleBuildTarget moduleBuildTarget,
+  private static void registerOutputFile(BuildOutputConsumer outputConsumer,
                                          CompileContext context, File generatedFile, Collection<String> sourcePaths)
     throws IOException {
-    outputConsumer.registerOutputFile(moduleBuildTarget, generatedFile, sourcePaths);
+    outputConsumer.registerOutputFile(generatedFile, sourcePaths);
     FSOperations.markDirty(context, CompilationRound.CURRENT, generatedFile);
     JangarooBuilder.processFileInvalidationMessage(context, generatedFile);
   }
