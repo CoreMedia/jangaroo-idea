@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -378,6 +379,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     // just to satisfy IDEA:
     buildConfiguration.setOutputFolder(mavenProjectModel.getBuildDirectory());
     buildConfiguration.setOutputFileName(mavenProjectModel.getFinalName() + ".swc");
+    configureExmlNamespaceForMxml(mavenProjectModel, buildConfiguration);
 
     ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
     String flexSdkName = null;
@@ -461,6 +463,25 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       buildConfiguration.getCompilerOptions().setAllOptions(Collections.singletonMap(
         "compiler.namespaces.namespace", namespaceConfigs.toString()
       ));
+    }
+  }
+
+  private void configureExmlNamespaceForMxml(MavenProject mavenProjectModel, ModifiableFlexBuildConfiguration buildConfiguration) {
+    Element exmlPluginConfiguration = mavenProjectModel.getPluginConfiguration(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
+    if (exmlPluginConfiguration != null) {
+      Element configClassPackageElement = exmlPluginConfiguration.getChild("configClassPackage");
+      if (configClassPackageElement != null) {
+        for (String sourceDirectory : mavenProjectModel.getSources()) {
+          String manifestFileName = sourceDirectory.replace('\\', '/') + "/manifest.xml";
+          if (new File(manifestFileName).exists()) {
+            String configClassPackage = configClassPackageElement.getValue();
+            String namespaceMapping = String.format("exml:%s\t%s", configClassPackage, manifestFileName);
+            Map<String, String> allOptions = Collections.singletonMap("compiler.namespaces.namespace", namespaceMapping);
+            buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
+            break;
+          }
+        }
+      }
     }
   }
 
