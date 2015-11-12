@@ -6,6 +6,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.roots.ModuleOrderEntry;
@@ -22,7 +23,6 @@ import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.maven.importing.FacetImporter;
-import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenProject;
@@ -48,7 +48,6 @@ import java.util.zip.ZipFile;
 
 import static net.jangaroo.ide.idea.JangarooFacetImporter.EXML_MAVEN_PLUGIN_ARTIFACT_ID;
 import static net.jangaroo.ide.idea.jps.JpsJangarooSdkType.JANGAROO_GROUP_ID;
-import static net.jangaroo.ide.idea.JangarooFacetImporter.findDeclaredJangarooPlugin;
 import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
 import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
@@ -106,7 +105,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   @Override
-  protected void reimportFacet(MavenModifiableModelsProvider modelsProvider, Module module,
+  protected void reimportFacet(IdeModifiableModelsProvider modelsProvider, Module module,
                                MavenRootModelAdapter rootModel, ExmlFacet exmlFacet, MavenProjectsTree mavenTree,
                                MavenProject mavenProjectModel, MavenProjectChanges changes,
                                Map<MavenProject, String> mavenProjectToModuleName, List<MavenProjectsProcessorTask> postTasks) {
