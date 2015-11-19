@@ -35,6 +35,7 @@ import com.intellij.openapi.roots.impl.libraries.LibraryEx;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -48,6 +49,7 @@ import com.intellij.packaging.elements.PackagingElementResolvingContext;
 import com.intellij.packaging.impl.elements.ArchivePackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
 import com.intellij.util.PairConsumer;
+import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
 import net.jangaroo.jooc.config.CompilerConfigParser;
@@ -81,6 +83,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -469,17 +472,42 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     if (exmlPluginConfiguration != null) {
       Element configClassPackageElement = exmlPluginConfiguration.getChild("configClassPackage");
       if (configClassPackageElement != null) {
-        for (String sourceDirectory : mavenProjectModel.getSources()) {
-          String manifestFileName = sourceDirectory.replace('\\', '/') + "/manifest.xml";
-          if (new File(manifestFileName).exists()) {
-            String configClassPackage = configClassPackageElement.getValue();
-            String namespaceMapping = String.format("exml:%s\t%s", configClassPackage, manifestFileName);
-            Map<String, String> allOptions = Collections.singletonMap("compiler.namespaces.namespace", namespaceMapping);
-            buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
-            break;
-          }
+        String namespace = Exmlc.EXML_CONFIG_URI_PREFIX + configClassPackageElement.getValue();
+        List<Pair<String, String>> namespacesToManifests = new ArrayList<Pair<String, String>>();
+        addManifestNamespaceMapping(namespacesToManifests, namespace, mavenProjectModel.getSources());
+        addManifestNamespaceMapping(namespacesToManifests, namespace, mavenProjectModel.getTestSources());
+        String namespaceMapping = formatNamespaceMapping(namespacesToManifests);
+        if (namespaceMapping != null) {
+          Map<String, String> allOptions = Collections.singletonMap("compiler.namespaces.namespace", namespaceMapping);
+          buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
         }
       }
+    }
+  }
+
+  private void addManifestNamespaceMapping(List<Pair<String, String>> namespaceToManifest, String namespace, List<String> directories) {
+    for (String directory : directories) {
+      String manifestFileName = directory.replace('\\', '/') + "/manifest.xml";
+      if (new File(manifestFileName).exists()) {
+        namespaceToManifest.add(Pair.create(namespace, manifestFileName));
+        break;
+      }
+    }
+  }
+
+  private String formatNamespaceMapping(List<Pair<String, String>> namespacesToManifests) {
+    if (namespacesToManifests.isEmpty()) {
+      return null;
+    }
+    StringBuilder result = new StringBuilder();
+    Iterator<Pair<String, String>> iterator = namespacesToManifests.iterator();
+    while (true) {
+      Pair<String, String> namespaceToManifest = iterator.next();
+      result.append(namespaceToManifest.first).append('\t').append(namespaceToManifest.second);
+      if (!iterator.hasNext()) {
+        return result.toString();
+      }
+      result.append('\n');
     }
   }
 
