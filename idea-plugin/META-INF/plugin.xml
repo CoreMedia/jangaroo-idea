@@ -8,7 +8,8 @@
   <version>0.34-SNAPSHOT</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
-  <idea-version since-build="IU-139.1117"/>
+  <idea-version since-build="IU-139.1117"
+                until-build="IU-140.9999"/>
 
   <depends>JavaScript</depends>
   <depends>JavaScriptDebugger</depends>
