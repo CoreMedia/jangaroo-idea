@@ -28,7 +28,6 @@ import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModifiableRootModel;
-import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.impl.libraries.LibraryEx;
@@ -52,9 +51,6 @@ import com.intellij.util.PairConsumer;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
-import net.jangaroo.jooc.config.CompilerConfigParser;
-import net.jangaroo.jooc.config.JoocConfiguration;
-import net.jangaroo.jooc.config.NamespaceConfiguration;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -79,7 +75,6 @@ import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -399,7 +394,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
 
     modifiableDependencies.getModifiableEntries().clear();
-    StringBuilder namespaceConfigs = new StringBuilder();
     for (MavenArtifact dependency : mavenProjectModel.getDependencies()) {
       VirtualFile artifactFile = LocalFileSystem.getInstance().findFileByIoFile(dependency.getFile());
       if (artifactFile != null) {
@@ -413,10 +407,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
             if (dependentBC != null) {
               ModifiableBuildConfigurationEntry buildConfigurationEntry = flexEditor.createBcEntry(modifiableDependencies, dependentModule.getName(), dependentBC.getName());
               modifiableDependencies.getModifiableEntries().add(buildConfigurationEntry);
-              // look for config.xml containing additional compiler settings:
-              for (VirtualFile sourceRoot : ModuleRootManager.getInstance(dependentModule).getSourceRoots()) {
-                parseCompilerConfig(sourceRoot, namespaceConfigs);
-              }
             }
           }
         } else {
@@ -458,12 +448,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
           }
         }
       }
-    }
-
-    if (namespaceConfigs.length() > 0) {
-      buildConfiguration.getCompilerOptions().setAllOptions(Collections.singletonMap(
-        "compiler.namespaces.namespace", namespaceConfigs.toString()
-      ));
     }
   }
 
@@ -515,34 +499,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   private static ModifiableFlexBuildConfiguration getFirstFlexBuildConfiguration(FlexProjectConfigurationEditor flexEditor, Module module) {
     ModifiableFlexBuildConfiguration[] configurations = flexEditor.getConfigurations(module);
     return configurations.length == 0 ? null : configurations[0];
-  }
-
-  private static void parseCompilerConfig(VirtualFile baseDirOrJar, StringBuilder namespaceConfigs) {
-    VirtualFile compilerConfigXml = baseDirOrJar.findFileByRelativePath("config.xml");
-    if (compilerConfigXml != null) {
-      JoocConfiguration joocConfiguration = new JoocConfiguration();
-      try {
-        new CompilerConfigParser(joocConfiguration).parse(compilerConfigXml.getInputStream());
-        for (NamespaceConfiguration namespace : joocConfiguration.getNamespaces()) {
-          VirtualFile manifestFile = baseDirOrJar.findFileByRelativePath(namespace.getManifest());
-          if (manifestFile != null && manifestFile.exists()) {
-            if (namespaceConfigs.length() > 0) {
-              namespaceConfigs.append('\n');
-            }
-            namespaceConfigs.append(namespace.getUri()).append('\t').append(manifestFile.getPath());
-          } else {
-            Notifications.Bus.notify(new Notification("jangaroo", "Manifest file not found",
-              "Compiler config.xml " + compilerConfigXml.getPresentableName() + " contains a reference to manifest "
-                + namespace.getManifest() + ", but the file could not be found.", NotificationType.INFORMATION));
-          }
-        }
-
-      } catch (IOException e) {
-        Notifications.Bus.notify(new Notification("jangaroo", "Manifest file not found",
-          "Error while trying to read config.xml " + compilerConfigXml.getPresentableName() + ": " + e,
-          NotificationType.WARNING));
-      }
-    }
   }
 
   private static class AddJangarooPackagingOutputToExplodedWebArtifactsTask implements MavenProjectsProcessorTask {

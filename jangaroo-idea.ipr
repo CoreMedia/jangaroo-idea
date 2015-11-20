@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="ArtifactManager">
+    <artifact build-on-make="true" name="jangaroo-jps-plugin:jar">
+      <output-path>$USER_HOME$/.IntelliJIdea14/system/plugins-sandbox/plugins/jangaroo-0.9/lib</output-path>
+      <root id="root">
+        <element id="archive" name="jangaroo-jps-plugin.jar">
+          <element id="module-output" name="jangaroo-jps-plugin" />
+        </element>
+        <element id="library" level="project" name="jangaroo-api" />
+      </root>
+    </artifact>
+  </component>
   <component name="BuildJarProjectSettings">
     <option name="BUILD_JARS_ON_MAKE" value="false" />
   </component>
@@ -441,7 +452,7 @@
       <module name="jangaroo-0.9" />
       <option name="VM_PARAMETERS" value=" -Xms256m -Xmx768m -XX:MaxPermSize=156m -ea -agentlib:yjpagent=disablej2ee,disablecounts,disablealloc,sessionname=IntelliJIDEA" />
       <option name="PROGRAM_PARAMETERS" value="" />
-      <log_file path="$USER_HOME$/.IntelliJIdea15/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
+      <log_file path="$USER_HOME$/.IntelliJIdea14/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="51555" />
         <option name="TRANSPORT" value="0" />
@@ -463,9 +474,6 @@
   <component name="SvnBranchConfigurationManager">
     <option name="mySupportsUserInfoFilter" value="true" />
   </component>
-  <component name="TaskProjectConfiguration">
-    <server type="YouTrack" url="http://jangaroo.myjetbrains.com/youtrack" />
-  </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
   </component>
@@ -473,10 +481,10 @@
   <component name="libraryTable">
     <library name="jangaroo-api">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/3.0.1/jangaroo-compiler-api-3.0.1.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/3.0.1/exml-compiler-api-3.0.1.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/3.0.1/properties-compiler-api-3.0.1.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/3.0.1/jangaroo-utils-3.0.1.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.0-SNAPSHOT/jangaroo-compiler-api-2.1.0-SNAPSHOT.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.0-SNAPSHOT/exml-compiler-api-2.1.0-SNAPSHOT.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.0-SNAPSHOT/properties-compiler-api-2.1.0-SNAPSHOT.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.0-SNAPSHOT/jangaroo-utils-2.1.0-SNAPSHOT.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126.jar!/" />
       </CLASSES>

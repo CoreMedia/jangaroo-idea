@@ -83,7 +83,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
             injectedLanguagePlaces.addPlace(JavaScriptSupportLoader.ECMA_SCRIPT_L4, TextRange.from(1, text.length()), "import ", ";");
           } else {
             if (isBaseClassAttribute(attributeValue) || isDeclarationTypeAttribute(attributeValue) ||
-              isDeclarationValueAttribute(attributeValue) || CompilerUtils.isCodeExpression(text)) {
+              isDeclarationValueAttribute(attributeValue) || ExmlUtils.isCodeExpression(text)) {
               injectAS(injectedLanguagePlaces, exmlFile, module, exmlConfig, psiLanguageInjectionHost);
             }
           }
@@ -127,7 +127,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
           return;
         }
       }
-      boolean isCodeExpression = CompilerUtils.isCodeExpression(text);
+      boolean isCodeExpression = ExmlUtils.isCodeExpression(text);
 
       // find relative path to source root to determine package name:
       VirtualFile packageDir = exmlFile.getParent();
@@ -366,8 +366,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
         if (value == null) {
           code.append("undefined"); // prevent "variable might not have been initialized"!
         } else {
-          if (CompilerUtils.isCodeExpression(value)) {
-            value = CompilerUtils.getCodeExpression(value);
+          if (ExmlUtils.isCodeExpression(value)) {
+            value = ExmlUtils.getCodeExpression(value);
           }
           code.append(value);
         }

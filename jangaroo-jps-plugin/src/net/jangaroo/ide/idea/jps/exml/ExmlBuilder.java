@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.jps.exml;
 
+import com.intellij.flex.model.bc.JpsFlexBuildConfiguration;
 import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.exml.api.ExmlcException;
 import net.jangaroo.exml.config.ExmlConfiguration;
@@ -104,8 +105,9 @@ public class ExmlBuilder extends TargetBuilder<BuildRootDescriptor, JangarooBuil
   private void build(CompileContext context, List<File> propertiesFilesToCompile,
                      List<File> exmlFilesToCompile, JangarooBuildTarget moduleBuildTarget,
                      BuildOutputConsumer outputConsumer) throws IOException {
-    JpsModule module = moduleBuildTarget.getBC().getModule();
-    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(module, moduleBuildTarget.isTests());
+    JpsFlexBuildConfiguration bc = moduleBuildTarget.getBC();
+    JpsModule module = bc.getModule();
+    ExmlConfiguration exmlcConfiguration = getExmlcConfiguration(bc, moduleBuildTarget.isTests());
     if (exmlcConfiguration == null) {
       return; // no EXML Facet in this module: skip silently!
     }
@@ -214,13 +216,14 @@ public class ExmlBuilder extends TargetBuilder<BuildRootDescriptor, JangarooBuil
   }
 
   @Nullable
-  protected ExmlConfiguration getExmlcConfiguration(JpsModule module, boolean forTests) {
+  protected ExmlConfiguration getExmlcConfiguration(JpsFlexBuildConfiguration bc, boolean forTests) {
+    JpsModule module = bc.getModule();
     ExmlcConfigurationBean exmlcConfigurationBean = JangarooModelSerializerExtension.getExmlcSettings(module);
     if (exmlcConfigurationBean == null) {
       return null;
     }
     ExmlConfiguration exmlcConfig = new ExmlConfiguration();
-    JangarooBuilder.updateFileLocations(exmlcConfig, module, forTests, false);
+    JangarooBuilder.updateFileLocations(exmlcConfig, bc, forTests, false);
     copyFromBeanToConfiguration(exmlcConfigurationBean, exmlcConfig, forTests);
     return exmlcConfig;
   }
