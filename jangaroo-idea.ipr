@@ -59,6 +59,7 @@
       <entry name="?*.ft" />
       <entry name="META-INF/services/?*" />
       <entry name="META-INF/MANIFEST.MF" />
+      <entry name="?*.as.template" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">

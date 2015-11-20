@@ -36,6 +36,21 @@
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
     <findUsagesHandlerFactory implementation="net.jangaroo.ide.idea.exml.FindExmlUsagesHandlerFactory" order="FIRST"/>
     <gotoClassContributor implementation="net.jangaroo.ide.idea.exml.GotoExmlClassContributor"/>
+    <intentionAction>
+      <className>net.jangaroo.ide.idea.exml.intentions.ReplaceObjectLiteralByPropertyAssignment</className>
+      <category>ActionScript</category>
+      <descriptionDirectoryName>ReplaceObjectLiteralByPropertyAssignment</descriptionDirectoryName>
+    </intentionAction>
+    <intentionAction>
+      <className>net.jangaroo.ide.idea.exml.intentions.SquareBracketToDotMemberAccess</className>
+      <category>ActionScript</category>
+      <descriptionDirectoryName>SquareBracketToDotMemberAccess</descriptionDirectoryName>
+    </intentionAction>
+    <intentionAction>
+      <className>net.jangaroo.ide.idea.exml.intentions.DotToSquareBracketMemberAccess</className>
+      <category>ActionScript</category>
+      <descriptionDirectoryName>DotToSquareBracketMemberAccess</descriptionDirectoryName>
+    </intentionAction>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
