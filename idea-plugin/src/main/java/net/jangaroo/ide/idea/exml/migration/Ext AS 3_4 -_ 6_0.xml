@@ -25,6 +25,7 @@
   <entry oldName="ext.Container$findByType" newName="ext.Container$query" type="class" />
   <entry oldName="ext.Container$get" newName="ext.Container$getComponent" type="class" />
   <entry oldName="ext.util.Observable$purgeListeners" newName="ext.mixin.IObservable$clearListeners" type="class" />
+  <entry oldName="ext.util.Observable$observeClass" newName="ext.mixin.Observable$observe" type="class" />
   <entry oldName="ext.config.box" newName="ext.config.component" type="class" />
   <entry oldName="ext.config.editorgrid" newName="ext.config.grid" type="class" />
   <entry oldName="ext.BoxComponent" newName="ext.Component" type="class" />
