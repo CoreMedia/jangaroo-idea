@@ -210,7 +210,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   }
 
   @Override
-  protected void reimportFacet(IdeModifiableModelsProvider modelsProvider, Module module, MavenRootModelAdapter rootModel, JangarooFacet jangarooFacet, MavenProjectsTree mavenTree, MavenProject mavenProjectModel, MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName, List<MavenProjectsProcessorTask> postTasks) {
+  protected void reimportFacet(IdeModifiableModelsProvider modelsProvider, Module module,
+                               MavenRootModelAdapter rootModel, JangarooFacet jangarooFacet,
+                               MavenProjectsTree mavenTree, MavenProject mavenProjectModel,
+                               MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName,
+                               List<MavenProjectsProcessorTask> postTasks) {
     //System.out.println("reimportFacet called!");
     FlexProjectConfigurationEditor currentEditor = getCurrentFlexProjectConfigurationEditor();
     FlexProjectConfigurationEditor flexEditor = currentEditor == null

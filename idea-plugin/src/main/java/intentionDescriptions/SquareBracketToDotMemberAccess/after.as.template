@@ -1,0 +1,2 @@
+var str:String = "something";
+trace(str<spot>.length</spot>);

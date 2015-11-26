@@ -8,10 +8,10 @@ public class configClass {
   }
 
   public static function main():void {
-    var config = new configClass({
+    var config = new configClass(<spot>{
       foo: "FOO",
       bar: 12
-    });
+    });</spot>
     trace(config);
   }
 }

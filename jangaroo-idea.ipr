@@ -70,6 +70,7 @@
       <entry name="?*.ft" />
       <entry name="META-INF/services/?*" />
       <entry name="META-INF/MANIFEST.MF" />
+      <entry name="?*.as.template" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">
@@ -452,7 +453,7 @@
       <module name="jangaroo-0.9" />
       <option name="VM_PARAMETERS" value=" -Xms256m -Xmx768m -XX:MaxPermSize=156m -ea -agentlib:yjpagent=disablej2ee,disablecounts,disablealloc,sessionname=IntelliJIDEA" />
       <option name="PROGRAM_PARAMETERS" value="" />
-      <log_file path="$USER_HOME$/.IntelliJIdea14/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
+      <log_file path="$USER_HOME$/.IntelliJIdea15/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="51555" />
         <option name="TRANSPORT" value="0" />
