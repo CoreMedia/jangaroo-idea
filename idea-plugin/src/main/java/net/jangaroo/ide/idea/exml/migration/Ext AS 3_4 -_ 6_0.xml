@@ -58,5 +58,7 @@
   <entry oldName="ext.Spacer" newName="ext.Component" type="class" />
   <entry oldName="ext.config.spacer" newName="ext.config.component" type="class" />
   <entry oldName="ext.Shadow" newName="ext.dom.Shadow" type="class" />
+  <entry oldName="ext.util.ITextMetrics" newName="ext.util.TextMetrics" type="class" />
+  <entry oldName="ext.data.Field" newName="ext.data.DataField" type="class" />
 </migrationMap>
 
