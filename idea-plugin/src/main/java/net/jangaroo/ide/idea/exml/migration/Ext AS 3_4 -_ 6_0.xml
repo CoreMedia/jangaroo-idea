@@ -65,5 +65,6 @@
   <entry oldName="ext.config.listview" newName="ext.config.grid" type="class" />
   <entry oldName="ext.config.lvcolumn" newName="ext.config.gridcolumn" type="class" />
   <entry oldName="ext.config.singleslider" newName="ext.config.sliderfield" type="class" />
+  <entry oldName="ext.slider.SingleSlider" newName="ext.form.SliderField" type="class" />
 </migrationMap>
 
