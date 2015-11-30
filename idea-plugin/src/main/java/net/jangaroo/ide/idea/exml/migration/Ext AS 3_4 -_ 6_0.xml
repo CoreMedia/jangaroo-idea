@@ -64,5 +64,6 @@
   <entry oldName="ext.config.toolbarlayout" newName="ext.config.hboxlayout" type="class" />
   <entry oldName="ext.config.listview" newName="ext.config.grid" type="class" />
   <entry oldName="ext.config.lvcolumn" newName="ext.config.gridcolumn" type="class" />
+  <entry oldName="ext.config.singleslider" newName="ext.config.sliderfield" type="class" />
 </migrationMap>
 
