@@ -44,7 +44,6 @@
   <entry oldName="ext.tree.TreeNode" newName="ext.data.NodeInterface" type="class" />
   <entry oldName="ext.tree.DefaultSelectionModel" newName="ext.selection.TreeSelectionModel" type="class" />
   <entry oldName="ext.tree.MultiSelectionModel" newName="ext.selection.TreeSelectionModel" type="class" />
-  <entry oldName="ext.tree.TreeEditor" newName="ext.tree.TreePanel" type="class" />
   <entry oldName="ext.tree.TreeLoader" newName="ext.ComponentLoader" type="class" />
   <entry oldName="ext.tree.TreeSorter" newName="ext.util.Sorter" type="class" />
   <entry oldName="ext.tree.AsyncTreeNode" newName="ext.data.NodeInterface" type="class" />
