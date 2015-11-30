@@ -379,7 +379,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     // just to satisfy IDEA:
     buildConfiguration.setOutputFolder(mavenProjectModel.getBuildDirectory());
     buildConfiguration.setOutputFileName(mavenProjectModel.getFinalName() + ".swc");
-    configureExmlNamespaceForMxml(mavenProjectModel, buildConfiguration);
+    configureMxmlNamespaces(mavenProjectModel, buildConfiguration);
 
     ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
     String flexSdkName = null;
@@ -455,15 +455,25 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
   }
 
-  private void configureExmlNamespaceForMxml(MavenProject mavenProjectModel, ModifiableFlexBuildConfiguration buildConfiguration) {
-    Element exmlPluginConfiguration = mavenProjectModel.getPluginConfiguration(JANGAROO_GROUP_ID, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
-    if (exmlPluginConfiguration != null) {
-      Element configClassPackageElement = exmlPluginConfiguration.getChild("configClassPackage");
-      if (configClassPackageElement != null) {
-        String namespace = Exmlc.EXML_CONFIG_URI_PREFIX + configClassPackageElement.getValue();
-        List<Pair<String, String>> namespacesToManifests = new ArrayList<Pair<String, String>>();
-        addManifestNamespaceMapping(namespacesToManifests, namespace, mavenProjectModel.getSources());
-        addManifestNamespaceMapping(namespacesToManifests, namespace, mavenProjectModel.getTestSources());
+  private void configureMxmlNamespaces(MavenProject mavenProjectModel, ModifiableFlexBuildConfiguration buildConfiguration) {
+    List<Pair<String, String>> namespacesToManifests = new ArrayList<Pair<String, String>>();
+    Element jangarooPluginConfiguration = mavenProjectModel.getPluginConfiguration(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
+    if (jangarooPluginConfiguration != null) {
+      Element namespacesElement = jangarooPluginConfiguration.getChild("namespaces");
+      if (namespacesElement != null) {
+        for (Element namespaceElement : namespacesElement.getChildren("namespace")) {
+          Element uriElement = namespaceElement.getChild("uri");
+          if (uriElement != null) {
+            String namespace = uriElement.getTextTrim();
+            Element manifestElement = namespaceElement.getChild("manifest");
+            if (manifestElement != null) {
+              addManifestNamespaceMapping(namespacesToManifests, namespace, manifestElement.getTextTrim());
+            } else {
+              addManifestNamespaceMapping(namespacesToManifests, namespace, mavenProjectModel.getSources());
+              addManifestNamespaceMapping(namespacesToManifests, namespace, mavenProjectModel.getTestSources());
+            }
+          }
+        }
         String namespaceMapping = formatNamespaceMapping(namespacesToManifests);
         if (namespaceMapping != null) {
           Map<String, String> allOptions = Collections.singletonMap("compiler.namespaces.namespace", namespaceMapping);
@@ -476,11 +486,18 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   private void addManifestNamespaceMapping(List<Pair<String, String>> namespaceToManifest, String namespace, List<String> directories) {
     for (String directory : directories) {
       String manifestFileName = directory.replace('\\', '/') + "/manifest.xml";
-      if (new File(manifestFileName).exists()) {
-        namespaceToManifest.add(Pair.create(namespace, manifestFileName));
+      if (addManifestNamespaceMapping(namespaceToManifest, namespace, manifestFileName)) {
         break;
       }
     }
+  }
+
+  private boolean addManifestNamespaceMapping(List<Pair<String, String>> namespaceToManifest, String namespace, String manifestFileName) {
+    if (new File(manifestFileName).exists()) {
+      namespaceToManifest.add(Pair.create(namespace, manifestFileName));
+      return true;
+    }
+    return false;
   }
 
   private String formatNamespaceMapping(List<Pair<String, String>> namespacesToManifests) {
