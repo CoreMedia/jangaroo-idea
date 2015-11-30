@@ -63,5 +63,6 @@
   <entry oldName="ext.config.gridview" newName="ext.config.tableview" type="class" />
   <entry oldName="ext.config.toolbarlayout" newName="ext.config.hboxlayout" type="class" />
   <entry oldName="ext.config.listview" newName="ext.config.grid" type="class" />
+  <entry oldName="ext.config.lvcolumn" newName="ext.config.gridcolumn" type="class" />
 </migrationMap>
 
