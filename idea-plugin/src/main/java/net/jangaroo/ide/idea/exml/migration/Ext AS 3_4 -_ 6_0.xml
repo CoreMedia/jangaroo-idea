@@ -60,5 +60,6 @@
   <entry oldName="ext.Shadow" newName="ext.dom.Shadow" type="class" />
   <entry oldName="ext.util.ITextMetrics" newName="ext.util.TextMetrics" type="class" />
   <entry oldName="ext.data.Field" newName="ext.data.DataField" type="class" />
+  <entry oldName="ext.config.gridview" newName="ext.config.tableview" type="class" />
 </migrationMap>
 
