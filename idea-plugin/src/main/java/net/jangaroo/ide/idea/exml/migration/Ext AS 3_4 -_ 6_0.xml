@@ -57,5 +57,6 @@
   <entry oldName="ext.util.IJSON" newName="ext.SJSON" type="class" />
   <entry oldName="ext.Spacer" newName="ext.Component" type="class" />
   <entry oldName="ext.config.spacer" newName="ext.config.component" type="class" />
+  <entry oldName="ext.Shadow" newName="ext.dom.Shadow" type="class" />
 </migrationMap>
 
