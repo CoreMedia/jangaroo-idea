@@ -65,5 +65,10 @@
   <entry oldName="ext.config.lvcolumn" newName="ext.config.gridcolumn" type="class" />
   <entry oldName="ext.config.singleslider" newName="ext.config.sliderfield" type="class" />
   <entry oldName="ext.slider.SingleSlider" newName="ext.form.SliderField" type="class" />
+  <entry oldName="ext.state.Manager" newName="ext.state.StateManager" type="class" />
+  <entry oldName="ext.config.treesorter" newName="ext.config.sorter" type="class" />
+  <entry oldName="ext.menu.DateMenu" newName="ext.menu.DatePickerMenu" type="class" />
+  <entry oldName="ext.grid.CheckboxSelectionModel" newName="ext.selection.CheckboxSelectionModel" type="class" />
+  <entry oldName="ext.Container$findById" newName="ext.Container$queryById" type="class" />
 </migrationMap>
 
