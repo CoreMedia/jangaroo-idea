@@ -66,5 +66,6 @@
   <entry oldName="ext.config.singleslider" newName="ext.config.sliderfield" type="class" />
   <entry oldName="ext.slider.SingleSlider" newName="ext.form.SliderField" type="class" />
   <entry oldName="ext.state.Manager" newName="ext.state.StateManager" type="class" />
+  <entry oldName="ext.config.treesorter" newName="ext.config.sorter" type="class" />
 </migrationMap>
 
