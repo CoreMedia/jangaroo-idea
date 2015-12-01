@@ -181,9 +181,10 @@ public class WebResourcesImporter extends MavenImporter {
     }
 
     private static Set<Module> collectTransitiveJarDependencies(Module warModule, Set<Module> dependencies) {
-      dependencies.add(warModule);
-      for (Module directDependency : ModuleRootManager.getInstance(warModule).getDependencies()) {
-        collectTransitiveJarDependencies(directDependency, dependencies);
+      if (dependencies.add(warModule)) {
+        for (Module directDependency : ModuleRootManager.getInstance(warModule).getDependencies()) {
+          collectTransitiveJarDependencies(directDependency, dependencies);
+        }
       }
       return dependencies;
     }
