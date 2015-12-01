@@ -68,5 +68,6 @@
   <entry oldName="ext.state.Manager" newName="ext.state.StateManager" type="class" />
   <entry oldName="ext.config.treesorter" newName="ext.config.sorter" type="class" />
   <entry oldName="ext.menu.DateMenu" newName="ext.menu.DatePickerMenu" type="class" />
+  <entry oldName="ext.grid.CheckboxSelectionModel" newName="ext.selection.CheckboxSelectionModel" type="class" />
 </migrationMap>
 
