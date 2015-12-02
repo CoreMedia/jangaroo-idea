@@ -70,5 +70,6 @@
   <entry oldName="ext.menu.DateMenu" newName="ext.menu.DatePickerMenu" type="class" />
   <entry oldName="ext.grid.CheckboxSelectionModel" newName="ext.selection.CheckboxSelectionModel" type="class" />
   <entry oldName="ext.Container$findById" newName="ext.Container$queryById" type="class" />
+  <entry oldName="ext.util.DateUtil$parseDate" newName="ext.util.SDateUtil$parse" type="class" />
 </migrationMap>
 
