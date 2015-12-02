@@ -49,6 +49,7 @@ import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
 import net.jangaroo.ide.idea.Utils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +63,10 @@ public class FlexMigrationUtil {
 
   public static UsageInfo[] findPackageUsages(Project project, PsiMigration migration, String qName) {
     PsiPackage aPackage = findOrCreatePackage(project, migration, qName);
-
+    if (aPackage == null) {
+      LOG.warn("Migration map contains unknown package: " + qName);
+      return new UsageInfo[0];
+    }
     return findRefs(project, aPackage);
   }
 
@@ -113,6 +117,10 @@ public class FlexMigrationUtil {
 
   public static UsageInfo[] findClassOrMemberUsages(Project project, String qName) {
     PsiElement psiElement = findClassOrMember(project, qName, true);
+    if (psiElement == null) {
+      LOG.warn("Migration map contains unknown class or member: " + qName);
+      return new UsageInfo[0];
+    }
     return findRefs(project, psiElement);
   }
 
@@ -150,7 +158,7 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  private static UsageInfo[] findRefs(final Project project, final PsiElement psiElement) {
+  private static UsageInfo[] findRefs(final Project project, @NotNull final PsiElement psiElement) {
     final ArrayList<UsageInfo> results = new ArrayList<UsageInfo>();
     GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
     for (PsiReference usage : ReferencesSearch.search(psiElement, projectScope, false)) {
@@ -187,6 +195,10 @@ public class FlexMigrationUtil {
   public static void doClassMigration(Project project, String newQName, UsageInfo[] usages) {
     try {
       PsiElement classOrMember = findClassOrMember(project, newQName, false);
+      if (classOrMember == null) {
+        LOG.warn("Migration map contains unknown new class or member: " + newQName);
+        return;
+      }
       JSFunction setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
 
       // rename all references
@@ -206,7 +218,6 @@ public class FlexMigrationUtil {
                 ((JSFunction)resolvedElement).getKind() == JSFunction.FunctionKind.SETTER) {
                 currentClassOrMember = setter;
               }
-              assert currentClassOrMember != null;
 
               try {
                 referenceElement.bindToElement(currentClassOrMember);
