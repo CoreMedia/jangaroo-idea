@@ -385,13 +385,13 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     String flexSdkName = null;
     for (Sdk flexSdk : FlexSdkUtils.getFlexSdks()) {
       flexSdkName = flexSdk.getName();
-      if ("FlexSDK4.6".equals(flexSdkName)) {
+      if ("FlExtAS".equalsIgnoreCase(flexSdkName)) {
         break;
       }
     }
     if (flexSdkName == null) {
       Notifications.Bus.notify(new Notification("jangaroo", "No Flex SDK",
-        "To use MXML, you have to have some Flex SDK installed.", NotificationType.WARNING));
+        "To use Jangaroo MXML, you have to have the mock Flex SDK FlExtAS installed.", NotificationType.WARNING));
     } else {
       modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flexSdkName));
       modifiableDependencies.setFrameworkLinkage(LinkageType.External);
