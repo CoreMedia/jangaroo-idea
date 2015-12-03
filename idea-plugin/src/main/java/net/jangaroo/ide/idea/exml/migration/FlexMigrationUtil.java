@@ -17,11 +17,13 @@ package net.jangaroo.ide.idea.exml.migration;
 
 import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSFunctionExpression;
 import com.intellij.lang.javascript.psi.JSNamedElement;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSReferenceExpression;
+import com.intellij.lang.javascript.psi.JSStatement;
 import com.intellij.lang.javascript.psi.JSType;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
@@ -42,9 +44,11 @@ import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiMigration;
 import com.intellij.psi.PsiPackage;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.impl.source.xml.XmlAttributeReference;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
+import com.intellij.refactoring.migration.MigrationMapEntry;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
@@ -102,12 +106,22 @@ public class FlexMigrationUtil {
     for (PsiReference reference : element.getReferences()) {
       if (reference instanceof JSTextReference || reference instanceof MxmlTagNameReference || reference instanceof XmlAttributeReference) {
         if (reference.getRangeInElement().equals(range)) {
-          if (reference instanceof XmlAttributeReference) {
-            reference.handleElementRename(((JSNamedElement)bindTo).getName());
-          } else if (reference instanceof MxmlTagNameReference) {
-            reference.bindToElement(bindTo.getContainingFile());
+          if (bindTo == null) {
+            PsiElement referenceElement = reference.getElement();
+            PsiElement maybeWhitespace = referenceElement.getPrevSibling();
+            if (maybeWhitespace instanceof PsiWhiteSpace) {
+              maybeWhitespace.getParent().deleteChildRange(maybeWhitespace, referenceElement);
+            } else {
+              referenceElement.delete();
+            }
           } else {
-            reference.bindToElement(bindTo);
+            if (reference instanceof XmlAttributeReference) {
+              reference.handleElementRename(((JSNamedElement)bindTo).getName());
+            } else if (reference instanceof MxmlTagNameReference) {
+              reference.bindToElement(bindTo.getContainingFile());
+            } else {
+              reference.bindToElement(bindTo);
+            }
           }
           break;
         }
@@ -192,12 +206,17 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  public static void doClassMigration(Project project, String newQName, UsageInfo[] usages) {
+  public static void doClassMigration(Project project, MigrationMapEntry migrationMapEntry, UsageInfo[] usages) {
+    String oldQName = migrationMapEntry.getOldName();
+    String newQName = migrationMapEntry.getNewName();
     try {
-      PsiElement classOrMember = findClassOrMember(project, newQName, false);
-      if (classOrMember == null) {
-        LOG.warn("Migration map contains unknown new class or member: " + newQName);
-        return;
+      PsiElement classOrMember = null;
+      if (!newQName.isEmpty()) {
+        classOrMember = findClassOrMember(project, newQName, false);
+        if (classOrMember == null) {
+          LOG.warn("Migration map contains unknown new class or member: " + newQName);
+          return;
+        }
       }
       JSFunction setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
 
@@ -205,7 +224,7 @@ public class FlexMigrationUtil {
       for (UsageInfo usage : usages) {
         if (usage instanceof FlexMigrationProcessor.MigrationUsageInfo) {
           final FlexMigrationProcessor.MigrationUsageInfo usageInfo = (FlexMigrationProcessor.MigrationUsageInfo)usage;
-          if (Comparing.equal(newQName, usageInfo.mapEntry.getNewName())) {
+          if (Comparing.equal(oldQName, usageInfo.mapEntry.getOldName())) {
             PsiElement element = usage.getElement();
             if (element == null || !element.isValid()) continue;
             if (element instanceof JSReferenceExpression) {
@@ -220,7 +239,18 @@ public class FlexMigrationUtil {
               }
 
               try {
-                referenceElement.bindToElement(currentClassOrMember);
+                if (currentClassOrMember == null) {
+                  PsiElement current = referenceElement;
+                  while (current instanceof JSElement) {
+                    if (current instanceof JSStatement) {
+                      replaceByComment(project, "EXT6_GONE:" + oldQName, current);
+                      break;
+                    }
+                    current = current.getParent();
+                  }
+                } else {
+                  referenceElement.bindToElement(currentClassOrMember);
+                }
               } catch (Throwable t) {
                 t.printStackTrace();
               }
@@ -238,6 +268,12 @@ public class FlexMigrationUtil {
       // should not happen!
       LOG.error(e);
     }
+  }
+
+  public static PsiElement replaceByComment(Project project, String todoComment, PsiElement element) {
+    String escapedBlockComments = element.getText().replaceAll("/[*]", "/!*").replaceAll("[*]/", "*!/");
+    String commentText = String.format("/* %s %s*/", todoComment, escapedBlockComments);
+    return element.replace((PsiElement)JSChangeUtil.createJSTreeFromText(project, commentText));
   }
 
   private static void adjustOverriddenMethodSignature(Project project, JSFunction referenceFunction, JSFunction functionToMigrate) {

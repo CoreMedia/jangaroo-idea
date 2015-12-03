@@ -128,7 +128,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
           FlexMigrationUtil.doPackageMigration(myProject, psiMigration, entry.getNewName(), usages);
         }
         if (entry.getType() == MigrationMapEntry.CLASS) {
-          FlexMigrationUtil.doClassMigration(myProject, entry.getNewName(), usages);
+          FlexMigrationUtil.doClassMigration(myProject, entry, usages);
         }
       }
 
