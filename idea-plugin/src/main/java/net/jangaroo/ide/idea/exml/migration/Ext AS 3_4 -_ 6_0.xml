@@ -71,5 +71,12 @@
   <entry oldName="ext.grid.CheckboxSelectionModel" newName="ext.selection.CheckboxSelectionModel" type="class" />
   <entry oldName="ext.Container$findById" newName="ext.Container$queryById" type="class" />
   <entry oldName="ext.util.DateUtil$parseDate" newName="ext.util.SDateUtil$parse" type="class" />
+  <entry oldName="ext.config.panel$bodyCssClass" newName="ext.config.panel$bodyCls" type="class" />
+  <entry oldName="ext.config.box$autoWidth" newName="" type="class" />
+  <entry oldName="ext.config.box$autoHeight" newName="" type="class" />
+  <entry oldName="ext.config.container$hideBorders" newName="" type="class" />
+  <entry oldName="ext.config.button$buttonSelector" newName="" type="class" />
+  <entry oldName="ext.config.container$forceLayout" newName="" type="class" />
+  <entry oldName="ext.config.gridview$autoFill" newName="" type="class" />
 </migrationMap>
 
