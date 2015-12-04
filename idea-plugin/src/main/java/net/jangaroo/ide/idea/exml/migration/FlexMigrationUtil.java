@@ -71,7 +71,7 @@ public class FlexMigrationUtil {
       LOG.warn("Migration map contains unknown package: " + qName);
       return new UsageInfo[0];
     }
-    return findRefs(project, aPackage);
+    return findRefs(project, aPackage, true);
   }
 
   public static void doPackageMigration(Project project, PsiMigration migration, String newQName, UsageInfo[] usages) {
@@ -135,7 +135,7 @@ public class FlexMigrationUtil {
       LOG.warn("Migration map contains unknown class or member: " + qName);
       return new UsageInfo[0];
     }
-    return findRefs(project, psiElement);
+    return findRefs(project, psiElement, true);
   }
 
   public static PsiElement findClassOrMember(Project project, String qName, boolean searchInOldLibrary) {
@@ -172,7 +172,8 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  private static UsageInfo[] findRefs(final Project project, @NotNull final PsiElement psiElement) {
+  private static UsageInfo[] findRefs(final Project project, @NotNull final PsiElement psiElement,
+                                      boolean findRefsOfSetter) {
     final ArrayList<UsageInfo> results = new ArrayList<UsageInfo>();
     GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
     for (PsiReference usage : ReferencesSearch.search(psiElement, projectScope, false)) {
@@ -182,14 +183,21 @@ public class FlexMigrationUtil {
     }
 
     if (psiElement instanceof JSFunction) {
-      JSFunction setter = findSetter((JSFunction)psiElement);
-      if (setter != null) {
-        results.addAll(Arrays.asList(findRefs(project, setter)));
+      if (findRefsOfSetter) {
+        JSFunction setter = findSetter((JSFunction)psiElement);
+        if (setter != null) {
+          results.addAll(Arrays.asList(findRefs(project, setter, false)));
+        }
       }
       Query<JSFunction> jsFunctions = JSFunctionsSearch.searchOverridingFunctions((JSFunction)psiElement, true);
       for (JSFunction jsFunction : jsFunctions) {
-        if (jsFunction.isValid() && jsFunction.getContainingFile().getVirtualFile().isWritable()) {
-          results.add(new UsageInfo(jsFunction));
+        if (jsFunction.isValid()) {
+          if (jsFunction.getContainingFile().getVirtualFile().isWritable()) {
+            results.add(new UsageInfo(jsFunction));
+          } else {
+            // make sure to find usages of overridden functions as well, ReferencesSearch did not return these
+            results.addAll(Arrays.asList(findRefs(project, jsFunction, false)));
+          }
         }
       }
     }
@@ -219,6 +227,9 @@ public class FlexMigrationUtil {
         }
       }
       JSFunction setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
+
+      // migrate import usages first in order to avoid unnecessary fully-qualified names
+      Arrays.sort(usages, ImportUsageFirstComparator.INSTANCE);
 
       // rename all references
       for (UsageInfo usage : usages) {
