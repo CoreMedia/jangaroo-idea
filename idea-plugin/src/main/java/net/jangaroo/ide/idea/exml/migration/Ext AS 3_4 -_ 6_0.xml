@@ -80,5 +80,7 @@
   <entry oldName="ext.config.gridview$autoFill" newName="" type="class" />
   <entry oldName="ext.Component$addClass" newName="ext.Component$addCls" type="class" />
   <entry oldName="ext.Component$removeClass" newName="ext.Component$removeCls" type="class" />
+  <entry oldName="ext.menu.Menu$addItem" newName="ext.Container$add" type="class" />
+  <entry oldName="ext.menu.Menu$addMenuItem" newName="ext.Container$add" type="class" />
+  <entry oldName="ext.util.Observable$addEvents" newName="" type="class" />
 </migrationMap>
-
