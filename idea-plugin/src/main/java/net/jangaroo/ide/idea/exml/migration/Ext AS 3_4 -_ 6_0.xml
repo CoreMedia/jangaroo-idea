@@ -78,5 +78,7 @@
   <entry oldName="ext.config.button$buttonSelector" newName="" type="class" />
   <entry oldName="ext.config.container$forceLayout" newName="" type="class" />
   <entry oldName="ext.config.gridview$autoFill" newName="" type="class" />
+  <entry oldName="ext.Component$addClass" newName="ext.Component$addCls" type="class" />
+  <entry oldName="ext.Component$removeClass" newName="ext.Component$removeCls" type="class" />
 </migrationMap>
 
