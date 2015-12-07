@@ -84,4 +84,10 @@
   <entry oldName="ext.menu.Menu$addMenuItem" newName="ext.Container$add" type="class" />
   <entry oldName="ext.util.Observable$addEvents" newName="" type="class" />
   <entry oldName="ext.config.combo$fieldClass" newName="ext.config.combo$fieldCls" type="class" />
+  <entry oldName="ext.menu.Menu$addMenuItem" newName="ext.Container$add" type="class" />
+  <entry oldName="ext.menu.Menu$addItem" newName="ext.Container$add" type="class" />
+  <entry oldName="ext.config.gridcolumn$id_" newName="ext.config.gridcolumn$stateId" type="class" />
+  <entry oldName="ext.config.treedropzone" newName="ext.config.dropzone" type="class" />
+  <entry oldName="ext.config.compositefield" newName="ext.config.fieldcontainer" type="class" />
+  <entry oldName="ext.form.CompositeField" newName="import ext.form.FieldContainer" type="class" />
 </migrationMap>
