@@ -147,15 +147,14 @@ public class FlexMigrationUtil {
     String[] parts = qName.split("\\$", 2);
     String className = parts[0];
     String member = parts.length == 2 ? parts[1] : null;
-    JSQualifiedNamedElement aClass = findJSClass(project, className, searchInOldLibrary);
-    if (aClass != null && member != null) {
-      return findMember((JSClass)aClass, member, functionKind, searchInOldLibrary);
+    JSQualifiedNamedElement aClass = findJSQualifiedNamedElement(project, className, searchInOldLibrary);
+    if (aClass instanceof JSClass && member != null) {
+      return findMember((JSClass)aClass, member, functionKind);
     }
     return aClass;
   }
 
-  public static JSFunction findMember(JSClass aClass, String member, JSFunction.FunctionKind functionKind,
-                                      boolean searchInOldLibrary) {
+  public static JSFunction findMember(JSClass aClass, String member, JSFunction.FunctionKind functionKind) {
     while (aClass != null) {
       JSFunction method = functionKind == null
         ? aClass.findFunctionByName(member)
@@ -167,7 +166,7 @@ public class FlexMigrationUtil {
       if (superClasses.length == 0) {
         break;
       }
-      aClass = findJSClass(aClass.getProject(), superClasses[0].getQualifiedName(), searchInOldLibrary);
+      aClass = superClasses[0];
     }
     return null;
   }
@@ -184,7 +183,7 @@ public class FlexMigrationUtil {
 
     if (psiElement instanceof JSFunction) {
       if (findRefsOfSetter) {
-        JSFunction setter = findSetter((JSFunction)psiElement, true);
+        JSFunction setter = findSetter((JSFunction)psiElement);
         if (setter != null) {
           results.addAll(Arrays.asList(findRefs(project, setter, false)));
         }
@@ -204,11 +203,11 @@ public class FlexMigrationUtil {
     return results.toArray(new UsageInfo[results.size()]);
   }
 
-  private static JSFunction findSetter(JSFunction getter, boolean searchInOldLibrary) {
+  private static JSFunction findSetter(JSFunction getter) {
     if (getter.getKind() == JSFunction.FunctionKind.GETTER) {
       PsiElement parent = getter.getParent();
       if (parent instanceof JSClass) {
-        return findMember((JSClass)parent, getter.getName(), JSFunction.FunctionKind.SETTER, searchInOldLibrary);
+        return findMember((JSClass)parent, getter.getName(), JSFunction.FunctionKind.SETTER);
       }
     }
     return null;
@@ -226,7 +225,7 @@ public class FlexMigrationUtil {
           return;
         }
       }
-      JSFunction setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember, false) : null;
+      JSFunction setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
 
       // migrate import usages first in order to avoid unnecessary fully-qualified names
       Arrays.sort(usages, ImportUsageFirstComparator.INSTANCE);
@@ -326,7 +325,7 @@ public class FlexMigrationUtil {
     }
   }
 
-  static JSClass findJSClass(Project project, final String qName, boolean searchInOldLibrary) {
+  static JSQualifiedNamedElement findJSQualifiedNamedElement(Project project, final String qName, boolean searchInOldLibrary) {
     //Library library = LibraryTablesRegistrar.getInstance().getLibraryTable(project).getLibraryByName("Maven: net.jangaroo:ext-as:2.0.15-SNAPSHOT-joo");
     ModuleManager moduleManager = ModuleManager.getInstance(project);
     Module extAs6Module = moduleManager.findModuleByName("jangaroo-ext-as"); // todo use "external library" (dependency) instead of module
@@ -341,13 +340,13 @@ public class FlexMigrationUtil {
     }
     Iterator<JSQualifiedNamedElement> jsQualifiedNamedElements = Utils.getActionScriptClassResolver().findElementsByQName(qName, scope).iterator();
     // use the last occurrence, as the source occurrences come first and do not return any usages:
-    JSClass jsClass = null;
+    JSQualifiedNamedElement jsElement = null;
     while (jsQualifiedNamedElements.hasNext()) {
       JSQualifiedNamedElement next = jsQualifiedNamedElements.next();
-      if (next instanceof JSClass && next.isValid()) {
-        jsClass = (JSClass)next;
+      if (next.isValid()) {
+        jsElement = next;
       }
     }
-    return jsClass;
+    return jsElement;
   }
 }
