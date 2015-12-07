@@ -89,5 +89,5 @@
   <entry oldName="ext.config.gridcolumn$id_" newName="ext.config.gridcolumn$stateId" type="class" />
   <entry oldName="ext.config.treedropzone" newName="ext.config.dropzone" type="class" />
   <entry oldName="ext.config.compositefield" newName="ext.config.fieldcontainer" type="class" />
-  <entry oldName="ext.form.CompositeField" newName="import ext.form.FieldContainer" type="class" />
+  <entry oldName="ext.form.CompositeField" newName="ext.form.FieldContainer" type="class" />
 </migrationMap>
