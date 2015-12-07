@@ -90,4 +90,6 @@
   <entry oldName="ext.config.treedropzone" newName="ext.config.dropzone" type="class" />
   <entry oldName="ext.config.compositefield" newName="ext.config.fieldcontainer" type="class" />
   <entry oldName="ext.form.CompositeField" newName="ext.form.FieldContainer" type="class" />
+  <entry oldName="ext.slider.Tip" newName="ext.slider.SliderTip" type="class" />
+  <entry oldName="ext.slider.Thumb" newName="ext.Base" type="class" />
 </migrationMap>
