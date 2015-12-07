@@ -144,7 +144,7 @@ public class FlexMigrationUtil {
 
   public static PsiElement findClassOrMember(Project project, String qName, JSFunction.FunctionKind functionKind,
                                              boolean searchInOldLibrary) {
-    String[] parts = qName.split("\\$", 2);
+    String[] parts = qName.split("#", 2);
     String className = parts[0];
     String member = parts.length == 2 ? parts[1] : null;
     JSQualifiedNamedElement aClass = findJSQualifiedNamedElement(project, className, searchInOldLibrary);

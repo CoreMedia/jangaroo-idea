@@ -2,30 +2,30 @@
 <migrationMap>
   <name value="Ext AS 3.4 -&gt; 6.0" />
   <description value="" />
-  <entry oldName="ext.Container$doLayout" newName="ext.Component$updateLayout" type="class" />
-  <entry oldName="ext.dd.IDDScrollConfig$animate" newName="ext.dd.IDDScrollConfig$animated" type="class" />
-  <entry oldName="ext.Panel$bwrap" newName="ext.Panel$body" type="class" />
-  <entry oldName="ext.config.box$margins" newName="ext.config.component$margin" type="class" />
-  <entry oldName="ext.config.accordionlayout$animate" newName="ext.config.accordionlayout$animated" type="class" />
-  <entry oldName="ext.grid.RowSelectionModel$selectRow" newName="ext.selection.SelectionModel$select" type="class" />
-  <entry oldName="ext.grid.RowSelectionModel$getSelections" newName="ext.selection.SelectionModel$getSelection" type="class" />
-  <entry oldName="ext.grid.RowSelectionModel$clearSelections" newName="ext.selection.SelectionModel$deselectAll" type="class" />
-  <entry oldName="ext.config.store$sortInfo" newName="ext.config.abstractstore$sorters" type="class" />
-  <entry oldName="ext.config.combo$mode" newName="ext.config.combo$queryMode" type="class" />
-  <entry oldName="ext.form.ComboBox$mode" newName="ext.form.ComboBox$queryMode" type="class" />
-  <entry oldName="ext.Button$setIconClass" newName="ext.Button$setIconCls" type="class" />
-  <entry oldName="ext.Element$addClass" newName="ext.Element$addCls" type="class" />
-  <entry oldName="ext.Element$removeClass" newName="ext.Element$removeCls" type="class" />
-  <entry oldName="ext.Element$hasClass" newName="ext.Element$hasCls" type="class" />
-  <entry oldName="ext.Element$getComputedHeight" newName="ext.Element$getHeight" type="class" />
-  <entry oldName="ext.Element$getComputedWidth" newName="ext.Element$getWidth" type="class" />
-  <entry oldName="ext.tree.TreeNode$destroy" newName="ext.data.NodeInterface$erase" type="class" />
-  <entry oldName="ext.util.IFunctions$createDelegate" newName="ext.util.SFunctions$bind" type="class" />
-  <entry oldName="ext.Container$findBy" newName="ext.Container$queryBy" type="class" />
-  <entry oldName="ext.Container$findByType" newName="ext.Container$query" type="class" />
-  <entry oldName="ext.Container$get" newName="ext.Container$getComponent" type="class" />
-  <entry oldName="ext.util.Observable$purgeListeners" newName="ext.mixin.IObservable$clearListeners" type="class" />
-  <entry oldName="ext.util.Observable$observeClass" newName="ext.util.Observable$observe" type="class" />
+  <entry oldName="ext.Container#doLayout" newName="ext.Component#updateLayout" type="class" />
+  <entry oldName="ext.dd.IDDScrollConfig#animate" newName="ext.dd.IDDScrollConfig#animated" type="class" />
+  <entry oldName="ext.Panel#bwrap" newName="ext.Panel#body" type="class" />
+  <entry oldName="ext.config.box#margins" newName="ext.config.component#margin" type="class" />
+  <entry oldName="ext.config.accordionlayout#animate" newName="ext.config.accordionlayout#animated" type="class" />
+  <entry oldName="ext.grid.RowSelectionModel#selectRow" newName="ext.selection.SelectionModel#select" type="class" />
+  <entry oldName="ext.grid.RowSelectionModel#getSelections" newName="ext.selection.SelectionModel#getSelection" type="class" />
+  <entry oldName="ext.grid.RowSelectionModel#clearSelections" newName="ext.selection.SelectionModel#deselectAll" type="class" />
+  <entry oldName="ext.config.store#sortInfo" newName="ext.config.abstractstore#sorters" type="class" />
+  <entry oldName="ext.config.combo#mode" newName="ext.config.combo#queryMode" type="class" />
+  <entry oldName="ext.form.ComboBox#mode" newName="ext.form.ComboBox#queryMode" type="class" />
+  <entry oldName="ext.Button#setIconClass" newName="ext.Button#setIconCls" type="class" />
+  <entry oldName="ext.Element#addClass" newName="ext.Element#addCls" type="class" />
+  <entry oldName="ext.Element#removeClass" newName="ext.Element#removeCls" type="class" />
+  <entry oldName="ext.Element#hasClass" newName="ext.Element#hasCls" type="class" />
+  <entry oldName="ext.Element#getComputedHeight" newName="ext.Element#getHeight" type="class" />
+  <entry oldName="ext.Element#getComputedWidth" newName="ext.Element#getWidth" type="class" />
+  <entry oldName="ext.tree.TreeNode#destroy" newName="ext.data.NodeInterface#erase" type="class" />
+  <entry oldName="ext.util.IFunctions#createDelegate" newName="ext.util.SFunctions#bind" type="class" />
+  <entry oldName="ext.Container#findBy" newName="ext.Container#queryBy" type="class" />
+  <entry oldName="ext.Container#findByType" newName="ext.Container#query" type="class" />
+  <entry oldName="ext.Container#get" newName="ext.Container#getComponent" type="class" />
+  <entry oldName="ext.util.Observable#purgeListeners" newName="ext.mixin.IObservable#clearListeners" type="class" />
+  <entry oldName="ext.util.Observable#observeClass" newName="ext.util.Observable#observe" type="class" />
   <entry oldName="ext.config.box" newName="ext.config.component" type="class" />
   <entry oldName="ext.config.editorgrid" newName="ext.config.grid" type="class" />
   <entry oldName="ext.BoxComponent" newName="ext.Component" type="class" />
@@ -69,24 +69,24 @@
   <entry oldName="ext.config.treesorter" newName="ext.config.sorter" type="class" />
   <entry oldName="ext.menu.DateMenu" newName="ext.menu.DatePickerMenu" type="class" />
   <entry oldName="ext.grid.CheckboxSelectionModel" newName="ext.selection.CheckboxSelectionModel" type="class" />
-  <entry oldName="ext.Container$findById" newName="ext.Container$queryById" type="class" />
-  <entry oldName="ext.util.DateUtil$parseDate" newName="ext.util.SDateUtil$parse" type="class" />
-  <entry oldName="ext.config.panel$bodyCssClass" newName="ext.config.panel$bodyCls" type="class" />
-  <entry oldName="ext.config.box$autoWidth" newName="" type="class" />
-  <entry oldName="ext.config.box$autoHeight" newName="" type="class" />
-  <entry oldName="ext.config.container$hideBorders" newName="" type="class" />
-  <entry oldName="ext.config.button$buttonSelector" newName="" type="class" />
-  <entry oldName="ext.config.container$forceLayout" newName="" type="class" />
-  <entry oldName="ext.config.gridview$autoFill" newName="" type="class" />
-  <entry oldName="ext.Component$addClass" newName="ext.Component$addCls" type="class" />
-  <entry oldName="ext.Component$removeClass" newName="ext.Component$removeCls" type="class" />
-  <entry oldName="ext.menu.Menu$addItem" newName="ext.Container$add" type="class" />
-  <entry oldName="ext.menu.Menu$addMenuItem" newName="ext.Container$add" type="class" />
-  <entry oldName="ext.util.Observable$addEvents" newName="" type="class" />
-  <entry oldName="ext.config.combo$fieldClass" newName="ext.config.combo$fieldCls" type="class" />
-  <entry oldName="ext.menu.Menu$addMenuItem" newName="ext.Container$add" type="class" />
-  <entry oldName="ext.menu.Menu$addItem" newName="ext.Container$add" type="class" />
-  <entry oldName="ext.config.gridcolumn$id_" newName="ext.config.gridcolumn$stateId" type="class" />
+  <entry oldName="ext.Container#findById" newName="ext.Container#queryById" type="class" />
+  <entry oldName="ext.util.DateUtil#parseDate" newName="ext.util.SDateUtil#parse" type="class" />
+  <entry oldName="ext.config.panel#bodyCssClass" newName="ext.config.panel#bodyCls" type="class" />
+  <entry oldName="ext.config.box#autoWidth" newName="" type="class" />
+  <entry oldName="ext.config.box#autoHeight" newName="" type="class" />
+  <entry oldName="ext.config.container#hideBorders" newName="" type="class" />
+  <entry oldName="ext.config.button#buttonSelector" newName="" type="class" />
+  <entry oldName="ext.config.container#forceLayout" newName="" type="class" />
+  <entry oldName="ext.config.gridview#autoFill" newName="" type="class" />
+  <entry oldName="ext.Component#addClass" newName="ext.Component#addCls" type="class" />
+  <entry oldName="ext.Component#removeClass" newName="ext.Component#removeCls" type="class" />
+  <entry oldName="ext.menu.Menu#addItem" newName="ext.Container#add" type="class" />
+  <entry oldName="ext.menu.Menu#addMenuItem" newName="ext.Container#add" type="class" />
+  <entry oldName="ext.util.Observable#addEvents" newName="" type="class" />
+  <entry oldName="ext.config.combo#fieldClass" newName="ext.config.combo#fieldCls" type="class" />
+  <entry oldName="ext.menu.Menu#addMenuItem" newName="ext.Container#add" type="class" />
+  <entry oldName="ext.menu.Menu#addItem" newName="ext.Container#add" type="class" />
+  <entry oldName="ext.config.gridcolumn#id_" newName="ext.config.gridcolumn#stateId" type="class" />
   <entry oldName="ext.config.treedropzone" newName="ext.config.dropzone" type="class" />
   <entry oldName="ext.config.compositefield" newName="ext.config.fieldcontainer" type="class" />
   <entry oldName="ext.form.CompositeField" newName="ext.form.FieldContainer" type="class" />
