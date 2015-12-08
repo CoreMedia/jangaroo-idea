@@ -328,7 +328,7 @@ public class FlexMigrationUtil {
   static JSQualifiedNamedElement findJSQualifiedNamedElement(Project project, final String qName, boolean searchInOldLibrary) {
     //Library library = LibraryTablesRegistrar.getInstance().getLibraryTable(project).getLibraryByName("Maven: net.jangaroo:ext-as:2.0.15-SNAPSHOT-joo");
     ModuleManager moduleManager = ModuleManager.getInstance(project);
-    Module extAs6Module = moduleManager.findModuleByName("jangaroo-ext-as"); // todo use "external library" (dependency) instead of module
+    Module extAs6Module = moduleManager.findModuleByName("ext-as"); // todo use "external library" (dependency) instead of module
     GlobalSearchScope scope;
     if (extAs6Module == null) {
       scope = GlobalSearchScope.allScope(project);
