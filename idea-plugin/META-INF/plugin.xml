@@ -3,12 +3,12 @@
   <name>Jangaroo 0.9</name>
   <id>net.jangaroo.idea.0.9</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 15.
+    A plugin for using the Jangaroo Open Source tools version 0.9 in IntelliJ IDEA 14.
   </description>
   <version>0.37-SNAPSHOT</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
-  <idea-version since-build="IU-143.381.42"/>
+  <idea-version since-build="IU-139.1117"/>
 
   <depends>JavaScript</depends>
   <depends>JavaScriptDebugger</depends>

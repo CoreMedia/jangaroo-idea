@@ -21,7 +21,6 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.options.ConfigurationException;
@@ -31,6 +30,7 @@ import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.impl.libraries.LibraryEx;
+import com.intellij.openapi.roots.impl.libraries.LibraryTableBase;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
@@ -56,6 +56,7 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.importing.FacetImporter;
+import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenPlugin;
@@ -210,7 +211,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   }
 
   @Override
-  protected void reimportFacet(IdeModifiableModelsProvider modelsProvider, Module module,
+  protected void reimportFacet(MavenModifiableModelsProvider modelsProvider, Module module,
                                MavenRootModelAdapter rootModel, JangarooFacet jangarooFacet,
                                MavenProjectsTree mavenTree, MavenProject mavenProjectModel,
                                MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName,
@@ -339,12 +340,12 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   }
 
   @NotNull
-  private static FlexProjectConfigurationEditor createFlexProjectConfigurationEditor(IdeModifiableModelsProvider modelsProvider, final Module module, final MavenRootModelAdapter rootModel) {
+  private static FlexProjectConfigurationEditor createFlexProjectConfigurationEditor(MavenModifiableModelsProvider modelsProvider, final Module module, final MavenRootModelAdapter rootModel) {
     FlexProjectConfigurationEditor flexEditor;
-    LibraryTable.ModifiableModel projectLibrariesModel = modelsProvider.getModifiableProjectLibrariesModel();
+    LibraryTable.ModifiableModel projectLibrariesModel = modelsProvider.getProjectLibrariesModel();
     final Map<Module, ModifiableRootModel> moduleToModifiableModel = Collections.singletonMap(module, rootModel.getRootModel());
     flexEditor = new FlexProjectConfigurationEditor(module.getProject(),
-      FlexProjectConfigurationEditor.createModelProvider(moduleToModifiableModel, projectLibrariesModel, null)) {
+      FlexProjectConfigurationEditor.createModelProvider(moduleToModifiableModel, (LibraryTableBase.ModifiableModelEx)projectLibrariesModel, null)) {
       @Nullable
       protected Module findModuleWithBC(final BuildConfigurationEntry bcEntry) {
         // don't check BC presence here because corresponding BC may appear later in next import cycle
@@ -362,7 +363,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
   }
 
-  private void doConfigure(FlexProjectConfigurationEditor flexEditor, IdeModifiableModelsProvider modelsProvider,
+  private void doConfigure(FlexProjectConfigurationEditor flexEditor, MavenModifiableModelsProvider modelsProvider,
                            Module module, MavenProject mavenProjectModel) {
     String buildConfigurationName = mavenProjectModel.getMavenId().getArtifactId();
     if (buildConfigurationName == null) {
@@ -419,7 +420,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
           if (library == null) {
             VirtualFile jooApiDir = artifactJarFile.findFileByRelativePath("META-INF/joo-api");
             if (jooApiDir != null) {
-              library = modelsProvider.getModifiableProjectLibrariesModel().createLibrary(libraryName, FlexLibraryType.FLEX_LIBRARY);
+              library = modelsProvider.getProjectLibrariesModel().createLibrary(libraryName, FlexLibraryType.FLEX_LIBRARY);
               final LibraryEx.ModifiableModelEx libraryModifiableModel = ((LibraryEx.ModifiableModelEx)library.getModifiableModel());
               libraryModifiableModel.setProperties(FlexLibraryType.FLEX_LIBRARY.createDefaultProperties());
               libraryModifiableModel.addRoot(artifactJarFile, OrderRootType.CLASSES);

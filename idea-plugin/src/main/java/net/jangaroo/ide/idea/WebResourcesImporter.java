@@ -4,7 +4,6 @@ import com.intellij.javaee.facet.JavaeeFacet;
 import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
 import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.CompilerModuleExtension;
@@ -22,6 +21,7 @@ import com.intellij.packaging.impl.elements.DirectoryCopyPackagingElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.importing.MavenImporter;
+import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.project.MavenConsole;
 import org.jetbrains.idea.maven.project.MavenEmbeddersManager;
@@ -66,12 +66,12 @@ public class WebResourcesImporter extends MavenImporter {
   }
 
   @Override
-  public void preProcess(Module module, MavenProject mavenProject, MavenProjectChanges changes, IdeModifiableModelsProvider modifiableModelsProvider) {
+  public void preProcess(Module module, MavenProject mavenProject, MavenProjectChanges changes, MavenModifiableModelsProvider modifiableModelsProvider) {
     // nothing to do
   }
 
   @Override
-  public void process(IdeModifiableModelsProvider modifiableModelsProvider, Module module, MavenRootModelAdapter rootModel, MavenProjectsTree mavenModel, MavenProject mavenProject, MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName, List<MavenProjectsProcessorTask> postTasks) {
+  public void process(MavenModifiableModelsProvider modifiableModelsProvider, Module module, MavenRootModelAdapter rootModel, MavenProjectsTree mavenModel, MavenProject mavenProject, MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName, List<MavenProjectsProcessorTask> postTasks) {
     //System.out.println("reimportFacet called!");
     postTasks.add(new UnpackJarResourcesIntoExplodedWebArtifactsTask(module));
   }
