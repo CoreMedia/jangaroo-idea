@@ -18,6 +18,7 @@ package net.jangaroo.ide.idea.exml.migration;
 import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.JSElement;
+import com.intellij.lang.javascript.psi.JSExpression;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSFunctionExpression;
 import com.intellij.lang.javascript.psi.JSNamedElement;
@@ -25,6 +26,8 @@ import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSReferenceExpression;
 import com.intellij.lang.javascript.psi.JSStatement;
 import com.intellij.lang.javascript.psi.JSType;
+import com.intellij.lang.javascript.psi.JSVariable;
+import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
 import com.intellij.lang.javascript.psi.impl.JSChangeUtil;
@@ -259,7 +262,12 @@ public class FlexMigrationUtil {
                     current = current.getParent();
                   }
                 } else {
-                  referenceElement.bindToElement(currentClassOrMember);
+                  PsiReference variableReference = getVariableReference(referenceElement);
+                  if (variableReference != null && isStaticFunction(currentClassOrMember)) {
+                    variableReference.bindToElement(currentClassOrMember.getParent());
+                  } else {
+                    referenceElement.bindToElement(currentClassOrMember);
+                  }
                 }
               } catch (Throwable t) {
                 t.printStackTrace();
@@ -348,5 +356,19 @@ public class FlexMigrationUtil {
       }
     }
     return jsElement;
+  }
+
+  private static PsiReference getVariableReference(JSReferenceExpression referenceElement) {
+    JSExpression qualifier = referenceElement.getQualifier();
+    return qualifier instanceof PsiReference && ((PsiReference)qualifier).resolve() instanceof JSVariable
+      ? (PsiReference)qualifier : null;
+  }
+
+  private static boolean isStaticFunction(PsiElement element) {
+    if (!(element instanceof JSFunction)) {
+      return false;
+    }
+    JSAttributeList attributeList = ((JSFunction) element).getAttributeList();
+    return attributeList != null && attributeList.hasModifier(JSAttributeList.ModifierType.STATIC);
   }
 }
