@@ -1,18 +1,3 @@
-/*
- * Copyright 2000-2011 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package net.jangaroo.ide.idea.exml.migration;
 
 import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
@@ -33,10 +18,11 @@ import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
 import com.intellij.lang.javascript.psi.impl.JSChangeUtil;
 import com.intellij.lang.javascript.psi.impl.JSTextReference;
 import com.intellij.lang.javascript.search.JSFunctionsSearch;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.Computable;
@@ -132,25 +118,26 @@ public class FlexMigrationUtil {
     }
   }
 
-  public static UsageInfo[] findClassOrMemberUsages(Project project, String qName) {
-    PsiElement psiElement = findClassOrMember(project, qName, true);
+  public static UsageInfo[] findClassOrMemberUsages(Project project, GlobalSearchScope searchScope, String qName) {
+    PsiElement psiElement = findClassOrMember(searchScope, qName);
     if (psiElement == null) {
-      LOG.warn("Migration map contains unknown class or member: " + qName);
+      Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
+        "Migration map contains source entry that does not exist in Ext AS 3.4: " + qName,
+        NotificationType.WARNING));
       return new UsageInfo[0];
     }
     return findRefs(project, psiElement, true);
   }
 
-  public static PsiElement findClassOrMember(Project project, String qName, boolean searchInOldLibrary) {
-    return findClassOrMember(project, qName, null, searchInOldLibrary);
+  public static PsiElement findClassOrMember(GlobalSearchScope searchScope, String qName) {
+    return findClassOrMember(searchScope, qName, null);
   }
 
-  public static PsiElement findClassOrMember(Project project, String qName, JSFunction.FunctionKind functionKind,
-                                             boolean searchInOldLibrary) {
+  public static PsiElement findClassOrMember(GlobalSearchScope searchScope, String qName, JSFunction.FunctionKind functionKind) {
     String[] parts = qName.split("#", 2);
     String className = parts[0];
     String member = parts.length == 2 ? parts[1] : null;
-    JSQualifiedNamedElement aClass = findJSQualifiedNamedElement(project, className, searchInOldLibrary);
+    JSQualifiedNamedElement aClass = findJSQualifiedNamedElement(searchScope, className);
     if (aClass instanceof JSClass && member != null) {
       return findMember((JSClass)aClass, member, functionKind);
     }
@@ -216,15 +203,18 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  public static void doClassMigration(Project project, MigrationMapEntry migrationMapEntry, UsageInfo[] usages) {
+  public static void doClassMigration(Project project, GlobalSearchScope newSearchScope,
+                                      MigrationMapEntry migrationMapEntry, UsageInfo[] usages) {
     String oldQName = migrationMapEntry.getOldName();
     String newQName = migrationMapEntry.getNewName();
     try {
       PsiElement classOrMember = null;
       if (!newQName.isEmpty()) {
-        classOrMember = findClassOrMember(project, newQName, false);
+        classOrMember = findClassOrMember(newSearchScope, newQName);
         if (classOrMember == null) {
-          LOG.warn("Migration map contains unknown new class or member: " + newQName);
+          Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
+            "Migration map contains target entry that does not exist in Ext AS 6: " + newQName,
+            NotificationType.WARNING));
           return;
         }
       }
@@ -333,20 +323,8 @@ public class FlexMigrationUtil {
     }
   }
 
-  static JSQualifiedNamedElement findJSQualifiedNamedElement(Project project, final String qName, boolean searchInOldLibrary) {
-    //Library library = LibraryTablesRegistrar.getInstance().getLibraryTable(project).getLibraryByName("Maven: net.jangaroo:ext-as:2.0.15-SNAPSHOT-joo");
-    ModuleManager moduleManager = ModuleManager.getInstance(project);
-    Module extAs6Module = moduleManager.findModuleByName("ext-as"); // todo use "external library" (dependency) instead of module
-    GlobalSearchScope scope;
-    if (extAs6Module == null) {
-      scope = GlobalSearchScope.allScope(project);
-    } else {
-      GlobalSearchScope extAs6ModuleScope = GlobalSearchScope.moduleScope(extAs6Module);
-      scope = searchInOldLibrary
-        ? GlobalSearchScope.notScope(extAs6ModuleScope)
-        : extAs6ModuleScope;
-    }
-    Iterator<JSQualifiedNamedElement> jsQualifiedNamedElements = Utils.getActionScriptClassResolver().findElementsByQName(qName, scope).iterator();
+  static JSQualifiedNamedElement findJSQualifiedNamedElement(GlobalSearchScope searchScope, final String qName) {
+    Iterator<JSQualifiedNamedElement> jsQualifiedNamedElements = Utils.getActionScriptClassResolver().findElementsByQName(qName, searchScope).iterator();
     // use the last occurrence, as the source occurrences come first and do not return any usages:
     JSQualifiedNamedElement jsElement = null;
     while (jsQualifiedNamedElements.hasNext()) {
