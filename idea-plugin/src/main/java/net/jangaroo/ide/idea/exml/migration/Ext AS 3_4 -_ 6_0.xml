@@ -188,12 +188,10 @@
   <entry oldName="ext.IMessageBox#CANCEL" newName="ext.window.MessageBoxWindow#CANCEL" type="class"/>
   <entry oldName="ext.IMessageBox#ERROR" newName="ext.window.MessageBoxWindow#ERROR" type="class"/>
   <entry oldName="ext.IMessageBox#INFO" newName="ext.window.MessageBoxWindow#INFO" type="class"/>
-  <entry oldName="ext.IMessageBox#NO" newName="ext.window.MessageBoxWindow#NO" type="class"/>
   <entry oldName="ext.IMessageBox#OK" newName="ext.window.MessageBoxWindow#OK" type="class"/>
   <entry oldName="ext.IMessageBox#OKCANCEL" newName="ext.window.MessageBoxWindow#OKCANCEL" type="class"/>
   <entry oldName="ext.IMessageBox#QUESTION" newName="ext.window.MessageBoxWindow#QUESTION" type="class"/>
   <entry oldName="ext.IMessageBox#WARNING" newName="ext.window.MessageBoxWindow#WARNING" type="class"/>
-  <entry oldName="ext.IMessageBox#YES" newName="ext.window.MessageBoxWindow#YES" type="class"/>
   <entry oldName="ext.IMessageBox#YESNO" newName="ext.window.MessageBoxWindow#YESNO" type="class"/>
   <entry oldName="ext.IMessageBox#YESNOCANCEL" newName="ext.window.MessageBoxWindow#YESNOCANCEL" type="class"/>
 
