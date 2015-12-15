@@ -96,6 +96,8 @@
   <entry oldName="ext.EventObject" newName="ext.event.Event" type="class"/>
   <entry oldName="ext.EventObjectImpl" newName="ext.event.Event" type="class"/>
   <entry oldName="ext.IEventObject" newName="ext.event.Event" type="class"/>
+  <entry oldName="ext.IEventObject#getPageX" newName="ext.event.Event#getX" type="class"/>
+  <entry oldName="ext.IEventObject#getPageY" newName="ext.event.Event#getY" type="class"/>
   <entry oldName="ext.IEventObject#A" newName="ext.event.Event#A" type="class"/>
   <entry oldName="ext.IEventObject#ALT" newName="ext.event.Event#ALT" type="class"/>
   <entry oldName="ext.IEventObject#B" newName="ext.event.Event#B" type="class"/>
