@@ -3,50 +3,49 @@ package net.jangaroo.ide.idea.exml.migration;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.InvalidDataException;
-import com.intellij.openapi.util.JDOMUtil;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.search.FilenameIndex;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.refactoring.migration.MigrationMap;
 import com.intellij.refactoring.migration.MigrationMapEntry;
-import org.jdom.Element;
-import org.jdom.JDOMException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
- * Loads the map to migrate ActionScript/MXML.
+ * Loads the map to migrate ActionScript.
  */
 public class FlexMigrationMapLoader {
 
-  private static final Logger LOG = Logger.getInstance(FlexMigrationManager.class);
-
-  private static final String MIGRATION_MAP_ROOT = "migrationMap";
-  private static final String ENTRY = "entry";
-  private static final String NAME = "name";
-  private static final String OLD_NAME = "oldName";
-  private static final String NEW_NAME = "newName";
-  private static final String DESCRIPTION = "description";
-  private static final String VALUE = "value";
-  private static final String TYPE = "type";
-  private static final String PACKAGE_TYPE = "package";
-  private static final String CLASS_TYPE = "class";
-  private static final String RECURSIVE = "recursive";
-
-  static MigrationMap loadMigrationMap(String migrationMap) {
-    InputStream is = FlexMigrationManager.class.getResourceAsStream(migrationMap);
-    if (is == null) {
-      error("Migration map '" + migrationMap + "' not found in class path.", null);
+  static MigrationMap loadMigrationMap(Project project, GlobalSearchScope ext6SearchScope, String migrationMap) {
+    Collection<VirtualFile> candidates = FilenameIndex.getVirtualFilesByName(project, migrationMap, ext6SearchScope);
+    if (candidates.isEmpty()) {
+      error("Migration map '" + migrationMap + "' not found in " + ext6SearchScope.getDisplayName(), null);
       return null;
     }
+    if (candidates.size() > 1) {
+      warn("Found multiple migration maps '" + migrationMap + "' in " + ext6SearchScope.getDisplayName()
+        + ". Will use the first of " + candidates);
+    }
+
+    InputStream is;
     try {
-      return loadMigrationMap(JDOMUtil.load(is));
-    } catch (JDOMException e) {
-      error("Error loading migration map '" + migrationMap + '\'', e);
+      is = candidates.iterator().next().getInputStream();
     } catch (IOException e) {
-      error("Error loading migration map '" + migrationMap + '\'', e);
-    } catch (InvalidDataException e) {
-      error("Invalid data in migration map '" + migrationMap + '\'', e);
+      error("Failed to load migration map '" + migrationMap + "' from '" + ext6SearchScope.getDisplayName(), e);
+      return null;
+    }
+    Properties properties = new Properties();
+    try {
+      properties.load(is);
+      return loadMigrationMap(properties);
+    } catch (IOException e) {
+      error("Failed to load migration map '" + migrationMap + "' from '" + ext6SearchScope.getDisplayName(), e);
     } finally {
       try {
         is.close();
@@ -57,60 +56,30 @@ public class FlexMigrationMapLoader {
     return null;
   }
 
+  private static void warn(String message) {
+    notify(message, null, NotificationType.WARNING);
+  }
+
   private static void error(String message, Exception cause) {
-    LOG.error(message, cause);
+    notify(message, cause, NotificationType.ERROR);
+  }
+
+  private static void notify(String message, Exception cause, NotificationType type) {
     String s = cause == null ? message : message +  ": " + cause.toString();
-    Notifications.Bus.notify(new Notification("jangaroo", "Cannot load migration map for ActionScript and MXML code",
-      s, NotificationType.ERROR));
+    Notifications.Bus.notify(new Notification("jangaroo", "Ext AS migration map",
+      s, type));
   }
 
+  private static MigrationMap loadMigrationMap(Properties properties) {
+    // sort the keys for reproducible results
+    Set<String> keys = new TreeSet<String>(properties.stringPropertyNames());
 
-  private static MigrationMap loadMigrationMap(Element root) throws InvalidDataException {
-    if (!MIGRATION_MAP_ROOT.equals(root.getName())){
-      throw new InvalidDataException();
-    }
     MigrationMap map = new MigrationMap();
-
-    for (Element node : root.getChildren()) {
-      if (NAME.equals(node.getName())) {
-        String name = node.getAttributeValue(VALUE);
-        map.setName(name);
-      }
-      if (DESCRIPTION.equals(node.getName())) {
-        String description = node.getAttributeValue(VALUE);
-        map.setDescription(description);
-      }
-
-      if (ENTRY.equals(node.getName())) {
-        MigrationMapEntry entry = new MigrationMapEntry();
-        String oldName = getRequiredAttribute(node, OLD_NAME);
-        entry.setOldName(oldName);
-        String newName = getRequiredAttribute(node, NEW_NAME);
-        entry.setNewName(newName);
-        String typeStr = getRequiredAttribute(node, TYPE);
-        entry.setType(MigrationMapEntry.CLASS);
-        if (typeStr.equals(PACKAGE_TYPE)) {
-          entry.setType(MigrationMapEntry.PACKAGE);
-          String isRecursiveStr = node.getAttributeValue(RECURSIVE);
-          if ("true".equals(isRecursiveStr)) {
-            entry.setRecursive(true);
-          } else {
-            entry.setRecursive(false);
-          }
-        }
-        map.addEntry(entry);
-      }
+    for (String source : keys) {
+      String target = properties.getProperty(source);
+      map.addEntry(new MigrationMapEntry(source, target, MigrationMapEntry.CLASS, false));
     }
-
     return map;
-  }
-
-  private static String getRequiredAttribute(Element node, String name) throws InvalidDataException {
-    String value = node.getAttributeValue(name);
-    if (value == null) {
-      throw new InvalidDataException("Element '" + node.getName() + "' without attribute '" + name + '\'');
-    }
-    return value;
   }
 
 }

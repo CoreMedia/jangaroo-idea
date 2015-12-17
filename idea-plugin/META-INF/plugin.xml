@@ -69,9 +69,6 @@
     <component>
       <implementation-class>net.jangaroo.ide.idea.JangarooProjectComponent</implementation-class>
     </component>
-    <component>
-      <implementation-class>net.jangaroo.ide.idea.exml.migration.FlexMigrationManager</implementation-class>
-    </component>
   </project-components>
 
   <actions>

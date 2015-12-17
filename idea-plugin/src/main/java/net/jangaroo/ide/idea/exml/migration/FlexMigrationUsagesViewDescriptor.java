@@ -8,17 +8,6 @@ import com.intellij.usageView.UsageViewDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 class FlexMigrationUsagesViewDescriptor implements UsageViewDescriptor {
-  private final boolean isSearchInComments;
-  private final MigrationMap myMigrationMap;
-
-  public FlexMigrationUsagesViewDescriptor(MigrationMap migrationMap, boolean isSearchInComments) {
-    myMigrationMap = migrationMap;
-    this.isSearchInComments = isSearchInComments;
-  }
-
-  public MigrationMap getMigrationMap() {
-    return myMigrationMap;
-  }
 
   @NotNull
   public PsiElement[] getElements() {
@@ -30,7 +19,7 @@ class FlexMigrationUsagesViewDescriptor implements UsageViewDescriptor {
   }
 
   public String getCodeReferencesText(int usagesCount, int filesCount) {
-    return RefactoringBundle.message("references.in.code.to.elements.from.migration.map", myMigrationMap.getName(),
+    return RefactoringBundle.message("references.in.code.to.elements.from.migration.map", "Ext AS",
                                      UsageViewBundle.getReferencesString(usagesCount, filesCount));
   }
 
@@ -39,7 +28,7 @@ class FlexMigrationUsagesViewDescriptor implements UsageViewDescriptor {
   }
 
   public String getInfo() {
-    return RefactoringBundle.message("press.the.do.migrate.button", myMigrationMap.getName());
+    return RefactoringBundle.message("press.the.do.migrate.button", "Ext AS");
   }
 
 }

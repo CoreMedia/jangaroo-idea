@@ -34,28 +34,31 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
 
   private static final String EXT3_LIBRARY = "Maven: net.jangaroo:ext-as:2.1.0-SNAPSHOT";
   private static final String EXT6_LIBRARY = "Maven: net.jangaroo:ext-as:6.0.1-1-SNAPSHOT";
+  private static final String MIGRATION_MAP = "ext-as-3.4-migration-map.properties";
 
-  private final MigrationMap myMigrationMap;
+  private MigrationMap migrationMap;
   private static final String REFACTORING_NAME = RefactoringBundle.message("migration.title");
   private PsiMigration myPsiMigration;
 
   private GlobalSearchScope ext3SearchScope;
   private GlobalSearchScope ext6SearchScope;
 
-  public FlexMigrationProcessor(Project project, MigrationMap migrationMap) {
+  public FlexMigrationProcessor(Project project) {
     super(project);
-    myMigrationMap = migrationMap;
     myPsiMigration = startMigration(project);
   }
 
   @NotNull
   protected UsageViewDescriptor createUsageViewDescriptor(UsageInfo[] usages) {
-    return new FlexMigrationUsagesViewDescriptor(myMigrationMap, false);
+    return new FlexMigrationUsagesViewDescriptor();
   }
 
   private PsiMigration startMigration(Project project) {
     ext3SearchScope = loadLibraryScope(project, EXT3_LIBRARY);
     ext6SearchScope = loadLibraryScope(project, EXT6_LIBRARY);
+    if (ext6SearchScope != null) {
+      migrationMap = FlexMigrationMapLoader.loadMigrationMap(myProject, ext6SearchScope, MIGRATION_MAP);
+    }
     return PsiMigrationManager.getInstance(project).startMigration();
   }
 
@@ -80,12 +83,12 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   @NotNull
   protected UsageInfo[] findUsages() {
     try {
-      if (myMigrationMap == null || ext3SearchScope == null) {
+      if (migrationMap == null || ext3SearchScope == null) {
         return UsageInfo.EMPTY_ARRAY;
       }
       ArrayList<UsageInfo> usagesVector = new ArrayList<UsageInfo>();
-      for (int i = 0; i < myMigrationMap.getEntryCount(); i++) {
-        MigrationMapEntry entry = myMigrationMap.getEntryAt(i);
+      for (int i = 0; i < migrationMap.getEntryCount(); i++) {
+        MigrationMapEntry entry = migrationMap.getEntryAt(i);
         UsageInfo[] usages;
         if (entry.getType() == MigrationMapEntry.PACKAGE) {
           usages = FlexMigrationUtil.findPackageUsages(myProject, myPsiMigration, entry.getOldName());
@@ -124,8 +127,8 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
     LocalHistoryAction a = LocalHistory.getInstance().startAction(getCommandName());
 
     try {
-      for (int i = 0; i < myMigrationMap.getEntryCount(); i++) {
-        MigrationMapEntry entry = myMigrationMap.getEntryAt(i);
+      for (int i = 0; i < migrationMap.getEntryCount(); i++) {
+        MigrationMapEntry entry = migrationMap.getEntryAt(i);
         if (entry.getType() == MigrationMapEntry.PACKAGE) {
           FlexMigrationUtil.doPackageMigration(myProject, psiMigration, entry.getNewName(), usages);
         }
