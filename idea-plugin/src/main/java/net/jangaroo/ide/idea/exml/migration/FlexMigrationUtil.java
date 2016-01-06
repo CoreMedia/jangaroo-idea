@@ -1,12 +1,10 @@
 package net.jangaroo.ide.idea.exml.migration;
 
-import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpression;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSFunctionExpression;
-import com.intellij.lang.javascript.psi.JSNamedElement;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSReferenceExpression;
 import com.intellij.lang.javascript.psi.JSStatement;
@@ -28,7 +26,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiWhiteSpace;
-import com.intellij.psi.impl.source.xml.XmlAttributeReference;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.refactoring.migration.MigrationMapEntry;
@@ -51,7 +48,8 @@ public class FlexMigrationUtil {
   private static void bindNonJavaReference(PsiElement bindTo, PsiElement element, UsageInfo usage) {
     final TextRange range = usage.getRangeInElement();
     for (PsiReference reference : element.getReferences()) {
-      if (reference instanceof JSTextReference || reference instanceof MxmlTagNameReference || reference instanceof XmlAttributeReference) {
+      if (reference instanceof JSTextReference) {
+        // e.g. references in @see api documentation
         if (reference.getRangeInElement().equals(range)) {
           if (bindTo == null) {
             PsiElement referenceElement = reference.getElement();
@@ -62,13 +60,7 @@ public class FlexMigrationUtil {
               referenceElement.delete();
             }
           } else {
-            if (reference instanceof XmlAttributeReference) {
-              reference.handleElementRename(((JSNamedElement)bindTo).getName());
-            } else if (reference instanceof MxmlTagNameReference) {
-              reference.bindToElement(bindTo.getContainingFile());
-            } else {
-              reference.bindToElement(bindTo);
-            }
+            reference.bindToElement(bindTo);
           }
           break;
         }
