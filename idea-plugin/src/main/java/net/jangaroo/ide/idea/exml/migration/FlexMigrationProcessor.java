@@ -89,13 +89,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
       ArrayList<UsageInfo> usagesVector = new ArrayList<UsageInfo>();
       for (int i = 0; i < migrationMap.getEntryCount(); i++) {
         MigrationMapEntry entry = migrationMap.getEntryAt(i);
-        UsageInfo[] usages;
-        if (entry.getType() == MigrationMapEntry.PACKAGE) {
-          usages = FlexMigrationUtil.findPackageUsages(myProject, myPsiMigration, entry.getOldName());
-        }
-        else {
-          usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, ext3SearchScope, entry.getOldName());
-        }
+        UsageInfo[] usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, ext3SearchScope, entry.getOldName());
 
         for (UsageInfo usage : usages) {
           usagesVector.add(new MigrationUsageInfo(usage, entry));
@@ -129,9 +123,6 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
     try {
       for (int i = 0; i < migrationMap.getEntryCount(); i++) {
         MigrationMapEntry entry = migrationMap.getEntryAt(i);
-        if (entry.getType() == MigrationMapEntry.PACKAGE) {
-          FlexMigrationUtil.doPackageMigration(myProject, psiMigration, entry.getNewName(), usages);
-        }
         if (entry.getType() == MigrationMapEntry.CLASS) {
           FlexMigrationUtil.doClassMigration(myProject, searchScope, entry, usages);
         }

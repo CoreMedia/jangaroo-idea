@@ -21,17 +21,11 @@ import com.intellij.lang.javascript.search.JSFunctionsSearch;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiJavaCodeReferenceElement;
-import com.intellij.psi.PsiMigration;
-import com.intellij.psi.PsiPackage;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.impl.source.xml.XmlAttributeReference;
@@ -52,42 +46,6 @@ public class FlexMigrationUtil {
   private static final Logger LOG = Logger.getInstance("#com.intellij.refactoring.migration.MigrationUtil");
 
   private FlexMigrationUtil() {
-  }
-
-  public static UsageInfo[] findPackageUsages(Project project, PsiMigration migration, String qName) {
-    PsiPackage aPackage = findOrCreatePackage(project, migration, qName);
-    if (aPackage == null) {
-      LOG.warn("Migration map contains unknown package: " + qName);
-      return new UsageInfo[0];
-    }
-    return findRefs(project, aPackage, true);
-  }
-
-  public static void doPackageMigration(Project project, PsiMigration migration, String newQName, UsageInfo[] usages) {
-    try {
-      PsiPackage aPackage = findOrCreatePackage(project, migration, newQName);
-
-      // rename all references
-      for (UsageInfo usage : usages) {
-        if (usage instanceof FlexMigrationProcessor.MigrationUsageInfo) {
-          final FlexMigrationProcessor.MigrationUsageInfo usageInfo = (FlexMigrationProcessor.MigrationUsageInfo)usage;
-          if (Comparing.equal(newQName, usageInfo.mapEntry.getNewName())) {
-            PsiElement element = usage.getElement();
-            if (element == null || !element.isValid()) continue;
-            if (element instanceof PsiJavaCodeReferenceElement) {
-              ((PsiJavaCodeReferenceElement)element).bindToElement(aPackage);
-            }
-            else {
-              bindNonJavaReference(aPackage, element, usage);
-            }
-          }
-        }
-      }
-    }
-    catch (IncorrectOperationException e) {
-      // should not happen!
-      LOG.error(e);
-    }
   }
 
   private static void bindNonJavaReference(PsiElement bindTo, PsiElement element, UsageInfo usage) {
@@ -306,20 +264,6 @@ public class FlexMigrationUtil {
           parameter.replace(correctedParameter);
         }
       }
-    }
-  }
-
-  static PsiPackage findOrCreatePackage(Project project, final PsiMigration migration, final String qName) {
-    PsiPackage aPackage = JavaPsiFacade.getInstance(project).findPackage(qName);
-    if (aPackage != null) {
-      return aPackage;
-    }
-    else {
-      return ApplicationManager.getApplication().runWriteAction(new Computable<PsiPackage>() {
-        public PsiPackage compute() {
-          return migration.createPackage(qName);
-        }
-      });
     }
   }
 
