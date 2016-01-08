@@ -79,7 +79,7 @@ public class FlexMigrationMapLoader {
     }
     addEntriesReplaceConfigClasses(map, projectExt3Scope);
 
-    LOG.info("Migration Map: " + map);
+    LOG.info("Migration Map: (" + map.size() + " entries): " + map);
 
     MigrationMap result = new MigrationMap();
     for (Map.Entry<String, String> entry : map.entrySet()) {

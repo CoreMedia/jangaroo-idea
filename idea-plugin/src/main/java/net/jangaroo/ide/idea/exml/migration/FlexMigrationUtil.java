@@ -23,6 +23,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.JavaProjectRootsUtil;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
@@ -118,7 +119,8 @@ public class FlexMigrationUtil {
                                       boolean findRefsOfSetter) {
     final ArrayList<UsageInfo> results = new ArrayList<UsageInfo>();
     GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
-    for (PsiReference usage : ReferencesSearch.search(psiElement, projectScope, false)) {
+    GlobalSearchScope scope = JavaProjectRootsUtil.getScopeWithoutGeneratedSources(projectScope, project);
+    for (PsiReference usage : ReferencesSearch.search(psiElement, scope, false)) {
       if (!(usage instanceof MxmlTagNameReference) && !(usage instanceof XmlAttributeReference)
         && !usage.getElement().getContainingFile().getName().endsWith(".exml")) {
         results.add(new UsageInfo(usage));
@@ -188,12 +190,13 @@ public class FlexMigrationUtil {
             if (element instanceof JSReferenceExpression) {
               final JSReferenceExpression referenceElement = (JSReferenceExpression)element;
 
-              PsiElement resolvedElement = referenceElement.resolve();
               PsiElement currentClassOrMember = classOrMember;
-              if (setter != null &&
-                resolvedElement instanceof JSFunction &&
-                ((JSFunction)resolvedElement).getKind() == JSFunction.FunctionKind.SETTER) {
-                currentClassOrMember = setter;
+              if (setter != null) {
+                PsiElement resolvedElement = referenceElement.resolve();
+                if (resolvedElement instanceof JSFunction &&
+                  ((JSFunction)resolvedElement).getKind() == JSFunction.FunctionKind.SETTER) {
+                  currentClassOrMember = setter;
+                }
               }
 
               try {
