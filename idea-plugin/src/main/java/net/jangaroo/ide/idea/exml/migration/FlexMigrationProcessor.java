@@ -18,6 +18,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMigration;
 import com.intellij.psi.impl.migration.PsiMigrationManager;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.ProjectScope;
 import com.intellij.refactoring.BaseRefactoringProcessor;
 import com.intellij.refactoring.RefactoringBundle;
 import com.intellij.refactoring.RefactoringHelper;
@@ -28,9 +29,10 @@ import com.intellij.usageView.UsageViewDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 class FlexMigrationProcessor extends BaseRefactoringProcessor {
-  private static final Logger LOG = Logger.getInstance("#net.jangaroo.ide.idea.exml.migration.FlexMigrationProcessor");
+  private static final Logger LOG = Logger.getInstance(FlexMigrationProcessor.class);
 
   private static final String EXT3_LIBRARY = "Maven: net.jangaroo:ext-as:2.1.0-SNAPSHOT";
   private static final String EXT6_LIBRARY = "Maven: net.jangaroo:ext-as:6.0.1-1-SNAPSHOT";
@@ -40,8 +42,8 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   private static final String REFACTORING_NAME = RefactoringBundle.message("migration.title");
   private PsiMigration myPsiMigration;
 
-  private GlobalSearchScope ext3SearchScope;
-  private GlobalSearchScope ext6SearchScope;
+  private GlobalSearchScope projectExt3Scope;
+  private GlobalSearchScope ext6Scope;
 
   public FlexMigrationProcessor(Project project) {
     super(project);
@@ -54,10 +56,11 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   }
 
   private PsiMigration startMigration(Project project) {
-    ext3SearchScope = loadLibraryScope(project, EXT3_LIBRARY);
-    ext6SearchScope = loadLibraryScope(project, EXT6_LIBRARY);
-    if (ext6SearchScope != null) {
-      migrationMap = FlexMigrationMapLoader.loadMigrationMap(myProject, ext6SearchScope, MIGRATION_MAP);
+    GlobalSearchScope ext3Scope = loadLibraryScope(project, EXT3_LIBRARY);
+    ext6Scope = loadLibraryScope(project, EXT6_LIBRARY);
+    if (ext3Scope != null && ext6Scope != null) {
+      projectExt3Scope = ext3Scope.uniteWith(ProjectScope.getProjectScope(project));
+      migrationMap = FlexMigrationMapLoader.loadMigrationMap(projectExt3Scope, ext6Scope, MIGRATION_MAP);
     }
     return PsiMigrationManager.getInstance(project).startMigration();
   }
@@ -83,13 +86,13 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   @NotNull
   protected UsageInfo[] findUsages() {
     try {
-      if (migrationMap == null || ext3SearchScope == null) {
+      if (migrationMap == null || projectExt3Scope == null) {
         return UsageInfo.EMPTY_ARRAY;
       }
       ArrayList<UsageInfo> usagesVector = new ArrayList<UsageInfo>();
       for (int i = 0; i < migrationMap.getEntryCount(); i++) {
         MigrationMapEntry entry = migrationMap.getEntryAt(i);
-        UsageInfo[] usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, ext3SearchScope, entry.getOldName());
+        UsageInfo[] usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, projectExt3Scope, entry.getOldName());
 
         for (UsageInfo usage : usages) {
           usagesVector.add(new MigrationUsageInfo(usage, entry));
@@ -112,20 +115,24 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   }
 
   protected void performRefactoring(@NotNull UsageInfo[] usages) {
-    GlobalSearchScope searchScope = ext6SearchScope;
-    if (searchScope == null) {
-      return;
-    }
-
     final PsiMigration psiMigration = startMigration(myProject);
     LocalHistoryAction a = LocalHistory.getInstance().startAction(getCommandName());
 
     try {
-      for (int i = 0; i < migrationMap.getEntryCount(); i++) {
-        MigrationMapEntry entry = migrationMap.getEntryAt(i);
-        if (entry.getType() == MigrationMapEntry.CLASS) {
-          FlexMigrationUtil.doClassMigration(myProject, searchScope, entry, usages);
-        }
+      if (ext6Scope == null) {
+        return;
+      }
+      GlobalSearchScope searchScope = ext6Scope.uniteWith(ProjectScope.getProjectScope(myProject));
+
+      // migrate import usages first in order to avoid unnecessary fully-qualified names
+      Arrays.sort(usages, ImportUsageFirstComparator.INSTANCE);
+
+      // todo[ahu]: show progress bar (instead of incremental logging)
+      int entryCount = migrationMap.getEntryCount();
+      LOG.info("Starting migration with " + entryCount + " replacement rules");
+      for (int i = 0; i < entryCount; i++) {
+        FlexMigrationUtil.doClassMigration(myProject, searchScope, migrationMap.getEntryAt(i), usages);
+        LOG.info("Migrated " + (i + 1) + '/' + entryCount + " replacement rules");
       }
 
       for(RefactoringHelper helper: Extensions.getExtensions(RefactoringHelper.EP_NAME)) {
@@ -138,7 +145,6 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
       psiMigration.finish();
     }
   }
-
 
   protected String getCommandName() {
     return REFACTORING_NAME;

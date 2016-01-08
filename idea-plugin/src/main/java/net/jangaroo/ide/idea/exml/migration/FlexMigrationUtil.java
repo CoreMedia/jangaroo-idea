@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.exml.migration;
 
+import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpression;
@@ -15,6 +16,7 @@ import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
 import com.intellij.lang.javascript.psi.impl.JSChangeUtil;
 import com.intellij.lang.javascript.psi.impl.JSTextReference;
+import com.intellij.lang.javascript.psi.resolve.JSClassResolver;
 import com.intellij.lang.javascript.search.JSFunctionsSearch;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
@@ -26,6 +28,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiWhiteSpace;
+import com.intellij.psi.impl.source.xml.XmlAttributeReference;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.refactoring.migration.MigrationMapEntry;
@@ -37,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Collection;
 
 public class FlexMigrationUtil {
   private static final Logger LOG = Logger.getInstance("#com.intellij.refactoring.migration.MigrationUtil");
@@ -72,7 +75,7 @@ public class FlexMigrationUtil {
     PsiElement psiElement = findClassOrMember(searchScope, qName);
     if (psiElement == null) {
       Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
-        "Migration map contains source entry that does not exist in Ext AS 3.4: " + qName,
+        "Migration map contains source entry that does not exist in Ext AS 3.4 or project: " + qName,
         NotificationType.WARNING));
       return new UsageInfo[0];
     }
@@ -116,7 +119,8 @@ public class FlexMigrationUtil {
     final ArrayList<UsageInfo> results = new ArrayList<UsageInfo>();
     GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
     for (PsiReference usage : ReferencesSearch.search(psiElement, projectScope, false)) {
-      if (!usage.getElement().getContainingFile().getName().endsWith(".exml")) {
+      if (!(usage instanceof MxmlTagNameReference) && !(usage instanceof XmlAttributeReference)
+        && !usage.getElement().getContainingFile().getName().endsWith(".exml")) {
         results.add(new UsageInfo(usage));
       }
     }
@@ -159,25 +163,26 @@ public class FlexMigrationUtil {
     String newQName = migrationMapEntry.getNewName();
     try {
       PsiElement classOrMember = null;
-      if (!newQName.isEmpty()) {
-        classOrMember = findClassOrMember(newSearchScope, newQName);
-        if (classOrMember == null) {
-          Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
-            "Migration map contains target entry that does not exist in Ext AS 6: " + newQName,
-            NotificationType.WARNING));
-          return;
-        }
-      }
-      JSFunction setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
-
-      // migrate import usages first in order to avoid unnecessary fully-qualified names
-      Arrays.sort(usages, ImportUsageFirstComparator.INSTANCE);
+      JSFunction setter = null;
 
       // rename all references
       for (UsageInfo usage : usages) {
         if (usage instanceof FlexMigrationProcessor.MigrationUsageInfo) {
           final FlexMigrationProcessor.MigrationUsageInfo usageInfo = (FlexMigrationProcessor.MigrationUsageInfo)usage;
           if (Comparing.equal(oldQName, usageInfo.mapEntry.getOldName())) {
+
+            // resolve the new name from a migration map entry lazily when processing the first usage of the old name
+            if (classOrMember == null && !newQName.isEmpty()) {
+              classOrMember = findClassOrMember(newSearchScope, newQName);
+              if (classOrMember == null) {
+                Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
+                  "Migration map contains target entry that does not exist in Ext AS 6 or project: " + newQName,
+                  NotificationType.WARNING));
+                return;
+              }
+              setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
+            }
+
             PsiElement element = usage.getElement();
             if (element == null || !element.isValid()) continue;
             if (element instanceof JSReferenceExpression) {
@@ -260,15 +265,26 @@ public class FlexMigrationUtil {
   }
 
   static JSQualifiedNamedElement findJSQualifiedNamedElement(GlobalSearchScope searchScope, final String qName) {
-    Iterator<JSQualifiedNamedElement> jsQualifiedNamedElements = Utils.getActionScriptClassResolver().findElementsByQName(qName, searchScope).iterator();
+    JSClassResolver classResolver = Utils.getActionScriptClassResolver();
+    Collection<JSQualifiedNamedElement> elementsByQName = classResolver.findElementsByQName(qName, searchScope);
+
     // use the last occurrence, as the source occurrences come first and do not return any usages:
     JSQualifiedNamedElement jsElement = null;
-    while (jsQualifiedNamedElements.hasNext()) {
-      JSQualifiedNamedElement next = jsQualifiedNamedElements.next();
+    for (JSQualifiedNamedElement next : elementsByQName) {
       if (next.isValid()) {
         jsElement = next;
       }
     }
+
+    // MXML classes are not returned by #findElementsByQName, try #findClassesByQName
+    if (jsElement == null) {
+      for (JSClass jsClass : classResolver.findClassesByQName(qName, searchScope)) {
+        if (jsClass.isValid()) {
+          jsElement = jsClass;
+        }
+      }
+    }
+
     return jsElement;
   }
 
