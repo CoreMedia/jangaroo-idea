@@ -16,8 +16,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.ProjectScope;
-import com.intellij.refactoring.migration.MigrationMap;
-import com.intellij.refactoring.migration.MigrationMapEntry;
 import com.intellij.util.Query;
 import com.intellij.util.containers.HashMap;
 import net.jangaroo.ide.idea.Utils;
@@ -29,6 +27,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -39,7 +38,9 @@ public class FlexMigrationMapLoader {
   private static final Logger LOG = Logger.getInstance(FlexMigrationMapLoader.class);
 
   @Nullable
-  static MigrationMap loadMigrationMap(GlobalSearchScope projectExt3Scope, GlobalSearchScope ext6Scope, String name) {
+  static SortedMap<String, MigrationMapEntry> loadMigrationMap(GlobalSearchScope projectExt3Scope,
+                                                               GlobalSearchScope ext6Scope,
+                                                               String name) {
     Project project = projectExt3Scope.getProject();
     Collection<VirtualFile> candidates = FilenameIndex.getVirtualFilesByName(project, name, ext6Scope);
     if (candidates.isEmpty()) {
@@ -73,19 +74,14 @@ public class FlexMigrationMapLoader {
     }
 
     // use sorted map for reproducible results
-    Map<String, String> map = new TreeMap<String, String>();
+    SortedMap<String, MigrationMapEntry> map = new TreeMap<String, MigrationMapEntry>();
     for (String source : properties.stringPropertyNames()) {
-      map.put(source, properties.getProperty(source));
+      map.put(source, new MigrationMapEntry(source, properties.getProperty(source), false));
     }
     addEntriesReplaceConfigClasses(map, projectExt3Scope);
 
-    LOG.info("Migration Map: (" + map.size() + " entries): " + map);
-
-    MigrationMap result = new MigrationMap();
-    for (Map.Entry<String, String> entry : map.entrySet()) {
-      result.addEntry(new MigrationMapEntry(entry.getKey(), entry.getValue(), MigrationMapEntry.CLASS, false));
-    }
-    return result;
+    LOG.info("Migration Map: (" + map.size() + " entries): " + map.values());
+    return map;
   }
 
   private static void warn(String message) {
@@ -106,7 +102,7 @@ public class FlexMigrationMapLoader {
    * @param migrationMap migration map to add entries to
    * @param projectExt3Scope search scope to lookup Ext AS 3.4 API and project
    */
-  private static void addEntriesReplaceConfigClasses(Map<String, String> migrationMap,
+  private static void addEntriesReplaceConfigClasses(SortedMap<String, MigrationMapEntry> migrationMap,
                                                      GlobalSearchScope projectExt3Scope) {
     JSClass javaScriptObjectClass = getJavaScriptObjectClass(projectExt3Scope.getProject());
     if (javaScriptObjectClass == null) {
@@ -123,9 +119,10 @@ public class FlexMigrationMapLoader {
         error("Migration map contains config class: " + source, null);
       } else {
         if (migrationMap.containsKey(target)) {
-          target = migrationMap.get(target);
+          MigrationMapEntry existingEntry = migrationMap.get(target);
+          target = existingEntry.getNewName();
         }
-        migrationMap.put(source, target);
+        migrationMap.put(source, new MigrationMapEntry(source, target, true));
       }
     }
   }

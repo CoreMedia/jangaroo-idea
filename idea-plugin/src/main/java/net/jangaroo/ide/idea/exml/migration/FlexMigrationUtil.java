@@ -2,10 +2,13 @@ package net.jangaroo.ide.idea.exml.migration;
 
 import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.psi.JSCallExpression;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpression;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSFunctionExpression;
+import com.intellij.lang.javascript.psi.JSNewExpression;
+import com.intellij.lang.javascript.psi.JSObjectLiteralExpression;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSReferenceExpression;
 import com.intellij.lang.javascript.psi.JSStatement;
@@ -32,7 +35,6 @@ import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.impl.source.xml.XmlAttributeReference;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
-import com.intellij.refactoring.migration.MigrationMapEntry;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
@@ -213,12 +215,15 @@ public class FlexMigrationUtil {
                   PsiReference variableReference = getVariableReference(referenceElement);
                   if (variableReference != null && isStaticFunction(currentClassOrMember)) {
                     variableReference.bindToElement(currentClassOrMember.getParent());
+                  } else if (referenceElement.getParent() instanceof JSNewExpression && migrationMapEntry.isMappingOfConfigClass()) {
+                    migrateConfigClassConstructorUsage(project, newSearchScope, oldQName, referenceElement, currentClassOrMember);
                   } else {
                     referenceElement.bindToElement(currentClassOrMember);
                   }
                 }
               } catch (Throwable t) {
-                t.printStackTrace();
+                LOG.error("Error during migration of " + referenceElement + " (" + referenceElement.getCanonicalText()
+                  + ") in " + referenceElement.getContainingFile().getVirtualFile().getPath() , t);
               }
             } else if (classOrMember instanceof JSFunction && element instanceof JSFunction) {
               adjustOverriddenMethodSignature(project, (JSFunction)classOrMember, (JSFunction)element);
@@ -233,6 +238,43 @@ public class FlexMigrationUtil {
     catch (IncorrectOperationException e) {
       // should not happen!
       LOG.error(e);
+    }
+  }
+
+  private static void migrateConfigClassConstructorUsage(Project project,
+                                                         GlobalSearchScope newSearchScope,
+                                                         String oldQName,
+                                                         JSReferenceExpression referenceElement,
+                                                         PsiElement newTargetClass) {
+    // migrating config class constructor call to a cast of an JSON object to the new class
+    JSNewExpression newExpression = (JSNewExpression)referenceElement.getParent();
+    JSExpression[] constructorArguments = newExpression.getArguments();
+    if (constructorArguments.length > 1) {
+      Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
+        "Cannot migrate config class constructor call with " + constructorArguments.length
+          + " arguments to " + oldQName + " in "
+          + referenceElement.getContainingFile().getVirtualFile().getPath(), NotificationType.WARNING));
+    } else {
+      // for example: new button() => Button({})
+      PsiElement castPrototype = JSChangeUtil.createExpressionFromText(project, "a({})").getPsi();
+      JSCallExpression castExpression = (JSCallExpression) newExpression.replace(castPrototype);
+      // replace "a" with correct target class
+      ((JSReferenceExpression)castExpression.getMethodExpression()).bindToElement(newTargetClass);
+
+      if (constructorArguments.length == 1) {
+        // for example: new button(config) => Button(Ext.apply({}, config))
+        PsiElement applyProtoType = JSChangeUtil.createExpressionFromText(project, "Ext.apply({}, c)").getPsi();
+        JSObjectLiteralExpression empty = (JSObjectLiteralExpression)castExpression.getArguments()[0];
+        JSCallExpression extApplyCall = (JSCallExpression) empty.replace(applyProtoType);
+        // replace "Ext" with ext.Ext to get correct import
+        JSReferenceExpression extApply = (JSReferenceExpression)extApplyCall.getMethodExpression();
+        JSReferenceExpression ext = ((JSReferenceExpression)extApply.getQualifier());
+        if (ext != null) {
+          ext.bindToElement(findClassOrMember(newSearchScope, "ext.Ext"));
+        }
+        // replace "c" with original constructor parameter
+        extApplyCall.getArguments()[1].replace(constructorArguments[0]);
+      }
     }
   }
 

@@ -22,14 +22,13 @@ import com.intellij.psi.search.ProjectScope;
 import com.intellij.refactoring.BaseRefactoringProcessor;
 import com.intellij.refactoring.RefactoringBundle;
 import com.intellij.refactoring.RefactoringHelper;
-import com.intellij.refactoring.migration.MigrationMap;
-import com.intellij.refactoring.migration.MigrationMapEntry;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.usageView.UsageViewDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.SortedMap;
 
 class FlexMigrationProcessor extends BaseRefactoringProcessor {
   private static final Logger LOG = Logger.getInstance(FlexMigrationProcessor.class);
@@ -38,7 +37,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   private static final String EXT6_LIBRARY = "Maven: net.jangaroo:ext-as:6.0.1-1-SNAPSHOT";
   private static final String MIGRATION_MAP = "ext-as-3.4-migration-map.properties";
 
-  private MigrationMap migrationMap;
+  private SortedMap<String, MigrationMapEntry> migrationMap;
   private static final String REFACTORING_NAME = RefactoringBundle.message("migration.title");
   private PsiMigration myPsiMigration;
 
@@ -90,8 +89,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
         return UsageInfo.EMPTY_ARRAY;
       }
       ArrayList<UsageInfo> usagesVector = new ArrayList<UsageInfo>();
-      for (int i = 0; i < migrationMap.getEntryCount(); i++) {
-        MigrationMapEntry entry = migrationMap.getEntryAt(i);
+      for (MigrationMapEntry entry : migrationMap.values()) {
         UsageInfo[] usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, projectExt3Scope, entry.getOldName());
 
         for (UsageInfo usage : usages) {
@@ -128,11 +126,12 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
       Arrays.sort(usages, ImportUsageFirstComparator.INSTANCE);
 
       // todo[ahu]: show progress bar (instead of incremental logging)
-      int entryCount = migrationMap.getEntryCount();
+      int entryCount = migrationMap.size();
+      int currentEntry = 0;
       LOG.info("Starting migration with " + entryCount + " replacement rules");
-      for (int i = 0; i < entryCount; i++) {
-        FlexMigrationUtil.doClassMigration(myProject, searchScope, migrationMap.getEntryAt(i), usages);
-        LOG.info("Migrated " + (i + 1) + '/' + entryCount + " replacement rules");
+      for (MigrationMapEntry entry : migrationMap.values()) {
+        FlexMigrationUtil.doClassMigration(myProject, searchScope, entry, usages);
+        LOG.info("Migrated " + (++currentEntry) + '/' + entryCount + " replacement rules");
       }
 
       for(RefactoringHelper helper: Extensions.getExtensions(RefactoringHelper.EP_NAME)) {
@@ -151,7 +150,7 @@ class FlexMigrationProcessor extends BaseRefactoringProcessor {
   }
 
   public static class MigrationUsageInfo extends UsageInfo {
-    public MigrationMapEntry mapEntry;
+    MigrationMapEntry mapEntry;
 
     public MigrationUsageInfo(UsageInfo info, MigrationMapEntry mapEntry) {
       super(info.getElement(), info.getRangeInElement().getStartOffset(), info.getRangeInElement().getEndOffset());
