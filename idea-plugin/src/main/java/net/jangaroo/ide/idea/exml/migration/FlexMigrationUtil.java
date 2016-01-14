@@ -262,18 +262,24 @@ public class FlexMigrationUtil {
       ((JSReferenceExpression)castExpression.getMethodExpression()).bindToElement(newTargetClass);
 
       if (constructorArguments.length == 1) {
-        // for example: new button(config) => Button(Ext.apply({}, config))
-        PsiElement applyProtoType = JSChangeUtil.createExpressionFromText(project, "Ext.apply({}, c)").getPsi();
+        JSExpression constructorArgument = constructorArguments[0];
         JSObjectLiteralExpression empty = (JSObjectLiteralExpression)castExpression.getArguments()[0];
-        JSCallExpression extApplyCall = (JSCallExpression) empty.replace(applyProtoType);
-        // replace "Ext" with ext.Ext to get correct import
-        JSReferenceExpression extApply = (JSReferenceExpression)extApplyCall.getMethodExpression();
-        JSReferenceExpression ext = ((JSReferenceExpression)extApply.getQualifier());
-        if (ext != null) {
-          ext.bindToElement(findClassOrMember(newSearchScope, "ext.Ext"));
+        if (constructorArgument instanceof JSObjectLiteralExpression) {
+          // for example: new button({text:"foo"}) => Button({text:"foo"})
+          empty.replace(constructorArgument);
+        } else {
+          // for example: new button(config) => Button(Ext.apply({}, config))
+          PsiElement applyProtoType = JSChangeUtil.createExpressionFromText(project, "Ext.apply({}, c)").getPsi();
+          JSCallExpression extApplyCall = (JSCallExpression)empty.replace(applyProtoType);
+          // replace "Ext" with ext.Ext to get correct import
+          JSReferenceExpression extApply = (JSReferenceExpression)extApplyCall.getMethodExpression();
+          JSReferenceExpression ext = ((JSReferenceExpression)extApply.getQualifier());
+          if (ext != null) {
+            ext.bindToElement(findClassOrMember(newSearchScope, "ext.Ext"));
+          }
+          // replace "c" with original constructor parameter
+          extApplyCall.getArguments()[1].replace(constructorArgument);
         }
-        // replace "c" with original constructor parameter
-        extApplyCall.getArguments()[1].replace(constructorArguments[0]);
       }
     }
   }
