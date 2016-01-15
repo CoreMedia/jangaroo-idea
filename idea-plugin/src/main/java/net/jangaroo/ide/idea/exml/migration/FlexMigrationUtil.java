@@ -222,8 +222,11 @@ public class FlexMigrationUtil {
                   }
                 }
               } catch (Throwable t) {
-                LOG.error("Error during migration of " + referenceElement + " (" + referenceElement.getCanonicalText()
-                  + ") in " + referenceElement.getContainingFile().getVirtualFile().getPath() , t);
+                String path = referenceElement.isValid()
+                  ? referenceElement.getContainingFile().getVirtualFile().getPath()
+                  : "<INVALID>";
+                LOG.error("Error during migration of " + referenceElement
+                  + " (" + referenceElement.getCanonicalText() + ") in " + path, t);
               }
             } else if (classOrMember instanceof JSFunction && element instanceof JSFunction) {
               adjustOverriddenMethodSignature(project, (JSFunction)classOrMember, (JSFunction)element);
