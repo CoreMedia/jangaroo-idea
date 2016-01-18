@@ -38,12 +38,12 @@ import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
+import com.intellij.util.containers.HashSet;
 import net.jangaroo.ide.idea.Utils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 public class FlexMigrationUtil {
   private static final Logger LOG = Logger.getInstance("#com.intellij.refactoring.migration.MigrationUtil");
@@ -75,29 +75,39 @@ public class FlexMigrationUtil {
   }
 
   public static UsageInfo[] findClassOrMemberUsages(Project project, GlobalSearchScope searchScope, String qName) {
-    PsiElement psiElement = findClassOrMember(searchScope, qName);
-    if (psiElement == null) {
+    Collection<PsiElement> psiElements = findClassesOrMembers(searchScope, qName);
+    if (psiElements.isEmpty()) {
       Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
         "Migration map contains source entry that does not exist in Ext AS 3.4 or project: " + qName,
         NotificationType.WARNING));
       return new UsageInfo[0];
     }
-    return findRefs(project, psiElement, true);
+    return findRefs(project, psiElements, true);
   }
 
   public static PsiElement findClassOrMember(GlobalSearchScope searchScope, String qName) {
-    return findClassOrMember(searchScope, qName, null);
+    Collection<PsiElement> collection = findClassesOrMembers(searchScope, qName);
+    return collection.isEmpty() ? null : collection.iterator().next();
   }
 
-  public static PsiElement findClassOrMember(GlobalSearchScope searchScope, String qName, JSFunction.FunctionKind functionKind) {
+  public static Collection<PsiElement> findClassesOrMembers(GlobalSearchScope searchScope, String qName) {
     String[] parts = qName.split("#", 2);
     String className = parts[0];
     String member = parts.length == 2 ? parts[1] : null;
-    JSQualifiedNamedElement aClass = findJSQualifiedNamedElement(searchScope, className);
-    if (aClass instanceof JSClass && member != null) {
-      return findMember((JSClass)aClass, member, functionKind);
+    Collection<PsiElement> classes = findJSQualifiedNamedElements(searchScope, className);
+    if (member == null) {
+      return classes;
     }
-    return aClass;
+    Collection<PsiElement> result = new HashSet<PsiElement>();
+    for (PsiElement aClass : classes) {
+      if (aClass instanceof JSClass) {
+        JSFunction foundMember = findMember((JSClass)aClass, member, null);
+        if (foundMember != null) {
+          result.add(foundMember);
+        }
+      }
+    }
+    return result;
   }
 
   public static JSFunction findMember(JSClass aClass, String member, JSFunction.FunctionKind functionKind) {
@@ -117,11 +127,18 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  private static UsageInfo[] findRefs(final Project project, @NotNull final PsiElement psiElement,
+  private static UsageInfo[] findRefs(final Project project, @NotNull final Collection<PsiElement> psiElements,
                                       boolean findRefsOfSetter) {
-    final ArrayList<UsageInfo> results = new ArrayList<UsageInfo>();
+    final Set<UsageInfo> results = new HashSet<UsageInfo>();
     GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
     GlobalSearchScope scope = JavaProjectRootsUtil.getScopeWithoutGeneratedSources(projectScope, project);
+    for (PsiElement psiElement : psiElements) {
+      addRefs(results, scope, psiElement, findRefsOfSetter);
+    }
+    return results.toArray(new UsageInfo[results.size()]);
+  }
+
+  private static void addRefs(Set<? super UsageInfo> results, GlobalSearchScope scope, PsiElement psiElement, boolean findRefsOfSetter) {
     for (PsiReference usage : ReferencesSearch.search(psiElement, scope, false)) {
       if (!(usage instanceof MxmlTagNameReference) && !(usage instanceof XmlAttributeReference)
         && !usage.getElement().getContainingFile().getName().endsWith(".exml")) {
@@ -133,7 +150,7 @@ public class FlexMigrationUtil {
       if (findRefsOfSetter) {
         JSFunction setter = findSetter((JSFunction)psiElement);
         if (setter != null) {
-          results.addAll(Arrays.asList(findRefs(project, setter, false)));
+          addRefs(results, scope, setter, false);
         }
       }
       Query<JSFunction> jsFunctions = JSFunctionsSearch.searchOverridingFunctions((JSFunction)psiElement, true);
@@ -143,12 +160,11 @@ public class FlexMigrationUtil {
             results.add(new UsageInfo(jsFunction));
           } else {
             // make sure to find usages of overridden functions as well, ReferencesSearch did not return these
-            results.addAll(Arrays.asList(findRefs(project, jsFunction, false)));
+            addRefs(results, scope, jsFunction, false);
           }
         }
       }
     }
-    return results.toArray(new UsageInfo[results.size()]);
   }
 
   private static JSFunction findSetter(JSFunction getter) {
@@ -277,8 +293,9 @@ public class FlexMigrationUtil {
           // replace "Ext" with ext.Ext to get correct import
           JSReferenceExpression extApply = (JSReferenceExpression)extApplyCall.getMethodExpression();
           JSReferenceExpression ext = ((JSReferenceExpression)extApply.getQualifier());
-          if (ext != null) {
-            ext.bindToElement(findClassOrMember(newSearchScope, "ext.Ext"));
+          PsiElement extClass = findClassOrMember(newSearchScope, "ext.Ext");
+          if (ext != null && extClass != null) {
+            ext.bindToElement(extClass);
           }
           // replace "c" with original constructor parameter
           extApplyCall.getArguments()[1].replace(constructorArgument);
@@ -318,28 +335,26 @@ public class FlexMigrationUtil {
     }
   }
 
-  static JSQualifiedNamedElement findJSQualifiedNamedElement(GlobalSearchScope searchScope, final String qName) {
+  static Collection<PsiElement> findJSQualifiedNamedElements(GlobalSearchScope searchScope, final String qName) {
+    Set<PsiElement> result = new HashSet<PsiElement>();
+
     JSClassResolver classResolver = Utils.getActionScriptClassResolver();
     Collection<JSQualifiedNamedElement> elementsByQName = classResolver.findElementsByQName(qName, searchScope);
 
-    // use the last occurrence, as the source occurrences come first and do not return any usages:
-    JSQualifiedNamedElement jsElement = null;
     for (JSQualifiedNamedElement next : elementsByQName) {
       if (next.isValid()) {
-        jsElement = next;
+        result.add(next);
       }
     }
 
     // MXML classes are not returned by #findElementsByQName, try #findClassesByQName
-    if (jsElement == null) {
-      for (JSClass jsClass : classResolver.findClassesByQName(qName, searchScope)) {
-        if (jsClass.isValid()) {
-          jsElement = jsClass;
-        }
+    for (JSClass jsClass : classResolver.findClassesByQName(qName, searchScope)) {
+      if (jsClass.isValid()) {
+        result.add(jsClass);
       }
     }
 
-    return jsElement;
+    return result;
   }
 
   private static PsiReference getVariableReference(JSReferenceExpression referenceElement) {
