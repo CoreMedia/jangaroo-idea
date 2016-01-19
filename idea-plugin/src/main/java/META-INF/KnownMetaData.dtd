@@ -425,13 +425,12 @@
 <!--
   Annotation for ActionScript API classes, package-scope variables or functions whose implementation is provided,
   so the compiler generates no code.
-  If the implementation is in JavaScript, you can specify the name of the AMD module containing the
-  implementation as property "amd", and the global JavaScript name of the object in "global".
+  The optional default annotation parameter specifies the corresponding JavaScript name.
+  The parameter "require" is set for ActionScript classes that must be loaded using "require" by the Ext JS runtime.
 -->
 <!ELEMENT Native EMPTY>
 <!ATTLIST Native
-  amd CDATA #IMPLIED
-  global CDATA #IMPLIED
+  require CDATA #IMPLIED
 >
 <!--
   Annotation to convert property accessor methods into normal methods.
