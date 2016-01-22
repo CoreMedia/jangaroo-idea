@@ -33,7 +33,7 @@ import java.util.SortedMap;
 class FlexMigrationProcessor extends BaseRefactoringProcessor {
   private static final Logger LOG = Logger.getInstance(FlexMigrationProcessor.class);
 
-  private static final String EXT3_LIBRARY = "Maven: net.jangaroo:ext-as:2.1.0-SNAPSHOT";
+  private static final String EXT3_LIBRARY = "Maven: net.jangaroo:ext-as:2.0.15";
   private static final String EXT6_LIBRARY = "Maven: net.jangaroo:ext-as:6.0.1-1-SNAPSHOT";
   private static final String MIGRATION_MAP = "ext-as-3.4-migration-map.properties";
 
