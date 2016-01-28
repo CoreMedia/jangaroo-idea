@@ -455,6 +455,22 @@
   Specify the target class to be used when instantiating this config object in property "target".
   Use property "xtype", "ptype", "type", or "gctype" for a component, plugin, layout, grid column, respectively.
   If the "*type" property is used without a value, the fully qualified config class name is used.
+
+  * The "create" property takes a boolean value and has the following meaning:
+    On a class:
+       create[=true] this class always has to be instantiated (from a config object) before being used.
+    On a property:
+      create[=true]
+        The object(s) assigned to this property have to be instance(s), not config object(s).
+      create=false
+        The object(s) assigned to this property have to be config object(s), not instance(s).
+      (not given)
+        Let the class annotation determine whether to use config object(s) or instance(s).
+
+  * The "extractXType" takes an optional property name. It implies create=false.
+    This is an advanced option to strip the config assigned to this property from its xtype and xclass.
+    If a property name is given, the extracted xtype is stored in that property.
+    Typical usage: Container#defaults / #defaultType, but this pattern seems to reoccur in Ext.
 -->
 <!ELEMENT ExtConfig EMPTY>
 <!ATTLIST ExtConfig
@@ -463,6 +479,8 @@
   ptype CDATA #IMPLIED
   type CDATA #IMPLIED
   gctype CDATA #IMPLIED
+  create CDATA #IMPLIED
+  extractXType CDATA #IMPLIED
 >
 <!--
   Annotation for a class implementing a REST resources.
@@ -499,12 +517,3 @@
   _DEFAULT_ CDATA #IMPLIED
   value CDATA #IMPLIED
 >
-<!--
-  Annotation for a property that, instead of receiving
-  instantiated objects, can also receive configuration
-  objects and cares about instantiating them itself.
-  The configuration objects need to have a
-  [ConstructorParameter] with a "value" attribute set
-  so that the right type of object can be instantiated.
--->
-<!ELEMENT AllowConstructorParameters EMPTY>
