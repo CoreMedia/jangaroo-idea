@@ -451,7 +451,7 @@
   <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="Jangaroo IDEA Plugin" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
       <module name="jangaroo-0.9" />
-      <option name="VM_PARAMETERS" value=" -Xms256m -Xmx768m -XX:MaxPermSize=156m -ea -agentlib:yjpagent=disablej2ee,disablecounts,disablealloc,sessionname=IntelliJIDEA" />
+      <option name="VM_PARAMETERS" value="-Xmx2048m -Xms256m -XX:MaxPermSize=512m -ea -Dcompiler.process.debug.port=-1" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <log_file path="$USER_HOME$/.IntelliJIdea15/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
       <RunnerSettings RunnerId="Debug">
@@ -482,15 +482,169 @@
   <component name="libraryTable">
     <library name="jangaroo-api">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.0-SNAPSHOT/jangaroo-compiler-api-2.1.0-SNAPSHOT.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.0-SNAPSHOT/exml-compiler-api-2.1.0-SNAPSHOT.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.0-SNAPSHOT/properties-compiler-api-2.1.0-SNAPSHOT.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.0-SNAPSHOT/jangaroo-utils-2.1.0-SNAPSHOT.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />
+    </library>
+    <library name="Maven: args4j:args4j:2.0.16">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.code.findbugs:jsr305:1.3.9">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/code/findbugs/jsr305/1.3.9/jsr305-1.3.9.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/code/findbugs/jsr305/1.3.9/jsr305-1.3.9-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/code/findbugs/jsr305/1.3.9/jsr305-1.3.9-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.code.gson:gson:2.2.4">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.2.4/gson-2.2.4.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.2.4/gson-2.2.4-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.2.4/gson-2.2.4-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.guava:guava:18.0">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/18.0/guava-18.0.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/18.0/guava-18.0-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/18.0/guava-18.0-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.javascript:closure-compiler-externs:v20150126">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler-externs/v20150126/closure-compiler-externs-v20150126.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler-externs/v20150126/closure-compiler-externs-v20150126-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler-externs/v20150126/closure-compiler-externs-v20150126-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.javascript:closure-compiler:v20150126">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.protobuf:protobuf-java:2.5.0">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/protobuf/protobuf-java/2.5.0/protobuf-java-2.5.0.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/protobuf/protobuf-java/2.5.0/protobuf-java-2.5.0-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/protobuf/protobuf-java/2.5.0/protobuf-java-2.5.0-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: com.google.truth:truth:0.24">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/truth/truth/0.24/truth-0.24.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/truth/truth/0.24/truth-0.24-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/truth/truth/0.24/truth-0.24-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: junit:junit:4.10">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/junit/junit/4.10/junit-4.10.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/junit/junit/4.10/junit-4.10-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/junit/junit/4.10/junit-4.10-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: net.jangaroo:exml-compiler-api:2.1.2">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: net.jangaroo:jangaroo-compiler-api:2.1.2">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: net.jangaroo:jangaroo-utils:2.1.2">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: net.jangaroo:properties-compiler-api:2.1.2">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2-sources.jar!/" />
+      </SOURCES>
+    </library>
+    <library name="Maven: org.hamcrest:hamcrest-core:1.1">
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/org/hamcrest/hamcrest-core/1.1/hamcrest-core-1.1.jar!/" />
+      </CLASSES>
+      <JAVADOC>
+        <root url="jar://$MAVEN_REPOSITORY$/org/hamcrest/hamcrest-core/1.1/hamcrest-core-1.1-javadoc.jar!/" />
+      </JAVADOC>
+      <SOURCES>
+        <root url="jar://$MAVEN_REPOSITORY$/org/hamcrest/hamcrest-core/1.1/hamcrest-core-1.1-sources.jar!/" />
+      </SOURCES>
     </library>
   </component>
 </project>

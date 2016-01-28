@@ -1,5 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: jangaroo-compiler-api-2.1.0-SNAPSHOT.jar exml-compiler-api
- -2.1.0-SNAPSHOT.jar properties-compiler-api-2.1.0-SNAPSHOT.jar jangar
- oo-utils-2.1.0-SNAPSHOT.jar args4j-2.0.16.jar closure-compiler-v20150
- 126.jar
+Class-Path: jangaroo-compiler-api-2.1.2.jar exml-compiler-api-2.1.2.ja
+ r properties-compiler-api-2.1.2.jar jangaroo-utils-2.1.2.jar args4j-2
+ .0.16.jar closure-compiler-v20150126.jar
