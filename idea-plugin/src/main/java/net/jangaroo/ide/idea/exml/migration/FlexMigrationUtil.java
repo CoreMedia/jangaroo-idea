@@ -1,7 +1,9 @@
 package net.jangaroo.ide.idea.exml.migration;
 
 import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
+import com.intellij.lang.ASTNode;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.psi.JSArgumentList;
 import com.intellij.lang.javascript.psi.JSCallExpression;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpression;
@@ -10,6 +12,7 @@ import com.intellij.lang.javascript.psi.JSFunctionExpression;
 import com.intellij.lang.javascript.psi.JSNewExpression;
 import com.intellij.lang.javascript.psi.JSObjectLiteralExpression;
 import com.intellij.lang.javascript.psi.JSParameter;
+import com.intellij.lang.javascript.psi.JSParameterList;
 import com.intellij.lang.javascript.psi.JSReferenceExpression;
 import com.intellij.lang.javascript.psi.JSStatement;
 import com.intellij.lang.javascript.psi.JSType;
@@ -183,6 +186,7 @@ public class FlexMigrationUtil {
     String newQName = migrationMapEntry.getNewName();
     try {
       PsiElement classOrMember = null;
+      String newParams = null;
       JSFunction setter = null;
 
       // rename all references
@@ -190,14 +194,23 @@ public class FlexMigrationUtil {
         if (usage instanceof FlexMigrationProcessor.MigrationUsageInfo) {
           final FlexMigrationProcessor.MigrationUsageInfo usageInfo = (FlexMigrationProcessor.MigrationUsageInfo)usage;
           if (Comparing.equal(oldQName, usageInfo.mapEntry.getOldName())) {
-
             // resolve the new name from a migration map entry lazily when processing the first usage of the old name
+
             if (classOrMember == null && !newQName.isEmpty()) {
-              classOrMember = findClassOrMember(newSearchScope, newQName);
+              int paramsIndex = newQName.indexOf('(');
+              String classOrMemberName;
+              if (paramsIndex >= 0) {
+                classOrMemberName = newQName.substring(0, paramsIndex);
+                newParams = newQName.substring(paramsIndex);
+              } else {
+                classOrMemberName = newQName;
+              }
+
+              classOrMember = findClassOrMember(newSearchScope, classOrMemberName);
               if (classOrMember == null) {
                 Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
-                  "Migration map contains target entry that does not exist in Ext AS 6 or project: " + newQName,
-                  NotificationType.WARNING));
+                  "Migration map contains target entry that does not exist in Ext AS 6 or project: "
+                    + classOrMemberName, NotificationType.WARNING));
                 return;
               }
               setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
@@ -235,6 +248,7 @@ public class FlexMigrationUtil {
                     migrateConfigClassConstructorUsage(project, newSearchScope, oldQName, referenceElement, currentClassOrMember);
                   } else {
                     referenceElement.bindToElement(currentClassOrMember);
+                    setCallParameters(project, referenceElement, newParams);
                   }
                 }
               } catch (Throwable t) {
@@ -257,6 +271,29 @@ public class FlexMigrationUtil {
     catch (IncorrectOperationException e) {
       // should not happen!
       LOG.error(e);
+    }
+  }
+
+  /**
+   * Sets fixed parameter values for a function call to the given element. If the element is not yet a function call,
+   * the parameter list is just appended, e.g. for empty parameters: "foo" -> "foo()".
+   *
+   * @param project project
+   * @param element function call element to add parameters to
+   * @param parameters parameter specification, including brackets, e.g "(true)" or "()"
+   */
+  @SuppressWarnings("ConstantConditions")
+  private static void setCallParameters(Project project, JSReferenceExpression element, String parameters) {
+    if (parameters == null) {
+      return;
+    }
+    ASTNode expression = JSChangeUtil.createExpressionFromText(project, 'a' + parameters);
+    JSArgumentList args = ((JSCallExpression)expression.getPsi()).getArgumentList();
+    PsiElement parent = element.getParent();
+    if (parent instanceof JSCallExpression) {
+      ((JSCallExpression)parent).getArgumentList().replace(args);
+    } else {
+      parent.addAfter(args, element);
     }
   }
 
@@ -320,7 +357,9 @@ public class FlexMigrationUtil {
         assert parameter != null;
         parameter.delete();
       } else if (parameter == null) {
-        functionToMigrate.getParameterList().add(referenceParameter);
+        JSParameterList parameterList = functionToMigrate.getParameterList();
+        PsiElement closingBracket = parameterList.getLastChild();
+        parameterList.addBefore(referenceParameter, closingBracket);
       } else {
         // correct type of parameter according to reference parameter, but keep using the same name:
         // TODO: also correct initializers (optional!) and ...rest parameter!
