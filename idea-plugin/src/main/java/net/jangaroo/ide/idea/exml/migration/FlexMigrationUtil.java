@@ -19,6 +19,7 @@ import com.intellij.lang.javascript.psi.JSType;
 import com.intellij.lang.javascript.psi.JSVariable;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
+import com.intellij.lang.javascript.psi.ecmal4.JSImportStatement;
 import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
 import com.intellij.lang.javascript.psi.impl.JSChangeUtil;
 import com.intellij.lang.javascript.psi.impl.JSTextReference;
@@ -181,12 +182,11 @@ public class FlexMigrationUtil {
   }
 
   public static void doClassMigration(Project project, GlobalSearchScope newSearchScope,
-                                      MigrationMapEntry migrationMapEntry, UsageInfo[] usages) {
+                                      MigrationMapEntry migrationMapEntry, Collection<UsageInfo> usages) {
     String oldQName = migrationMapEntry.getOldName();
     String newQName = migrationMapEntry.getNewName();
     try {
       PsiElement classOrMember = null;
-      String newParams = null;
       JSFunction setter = null;
 
       // rename all references
@@ -198,13 +198,7 @@ public class FlexMigrationUtil {
 
             if (classOrMember == null && !newQName.isEmpty()) {
               int paramsIndex = newQName.indexOf('(');
-              String classOrMemberName;
-              if (paramsIndex >= 0) {
-                classOrMemberName = newQName.substring(0, paramsIndex);
-                newParams = newQName.substring(paramsIndex);
-              } else {
-                classOrMemberName = newQName;
-              }
+              String classOrMemberName = paramsIndex >= 0 ? newQName.substring(0, paramsIndex) : newQName;
 
               classOrMember = findClassOrMember(newSearchScope, classOrMemberName);
               if (classOrMember == null) {
@@ -248,7 +242,7 @@ public class FlexMigrationUtil {
                     migrateConfigClassConstructorUsage(project, newSearchScope, oldQName, referenceElement, currentClassOrMember);
                   } else {
                     referenceElement.bindToElement(currentClassOrMember);
-                    setCallParameters(project, referenceElement, newParams);
+                    setCallParameters(project, referenceElement, newQName);
                   }
                 }
               } catch (Throwable t) {
@@ -278,15 +272,20 @@ public class FlexMigrationUtil {
    * Sets fixed parameter values for a function call to the given element. If the element is not yet a function call,
    * the parameter list is just appended, e.g. for empty parameters: "foo" -> "foo()".
    *
+   * <p>This method does nothing if the given targetName does not have a parameter list.
+   *
    * @param project project
    * @param element function call element to add parameters to
-   * @param parameters parameter specification, including brackets, e.g "(true)" or "()"
+   * @param targetName target name including parameter specification, including brackets, e.g "(true)" or "()"
    */
   @SuppressWarnings("ConstantConditions")
-  private static void setCallParameters(Project project, JSReferenceExpression element, String parameters) {
-    if (parameters == null) {
+  private static void setCallParameters(Project project, JSReferenceExpression element, String targetName) {
+    int paramsIndex = targetName.indexOf('(');
+    if (paramsIndex < 0) {
       return;
     }
+    String parameters = targetName.substring(paramsIndex);
+
     ASTNode expression = JSChangeUtil.createExpressionFromText(project, 'a' + parameters);
     JSArgumentList args = ((JSCallExpression)expression.getPsi()).getArgumentList();
     PsiElement parent = element.getParent();
@@ -408,5 +407,10 @@ public class FlexMigrationUtil {
     }
     JSAttributeList attributeList = ((JSFunction) element).getAttributeList();
     return attributeList != null && attributeList.hasModifier(JSAttributeList.ModifierType.STATIC);
+  }
+
+  static boolean isImport(UsageInfo o1) {
+    PsiElement element = o1.getElement();
+    return element != null && element.getParent() instanceof JSImportStatement;
   }
 }
