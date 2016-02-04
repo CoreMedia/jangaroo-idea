@@ -21,7 +21,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   public static final String JANGAROO_SDK_TYPE_ID = "Jangaroo SDK";
   private static final Pattern JANGAROO_COMPILER_API_JAR_PATTERN =
-    Pattern.compile("^" + JANGAROO_COMPILER_API_ARTIFACT_ID + "-([0-9]+(\\.[0-9]+\\.|-preview-)[0-9]+(-SNAPSHOT)?)\\.jar$");
+    Pattern.compile("^" + JANGAROO_COMPILER_API_ARTIFACT_ID + "-(([0-9]+(?:\\.[0-9]+)*)(-SNAPSHOT)?)\\.jar$");
   private static final String[] JANGAROO_COMPILER_ARTIFACT_IDS = new String[]{
     "jangaroo-compiler",
     "exml-compiler",
@@ -29,13 +29,13 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   };
   public static final String[] JANGAROO_3RD_PARTY_JARS = new String[]{
     "edu.princeton.cup:java-cup:10k",
-    "args4j:args4j:2.0.16",
     "commons-configuration:commons-configuration:1.6",
     "commons-io:commons-io:2.0.1",
     "commons-collections:commons-collections:3.2.1",
     "commons-lang:commons-lang:2.4",
     "commons-logging:commons-logging:1.1.1",
     "org.freemarker:freemarker:2.3.15",
+    "com.google.guava:guava:18.0",
   };
 
   public static List<String> getSdkJarPaths(JpsSdk sdk) {
