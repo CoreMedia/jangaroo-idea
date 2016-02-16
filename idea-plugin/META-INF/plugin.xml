@@ -37,6 +37,10 @@
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
     <findUsagesHandlerFactory implementation="net.jangaroo.ide.idea.exml.FindExmlUsagesHandlerFactory" order="FIRST"/>
     <gotoClassContributor implementation="net.jangaroo.ide.idea.exml.GotoExmlClassContributor"/>
+
+    <codeInsight.implementMethod language="ECMA Script Level 4"
+                                 implementationClass="net.jangaroo.ide.idea.ext.MixinAwareImplementMethodsHandler"/>
+
     <intentionAction>
       <className>net.jangaroo.ide.idea.exml.intentions.ReplaceObjectLiteralByPropertyAssignment</className>
       <category>ActionScript</category>
