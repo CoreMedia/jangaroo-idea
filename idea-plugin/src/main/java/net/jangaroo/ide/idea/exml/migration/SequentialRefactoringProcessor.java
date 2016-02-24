@@ -21,6 +21,8 @@ import com.intellij.openapi.wm.impl.status.StatusBarUtil;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiMigration;
+import com.intellij.psi.impl.migration.PsiMigrationManager;
 import com.intellij.refactoring.BaseRefactoringProcessor;
 import com.intellij.refactoring.RefactoringBundle;
 import com.intellij.refactoring.listeners.RefactoringListenerManager;
@@ -147,15 +149,17 @@ public abstract class SequentialRefactoringProcessor extends BaseRefactoringProc
                   progressTask.setMinIterationTime(100);
                   SequentialRefactoringTask refactoringTask = new SequentialRefactoringTask(progressTask, usagesInFiles);
                   progressTask.setTask(refactoringTask);
-                  startRefactoring(writableUsageInfos);
+                  PsiMigration psiMigration = PsiMigrationManager.getInstance(myProject).startMigration();
                   try {
                     ProgressManager.getInstance().run(progressTask);
                   } finally {
-                    endRefactoring();
+                    psiMigration.finish();
                   }
                   StatusBarUtil.setStatusBarInfo(myProject,
                     RefactoringBundle.message("statusBar.refactoring.result", writableUsageInfos.length));
                 } catch (IndexNotReadyException ignored) {
+                } finally {
+                  endRefactoring();
                 }
               }
             }, getCommandName(), null);
@@ -190,8 +194,6 @@ public abstract class SequentialRefactoringProcessor extends BaseRefactoringProc
   protected Comparator<? super UsagesInFile> getRefactoringIterationComparator() {
     return Ordering.allEqual();
   }
-
-  protected abstract void startRefactoring(UsageInfo[] usageInfos);
 
   protected abstract void performRefactoringIteration(UsagesInFile usagesInFile);
 

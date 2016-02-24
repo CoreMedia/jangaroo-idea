@@ -1,17 +1,28 @@
 package net.jangaroo.ide.idea.exml.migration;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
+import com.intellij.codeInsight.actions.OptimizeImportsProcessor;
 import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.impl.scopes.LibraryScope;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
+import com.intellij.openapi.roots.libraries.NewLibraryConfiguration;
+import com.intellij.openapi.roots.ui.configuration.libraryEditor.ExistingLibraryEditor;
+import com.intellij.openapi.roots.ui.configuration.libraryEditor.NewLibraryEditor;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
-import com.intellij.psi.PsiElement;
+import com.intellij.openapi.vfs.JarFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMigration;
 import com.intellij.psi.impl.migration.PsiMigrationManager;
@@ -20,77 +31,131 @@ import com.intellij.psi.search.ProjectScope;
 import com.intellij.refactoring.RefactoringBundle;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.usageView.UsageViewDescriptor;
+import com.intellij.util.io.URLUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.idea.maven.utils.library.RepositoryAttachHandler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
+import java.util.regex.Pattern;
+
+import static com.intellij.notification.NotificationType.ERROR;
 
 class FlexMigrationProcessor extends SequentialRefactoringProcessor {
   private static final Logger LOG = Logger.getInstance(FlexMigrationProcessor.class);
 
-  private static final String EXT3_LIBRARY = "Maven: net.jangaroo:ext-as:2.0.15";
-  private static final String EXT6_LIBRARY = "Maven: net.jangaroo:ext-as:6.0.1-SNAPSHOT";
+  private static final Pattern EXT3_LIBRARY_PATTERN = Pattern.compile("Maven: net.jangaroo:ext-as:2.0.[1-9][0-9]*(-joo)?");
+  private static final String EXT6_LIBRARY = "net.jangaroo:ext-as:6.0.1-11";
   private static final String MIGRATION_MAP = "ext-as-3.4-migration-map.properties";
-
-  private SortedMap<String, MigrationMapEntry> migrationMap;
   private static final String REFACTORING_NAME = RefactoringBundle.message("migration.title");
-  private PsiMigration myPsiMigration;
 
-  private GlobalSearchScope projectExt3Scope;
-  private GlobalSearchScope projectExt6Scope;
+  private List<Library> extLibraries = ImmutableList.of();
+  private NewLibraryConfiguration ext6LibraryConfig;
+  private SortedMap<String, MigrationMapEntry> migrationMap;
+  private volatile GlobalSearchScope projectAndExtAsScope;
+  private Map<Library, ListMultimap<OrderRootType, String>> originalRoots = ImmutableMap.of();
 
   public FlexMigrationProcessor(Project project) {
     super(project);
-    myPsiMigration = startMigration(project);
+    initialize();
+  }
+
+  private void initialize() {
+    extLibraries = getLibraries(EXT3_LIBRARY_PATTERN);
+    if (extLibraries.isEmpty()) {
+      return;
+    }
+    projectAndExtAsScope = createProjectAndLibrariesScope(myProject, extLibraries);
+
+    ext6LibraryConfig = RepositoryAttachHandler.resolveAndDownload(myProject, EXT6_LIBRARY, false, false, null, null);
+    if (ext6LibraryConfig == null) {
+      error("Required library not found", "The library '" + EXT6_LIBRARY + "' not found in Maven repositories.");
+      return;
+    }
+
+    VirtualFile migrationMapFile = getMigrationMapFileFromLibrary(ext6LibraryConfig);
+    if (migrationMapFile != null) {
+      migrationMap = FlexMigrationMapLoader.load(projectAndExtAsScope, migrationMapFile);
+    }
+  }
+
+  private List<Library> getLibraries(Pattern namePattern) {
+    LibraryTable libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(myProject);
+    List<Library> libraries = new ArrayList<Library>();
+    for (Library library : libraryTable.getLibraries()) {
+      String libraryName = library.getName();
+      if (libraryName != null && namePattern.matcher(libraryName).matches()) {
+        libraries.add(library);
+      }
+    }
+    if (libraries.isEmpty()) {
+      error("Required library not found",
+        "Library that matches pattern '" + namePattern + "' must be added to the project.");
+    } else {
+      LOG.info("Libraries '" + namePattern + "' found (" + libraries.size() + "): " + libraries);
+    }
+    return libraries;
+  }
+
+  private static GlobalSearchScope createProjectAndLibrariesScope(Project project, List<Library> libraries) {
+    GlobalSearchScope result = new LibraryScope(project, libraries.get(0));
+    for (Library library : libraries.subList(1, libraries.size())) {
+      result = result.uniteWith(new LibraryScope(project, library));
+    }
+    return result.uniteWith(ProjectScope.getProjectScope(project));
+  }
+
+  private static VirtualFile getMigrationMapFileFromLibrary(NewLibraryConfiguration libraryConfig) {
+    NewLibraryEditor editor = new NewLibraryEditor(libraryConfig.getLibraryType(), libraryConfig.getProperties());
+    libraryConfig.addRoots(editor);
+    List<VirtualFile> roots = Arrays.asList(editor.getFiles(OrderRootType.CLASSES));
+    for (VirtualFile root : roots) {
+      String path = root.getPath();
+      if (MIGRATION_MAP.equals(path)) {
+        return root;
+      }
+      if ("jar".equals(root.getExtension())) {
+        if (!path.endsWith(URLUtil.JAR_SEPARATOR)) {
+          path += URLUtil.JAR_SEPARATOR;
+        }
+        VirtualFile result = JarFileSystem.getInstance().findLocalVirtualFileByPath(path + MIGRATION_MAP);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    error("Migration map file not found",
+      "Ext AS migration map file '" + MIGRATION_MAP + "' not found in " + EXT6_LIBRARY);
+    return null;
+  }
+
+  private static void error(String title, String text) {
+    Notifications.Bus.notify(new Notification("jangaroo", title, text, ERROR));
   }
 
   @NotNull
-  protected UsageViewDescriptor createUsageViewDescriptor(UsageInfo[] usages) {
+  protected UsageViewDescriptor createUsageViewDescriptor(@NotNull UsageInfo[] usages) {
     return new FlexMigrationUsagesViewDescriptor();
-  }
-
-  private PsiMigration startMigration(Project project) {
-    GlobalSearchScope ext3Scope = loadLibraryScope(project, EXT3_LIBRARY);
-    GlobalSearchScope ext6Scope = loadLibraryScope(project, EXT6_LIBRARY);
-    if (ext3Scope != null && ext6Scope != null) {
-      GlobalSearchScope projectScope = ProjectScope.getProjectScope(project);
-      projectExt3Scope = ext3Scope.uniteWith(projectScope);
-      migrationMap = FlexMigrationMapLoader.loadMigrationMap(projectExt3Scope, ext6Scope, MIGRATION_MAP);
-      projectExt6Scope = ext6Scope.union(projectScope);
-    }
-    return PsiMigrationManager.getInstance(project).startMigration();
-  }
-
-  private static GlobalSearchScope loadLibraryScope(@NotNull Project project, @NotNull String libraryName) {
-    LibraryTable libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project);
-    Library library = libraryTable.getLibraryByName(libraryName);
-    if (library == null) {
-      Notifications.Bus.notify(new Notification("jangaroo", "Required project library not found",
-        String.format("The project library '%s' must be added to the project.", libraryName),
-        NotificationType.ERROR));
-      return null;
-    }
-    LOG.info("Library '" + libraryName + "' found: " + library);
-    return new LibraryScope(project, library);
-  }
-
-  @Override
-  protected void refreshElements(@NotNull PsiElement[] elements) {
-    myPsiMigration = startMigration(myProject);
   }
 
   @NotNull
   protected UsageInfo[] findUsages() {
+    if (migrationMap == null || projectAndExtAsScope == null) {
+      return UsageInfo.EMPTY_ARRAY;
+    }
+
+    PsiMigration migration = PsiMigrationManager.getInstance(myProject).startMigration();
     try {
-      if (migrationMap == null || projectExt3Scope == null) {
-        return UsageInfo.EMPTY_ARRAY;
-      }
       ArrayList<UsageInfo> usagesVector = new ArrayList<UsageInfo>();
       for (MigrationMapEntry entry : migrationMap.values()) {
-        UsageInfo[] usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, projectExt3Scope, entry.getOldName());
+        UsageInfo[] usages = FlexMigrationUtil.findClassOrMemberUsages(myProject, projectAndExtAsScope, entry.getOldName());
 
         for (UsageInfo usage : usages) {
           usagesVector.add(new MigrationUsageInfo(usage, entry));
@@ -98,8 +163,7 @@ class FlexMigrationProcessor extends SequentialRefactoringProcessor {
       }
       return usagesVector.toArray(new UsageInfo[usagesVector.size()]);
     } finally {
-      myPsiMigration.finish();
-      myPsiMigration = null;
+      migration.finish();
     }
   }
 
@@ -112,10 +176,54 @@ class FlexMigrationProcessor extends SequentialRefactoringProcessor {
     return super.preprocessUsages(refUsages);
   }
 
-
   @Override
-  protected void startRefactoring(UsageInfo[] usageInfos) {
-    myPsiMigration = startMigration(myProject);
+  protected void execute(@NotNull final UsageInfo[] usages) {
+    if (extLibraries.isEmpty() || ext6LibraryConfig == null) {
+      return;
+    }
+    // we're going to temporarily modify the Ext AS libraries so that they point to Ext 6 instead of Ext 3.4
+
+    // remember the original Ext 3.4 files so that we can restore the library after migration in #endRefactoring
+    originalRoots = new HashMap<Library, ListMultimap<OrderRootType, String>>();
+    for (Library extLibrary : extLibraries) {
+      ListMultimap<OrderRootType, String> roots = ArrayListMultimap.create();
+      for (OrderRootType orderRootType : OrderRootType.getAllTypes()) {
+        roots.putAll(orderRootType, Arrays.asList(extLibrary.getUrls(orderRootType)));
+      }
+      originalRoots.put(extLibrary, roots);
+    }
+
+    // replace Ext 3.4 files with Ext 6 files
+    for (Library extLibrary : extLibraries) {
+      final ExistingLibraryEditor libraryEditor = new ExistingLibraryEditor(extLibrary, null);
+      libraryEditor.removeAllRoots();
+      ext6LibraryConfig.addRoots(libraryEditor);
+      DumbService.getInstance(myProject).runWhenSmart(
+        new Runnable() {
+          @Override
+          public void run() {
+            ApplicationManager.getApplication().runWriteAction(new Runnable() {
+              public void run() {
+                libraryEditor.commit();
+              }
+            });
+          }
+        }
+      );
+      LOG.info("Replaced library roots of " + extLibrary);
+    }
+
+    // recreate the search scope (it contains a cached index that needs to be invalidated)
+    projectAndExtAsScope = createProjectAndLibrariesScope(myProject, extLibraries);
+    // execute the actual migration as soon as Idea has completed "Indexing" after library change
+    DumbService.getInstance(myProject).runWhenSmart(
+      new Runnable() {
+        @Override
+        public void run() {
+          FlexMigrationProcessor.super.execute(usages);
+        }
+      }
+    );
   }
 
   @Override
@@ -154,7 +262,7 @@ class FlexMigrationProcessor extends SequentialRefactoringProcessor {
 
   @Override
   protected void performRefactoringIteration(UsagesInFile usagesInFile) {
-    if (projectExt6Scope == null) {
+    if (projectAndExtAsScope == null) {
       return;
     }
 
@@ -163,14 +271,32 @@ class FlexMigrationProcessor extends SequentialRefactoringProcessor {
     Collections.sort(usages, ImportUsageFirstComparator.INSTANCE);
 
     for (MigrationMapEntry entry : migrationMap.values()) {
-      FlexMigrationUtil.doClassMigration(myProject, projectExt6Scope, entry, usages);
+      FlexMigrationUtil.doClassMigration(myProject, projectAndExtAsScope, entry, usages);
     }
+    PsiFile file = usagesInFile.getFile();
+    new OptimizeImportsProcessor(myProject, file).run();
   }
 
   @Override
   protected void endRefactoring() {
-    myPsiMigration.finish();
+    // restore the original files of the Ext AS library
+    for (Map.Entry<Library, ListMultimap<OrderRootType, String>> entry : originalRoots.entrySet()) {
+      Library library = entry.getKey();
+      ListMultimap<OrderRootType, String> roots = entry.getValue();
+      final ExistingLibraryEditor editor = new ExistingLibraryEditor(library, null);
+      editor.removeAllRoots();
+      for (Map.Entry<OrderRootType, String> root : roots.entries()) {
+        editor.addRoot(root.getValue(), root.getKey());
+      }
+      ApplicationManager.getApplication().runWriteAction(new Runnable() {
+        public void run() {
+          editor.commit();
+        }
+      });
+      LOG.info("Restored library roots of " + library + " with " + roots);
+    }
   }
+
 
   protected String getCommandName() {
     return REFACTORING_NAME;

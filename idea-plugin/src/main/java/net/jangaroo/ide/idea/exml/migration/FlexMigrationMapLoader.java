@@ -13,7 +13,6 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.ProjectScope;
 import com.intellij.util.Query;
@@ -38,32 +37,19 @@ public class FlexMigrationMapLoader {
   private static final Logger LOG = Logger.getInstance(FlexMigrationMapLoader.class);
 
   @Nullable
-  static SortedMap<String, MigrationMapEntry> loadMigrationMap(GlobalSearchScope projectExt3Scope,
-                                                               GlobalSearchScope ext6Scope,
-                                                               String name) {
-    Project project = projectExt3Scope.getProject();
-    Collection<VirtualFile> candidates = FilenameIndex.getVirtualFilesByName(project, name, ext6Scope);
-    if (candidates.isEmpty()) {
-      error("Migration map '" + name + "' not found in " + ext6Scope.getDisplayName(), null);
-      return null;
-    }
-    if (candidates.size() > 1) {
-      warn("Found multiple migration maps '" + name + "' in " + ext6Scope.getDisplayName()
-        + ". Will use the first of " + candidates);
-    }
-
+  static SortedMap<String, MigrationMapEntry> load(GlobalSearchScope projectExt3Scope, VirtualFile migrationMap) {
     InputStream is;
     try {
-      is = candidates.iterator().next().getInputStream();
+      is = migrationMap.getInputStream();
     } catch (IOException e) {
-      error("Failed to load migration map '" + name + "' from '" + ext6Scope.getDisplayName(), e);
+      error("Failed to load migration map", e);
       return null;
     }
     Properties properties = new Properties();
     try {
       properties.load(is);
     } catch (IOException e) {
-      error("Failed to load migration map '" + name + "' from '" + ext6Scope.getDisplayName(), e);
+      error("Failed to load migration map", e);
       return null;
     } finally {
       try {
@@ -84,18 +70,9 @@ public class FlexMigrationMapLoader {
     return map;
   }
 
-  private static void warn(String message) {
-    notify(message, null, NotificationType.WARNING);
-  }
-
   private static void error(String message, Exception cause) {
-    notify(message, cause, NotificationType.ERROR);
-  }
-
-  private static void notify(String message, Exception cause, NotificationType type) {
     String s = cause == null ? message : message +  ": " + cause.toString();
-    Notifications.Bus.notify(new Notification("jangaroo", "Ext AS migration map",
-      s, type));
+    Notifications.Bus.notify(new Notification("jangaroo", "Ext AS migration map", s, NotificationType.ERROR));
   }
 
   /**
