@@ -29,10 +29,10 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   };
   public static final String[] JANGAROO_3RD_PARTY_JARS = new String[]{
     "edu.princeton.cup:java-cup:10k",
-    "commons-configuration:commons-configuration:1.6",
-    "commons-io:commons-io:2.0.1",
+    "commons-configuration:commons-configuration:1.10",
+    "commons-io:commons-io:2.4",
     "commons-collections:commons-collections:3.2.1",
-    "commons-lang:commons-lang:2.4",
+    "org.apache.commons:commons-lang3:3.2.1",
     "commons-logging:commons-logging:1.1.1",
     "org.freemarker:freemarker:2.3.15",
     "com.google.guava:guava:18.0",
