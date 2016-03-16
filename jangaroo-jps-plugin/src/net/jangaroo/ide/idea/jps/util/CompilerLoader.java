@@ -65,8 +65,11 @@ public class CompilerLoader {
   private static ClassLoader createClassLoader(List<String> jarFileNames) throws FileNotFoundException {
     URL[] urls = new URL[jarFileNames.size()];
     for (int i = 0; i < jarFileNames.size(); i++) {
-       urls[i] = toURL(jarFileNames.get(i));
-      
+      String jarFileName = jarFileNames.get(i);
+      if (!new File(jarFileName).exists()) {
+        throw new FileNotFoundException(jarFileName);
+      }
+      urls[i] = toURL(jarFileName);
     }
     return new URLClassLoader(urls, CompilerLoader.class.getClassLoader());
   }
