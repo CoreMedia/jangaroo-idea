@@ -55,6 +55,7 @@ import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
  * A Facet-from-Maven Importer for the EXML Facet type.
  */
 public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfiguration, ExmlFacetType> {
+  public static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
   private static final String DEFAULT_EXML_FACET_NAME = "EXML";
 
   public ExmlFacetImporter() {
@@ -79,7 +80,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   @Override
   public void getSupportedPackagings(Collection<String> result) {
     super.getSupportedPackagings(result);
-    result.add(JangarooFacetImporter.JANGAROO_PACKAGING_TYPE);
+    result.add(JANGAROO_PACKAGING_TYPE);
   }
 
   protected void setupFacet(ExmlFacet exmlFacet, MavenProject mavenProjectModel) {

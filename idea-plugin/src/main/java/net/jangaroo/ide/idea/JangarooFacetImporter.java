@@ -91,7 +91,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
   public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
-  public static final String JANGAROO_PACKAGING_TYPE = "jangaroo";
+  public static final String JANGAROO_PKG_PACKAGING_TYPE = "jangaroo-pkg";
+  public static final String JANGAROO_APP_PACKAGING_TYPE = "jangaroo-app";
   static final String JANGAROO_DEPENDENCY_TYPE = "jangaroo";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
@@ -127,7 +128,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
     // any of the two Jangaroo Maven plugins has to be configured explicitly:
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
-    if (jangarooMavenPlugin == null && JANGAROO_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging())) {
+    if (jangarooMavenPlugin == null) {
       Notifications.Bus.notify(new Notification("jangaroo", "Jangaroo Facet not created/updated",
         "Module " + mavenProjectModel.getMavenId() + " uses packaging type 'jangaroo', " +
         "but no jangaroo-maven-plugin or exml-maven-plugin was found. Try repeating 'Reimport All Maven Projects'.",
@@ -169,7 +170,8 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   @Override
   public void getSupportedPackagings(Collection<String> result) {
     super.getSupportedPackagings(result);
-    result.add(JANGAROO_PACKAGING_TYPE);
+    result.add(JANGAROO_PKG_PACKAGING_TYPE);
+    result.add(JANGAROO_APP_PACKAGING_TYPE);
   }
 
   @Override
@@ -257,29 +259,31 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
     // "debug" (boolean; true), "debuglevel" ("none", "lines", "source"; "source")
     boolean isWar = "war".equals(mavenProjectModel.getPackaging());
+    boolean isPkg = JANGAROO_PKG_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
+    boolean isApp = JANGAROO_APP_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
 
     String outputDirectory = findConfigValue(mavenProjectModel, "outputDirectory");
     if (outputDirectory == null) {
-      outputDirectory = isWar ? "target/jangaroo-output" : mavenProjectModel.getOutputDirectory();
+      outputDirectory = mavenProjectModel.getBuildDirectory() + (isWar ? "/jangaroo-output" : (isPkg ? "/packages/local/package" : "/app") + "/src");
     }
     File outputDir = new File(outputDirectory);
     if (!outputDir.isAbsolute()) {
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
 
-    String jooClassesRelativePath = "joo/classes";
+    String jooClassesRelativePath = "";
     int jangarooMajorVersion = getMajorVersion(jangarooSdkVersion);
-    if (jangarooMajorVersion > 2) {
+    if (jangarooMajorVersion == 3) {
       jooClassesRelativePath = "amd/as3";
     }
     String jooClassesPath = "";
-    if (jangarooMajorVersion > 1 && !isWar) {
+    if (jangarooMajorVersion > 1 && jangarooMajorVersion < 4 && !isWar) {
       jooClassesPath = "META-INF/resources/" + jooClassesRelativePath;
     }
     jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
 
     String apiOutputDirectory = getConfigurationValue(mavenProjectModel, "apiOutputDirectory", null);
-    jooConfig.apiOutputDirectory = isWar ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
+    jooConfig.apiOutputDirectory = null; // isWar ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
 
     String testOutputDirectory = findConfigValue(mavenProjectModel, "testOutputDirectory");
     if (testOutputDirectory == null) {
