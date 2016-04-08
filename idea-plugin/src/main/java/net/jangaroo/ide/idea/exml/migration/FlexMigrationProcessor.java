@@ -52,7 +52,7 @@ class FlexMigrationProcessor extends SequentialRefactoringProcessor {
   private static final Logger LOG = Logger.getInstance(FlexMigrationProcessor.class);
 
   private static final Pattern EXT3_LIBRARY_PATTERN = Pattern.compile("Maven: net.jangaroo:ext-as:2.0.[1-9][0-9]*(-joo)?");
-  private static final String EXT6_LIBRARY = "net.jangaroo:ext-as:6.0.1-11";
+  private static final String EXT6_LIBRARY = "net.jangaroo:ext-as:6.0.1-21";
   private static final String MIGRATION_MAP = "ext-as-3.4-migration-map.properties";
   private static final String REFACTORING_NAME = RefactoringBundle.message("migration.title");
 
