@@ -5,7 +5,7 @@
   <description>
     A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 15.
   </description>
-  <version>4.0.1</version>
+  <version>4.0.2</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version since-build="IU-143.381.42"/>
