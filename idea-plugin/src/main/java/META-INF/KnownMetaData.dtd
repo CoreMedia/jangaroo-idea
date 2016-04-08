@@ -70,7 +70,7 @@
 <!ELEMENT Event EMPTY>
 <!ATTLIST Event
   name CDATA #REQUIRED
-  type CDATA "flash.events.Event,starling.events.Event,js.Event,ext.IEventObject,com.coremedia.ui.data.PropertyChangeEvent"
+  type CDATA "flash.events.Event,starling.events.Event,js.Event,ext.IEventObject,com.coremedia.ui.data.PropertyChangeEvent,net.jangaroo.ext.FlExtEvent"
   deprecatedMessage CDATA #IMPLIED
   deprecatedReplacement CDATA #IMPLIED
   deprecatedSince CDATA #IMPLIED
