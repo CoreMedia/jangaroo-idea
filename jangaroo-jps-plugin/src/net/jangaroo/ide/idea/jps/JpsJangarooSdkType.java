@@ -32,6 +32,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
     "args4j:args4j:2.0.16",
     "commons-configuration:commons-configuration:1.6",
     "commons-io:commons-io:2.0.1",
+    "commons-lang:commons-lang:2.6",
     "commons-collections:commons-collections:3.2.1",
     "commons-lang:commons-lang:2.4",
     "commons-logging:commons-logging:1.1.1",
