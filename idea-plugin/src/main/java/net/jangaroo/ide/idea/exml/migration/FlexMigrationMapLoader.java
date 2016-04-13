@@ -37,7 +37,7 @@ public class FlexMigrationMapLoader {
   private static final Logger LOG = Logger.getInstance(FlexMigrationMapLoader.class);
 
   @Nullable
-  static SortedMap<String, MigrationMapEntry> load(GlobalSearchScope projectExt3Scope, VirtualFile migrationMap) {
+  static SortedMap<String, MigrationMapEntry> load(Project project, VirtualFile migrationMap) {
     InputStream is;
     try {
       is = migrationMap.getInputStream();
@@ -64,7 +64,7 @@ public class FlexMigrationMapLoader {
     for (String source : properties.stringPropertyNames()) {
       map.put(source, new MigrationMapEntry(source, properties.getProperty(source), false));
     }
-    addEntriesReplaceConfigClasses(map, projectExt3Scope);
+    addEntriesReplaceConfigClasses(project, map);
 
     LOG.info("Migration Map: (" + map.size() + " entries): " + map.values());
     return map;
@@ -76,18 +76,17 @@ public class FlexMigrationMapLoader {
   }
 
   /**
+   * @param project the project
    * @param migrationMap migration map to add entries to
-   * @param projectExt3Scope search scope to lookup Ext AS 3.4 API and project
    */
-  private static void addEntriesReplaceConfigClasses(SortedMap<String, MigrationMapEntry> migrationMap,
-                                                     GlobalSearchScope projectExt3Scope) {
-    JSClass javaScriptObjectClass = getJavaScriptObjectClass(projectExt3Scope.getProject());
+  private static void addEntriesReplaceConfigClasses(Project project, SortedMap<String, MigrationMapEntry> migrationMap) {
+    JSClass javaScriptObjectClass = getJavaScriptObjectClass(project);
     if (javaScriptObjectClass == null) {
       error("joo.JavaScriptObject not found in project libraries", null);
       return;
     }
 
-    Map<String, String> configToTargetClasses = getConfigToTargetClassMap(javaScriptObjectClass, projectExt3Scope);
+    Map<String, String> configToTargetClasses = getConfigToTargetClassMap(project, javaScriptObjectClass);
 
     for (Map.Entry<String, String> entry : configToTargetClasses.entrySet()) {
       String source = entry.getKey();
@@ -105,7 +104,8 @@ public class FlexMigrationMapLoader {
   }
 
   @NotNull
-  private static Map<String, String> getConfigToTargetClassMap(JSClass configBaseClass, GlobalSearchScope scope) {
+  private static Map<String, String> getConfigToTargetClassMap(Project project, JSClass configBaseClass) {
+    GlobalSearchScope scope = ProjectScope.getAllScope(project);
     Query<JSClass> cfgClasses = JSClassSearch.searchClassInheritors(configBaseClass, true, scope);
 
     Map<String, String> configToTargetClasses = new HashMap<String, String>();
