@@ -38,6 +38,7 @@ import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.impl.source.xml.XmlAttributeReference;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.ProjectScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
@@ -78,8 +79,8 @@ public class FlexMigrationUtil {
     }
   }
 
-  public static UsageInfo[] findClassOrMemberUsages(Project project, GlobalSearchScope searchScope, String qName) {
-    Collection<PsiElement> psiElements = findClassesOrMembers(searchScope, qName);
+  public static UsageInfo[] findClassOrMemberUsages(Project project, String qName) {
+    Collection<PsiElement> psiElements = findClassesOrMembers(project, qName);
     if (psiElements.isEmpty()) {
       Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
         "Migration map contains source entry that does not exist in Ext AS 3.4 or project: " + qName,
@@ -89,16 +90,16 @@ public class FlexMigrationUtil {
     return findRefs(project, psiElements, true);
   }
 
-  public static PsiElement findClassOrMember(GlobalSearchScope searchScope, String qName) {
-    Collection<PsiElement> collection = findClassesOrMembers(searchScope, qName);
+  public static PsiElement findClassOrMember(Project project, String qName) {
+    Collection<PsiElement> collection = findClassesOrMembers(project, qName);
     return collection.isEmpty() ? null : collection.iterator().next();
   }
 
-  public static Collection<PsiElement> findClassesOrMembers(GlobalSearchScope searchScope, String qName) {
+  public static Collection<PsiElement> findClassesOrMembers(Project project, String qName) {
     String[] parts = qName.split("#", 2);
     String className = parts[0];
     String member = parts.length == 2 ? parts[1] : null;
-    Collection<PsiElement> classes = findJSQualifiedNamedElements(searchScope, className);
+    Collection<PsiElement> classes = findJSQualifiedNamedElements(project, className);
     if (member == null) {
       return classes;
     }
@@ -181,7 +182,7 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  public static void doClassMigration(Project project, GlobalSearchScope newSearchScope,
+  public static void doClassMigration(Project project,
                                       MigrationMapEntry migrationMapEntry, Collection<UsageInfo> usages) {
     String oldQName = migrationMapEntry.getOldName();
     String newQName = migrationMapEntry.getNewName();
@@ -200,7 +201,7 @@ public class FlexMigrationUtil {
               int paramsIndex = newQName.indexOf('(');
               String classOrMemberName = paramsIndex >= 0 ? newQName.substring(0, paramsIndex) : newQName;
 
-              classOrMember = findClassOrMember(newSearchScope, classOrMemberName);
+              classOrMember = findClassOrMember(project, classOrMemberName);
               if (classOrMember == null) {
                 Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
                   "Migration map contains target entry that does not exist in Ext AS 6 or project: "
@@ -239,7 +240,7 @@ public class FlexMigrationUtil {
                   if (variableReference != null && isStaticFunction(currentClassOrMember)) {
                     variableReference.bindToElement(currentClassOrMember.getParent());
                   } else if (referenceElement.getParent() instanceof JSNewExpression && migrationMapEntry.isMappingOfConfigClass()) {
-                    migrateConfigClassConstructorUsage(project, newSearchScope, oldQName, referenceElement, currentClassOrMember);
+                    migrateConfigClassConstructorUsage(project, oldQName, referenceElement, currentClassOrMember);
                   } else {
                     referenceElement.bindToElement(currentClassOrMember);
                     setCallParameters(project, referenceElement, newQName);
@@ -297,7 +298,6 @@ public class FlexMigrationUtil {
   }
 
   private static void migrateConfigClassConstructorUsage(Project project,
-                                                         GlobalSearchScope newSearchScope,
                                                          String oldQName,
                                                          JSReferenceExpression referenceElement,
                                                          PsiElement newTargetClass) {
@@ -329,7 +329,7 @@ public class FlexMigrationUtil {
           // replace "Ext" with ext.Ext to get correct import
           JSReferenceExpression extApply = (JSReferenceExpression)extApplyCall.getMethodExpression();
           JSReferenceExpression ext = ((JSReferenceExpression)extApply.getQualifier());
-          PsiElement extClass = findClassOrMember(newSearchScope, "ext.Ext");
+          PsiElement extClass = findClassOrMember(project, "ext.Ext");
           if (ext != null && extClass != null) {
             ext.bindToElement(extClass);
           }
@@ -373,10 +373,11 @@ public class FlexMigrationUtil {
     }
   }
 
-  static Collection<PsiElement> findJSQualifiedNamedElements(GlobalSearchScope searchScope, final String qName) {
+  static Collection<PsiElement> findJSQualifiedNamedElements(Project project, final String qName) {
     Set<PsiElement> result = new HashSet<PsiElement>();
 
     JSClassResolver classResolver = Utils.getActionScriptClassResolver();
+    GlobalSearchScope searchScope = ProjectScope.getAllScope(project);
     Collection<JSQualifiedNamedElement> elementsByQName = classResolver.findElementsByQName(qName, searchScope);
 
     for (JSQualifiedNamedElement next : elementsByQName) {
