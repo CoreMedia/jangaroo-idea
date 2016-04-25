@@ -264,7 +264,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
     String outputDirectory = findConfigValue(mavenProjectModel, "outputDirectory");
     if (outputDirectory == null) {
-      outputDirectory = mavenProjectModel.getBuildDirectory() + (isWar ? "/jangaroo-output" : (isPkg ? "/packages/local/package" : "/app") + "/src");
+      outputDirectory = mavenProjectModel.getBuildDirectory() + (isWar ? "/jangaroo-output" : (isPkg ? "/packages/local/package/src" : "/app/app"));
     }
     File outputDir = new File(outputDirectory);
     if (!outputDir.isAbsolute()) {
@@ -368,10 +368,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
   private void doConfigure(FlexProjectConfigurationEditor flexEditor, IdeModifiableModelsProvider modelsProvider,
                            Module module, MavenProject mavenProjectModel) {
-    String buildConfigurationName = mavenProjectModel.getMavenId().getArtifactId();
-    if (buildConfigurationName == null) {
-      return;
-    }
+    String buildConfigurationName = module.getName();
 
     ModifiableFlexBuildConfiguration buildConfiguration = getFirstFlexBuildConfiguration(flexEditor, module);
     if (buildConfiguration == null) {
