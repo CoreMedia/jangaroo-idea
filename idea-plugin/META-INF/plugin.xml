@@ -5,7 +5,7 @@
   <description>
     A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 15.
   </description>
-  <version>4.0.2</version>
+  <version>4.0.3</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version since-build="IU-143.381.42"/>
@@ -33,6 +33,7 @@
     <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
     <languageInjector implementation="net.jangaroo.ide.idea.exml.ExmlLanguageInjector"/>
     <languageInjector implementation="net.jangaroo.ide.idea.sith.SithLanguageInjector"/>
+    <languageInjector implementation="net.jangaroo.ide.idea.properties.FlexPropertiesLanguageInjector"/>
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.ExmlElementGotoDeclarationHandler" order="FIRST"/>
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
     <findUsagesHandlerFactory implementation="net.jangaroo.ide.idea.exml.FindExmlUsagesHandlerFactory" order="FIRST"/>
