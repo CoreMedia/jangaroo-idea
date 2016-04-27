@@ -1,11 +1,11 @@
 <!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
 <idea-plugin url="https://github.com/CoreMedia/jangaroo-idea/wiki" version="2">
-  <name>Jangaroo 0.9</name>
-  <id>net.jangaroo.idea.0.9</id>
+  <name>Jangaroo 4</name>
+  <id>net.jangaroo.idea.4</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 15.
+    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 15.
   </description>
-  <version>4.0.3</version>
+  <version>4.0.4</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version since-build="IU-143.381.42"/>
@@ -27,17 +27,10 @@
     <compiler.buildTargetScopeProvider implementation="net.jangaroo.ide.idea.JangarooBuildTargetScopeProvider"/>
     <compileServer.plugin classpath="jangaroo-jps-plugin.jar"/>
 
-    <fileTypeFactory implementation="net.jangaroo.ide.idea.exml.ExmlFileTypeFactory"/>
-    <iconProvider implementation="net.jangaroo.ide.idea.exml.ExmlIconProvider"/>
-    <facetType implementation="net.jangaroo.ide.idea.exml.ExmlFacetType"/>
     <standardResourceProvider implementation="net.jangaroo.ide.idea.exml.ExmlResourceProvider"/>
-    <languageInjector implementation="net.jangaroo.ide.idea.exml.ExmlLanguageInjector"/>
     <languageInjector implementation="net.jangaroo.ide.idea.sith.SithLanguageInjector"/>
     <languageInjector implementation="net.jangaroo.ide.idea.properties.FlexPropertiesLanguageInjector"/>
-    <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.ExmlElementGotoDeclarationHandler" order="FIRST"/>
     <gotoDeclarationHandler implementation="net.jangaroo.ide.idea.exml.PropertyAccessGotoDeclarationHandler" order="FIRST"/>
-    <findUsagesHandlerFactory implementation="net.jangaroo.ide.idea.exml.FindExmlUsagesHandlerFactory" order="FIRST"/>
-    <gotoClassContributor implementation="net.jangaroo.ide.idea.exml.GotoExmlClassContributor"/>
 
     <codeInsight.implementMethod language="ECMA Script Level 4"
                                  implementationClass="net.jangaroo.ide.idea.ext.MixinAwareImplementMethodsHandler"/>
@@ -61,8 +54,6 @@
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
     <importer implementation="net.jangaroo.ide.idea.JangarooFacetImporter"/>
-    <importer implementation="net.jangaroo.ide.idea.WebResourcesImporter"/>
-    <importer implementation="net.jangaroo.ide.idea.exml.ExmlFacetImporter"/>
   </extensions>
 
   <extensions defaultExtensionNs="com.jetbrains">

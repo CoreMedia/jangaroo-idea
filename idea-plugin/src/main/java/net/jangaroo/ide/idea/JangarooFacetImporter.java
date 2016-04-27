@@ -48,7 +48,6 @@ import com.intellij.packaging.elements.PackagingElementResolvingContext;
 import com.intellij.packaging.impl.elements.ArchivePackagingElement;
 import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
 import com.intellij.util.PairConsumer;
-import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
 import net.jangaroo.jooc.config.PublicApiViolationsMode;

@@ -1,8 +1,6 @@
 package net.jangaroo.ide.idea.jps.util;
 
-import net.jangaroo.exml.api.Exmlc;
 import net.jangaroo.jooc.api.Jooc;
-import net.jangaroo.properties.api.Propc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,14 +20,6 @@ public class CompilerLoader {
 
   public static Jooc loadJooc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
     return instantiateClass(Jooc.class, "net.jangaroo.jooc.Jooc", jarFileNames);
-  }
-
-  public static Exmlc loadExmlc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    return instantiateClass(Exmlc.class, "net.jangaroo.exml.compiler.Exmlc", jarFileNames);
-  }
-
-  public static Propc loadPropc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    return instantiateClass(Propc.class, "net.jangaroo.properties.PropertyClassGenerator", jarFileNames);
   }
 
   private static <T> T instantiateClass(Class<T> compilerInterface, String mainClassName, List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {

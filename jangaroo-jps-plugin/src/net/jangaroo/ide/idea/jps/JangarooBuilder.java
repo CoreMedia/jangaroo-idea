@@ -8,7 +8,6 @@ import com.intellij.flex.model.bc.LinkageType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
-import net.jangaroo.ide.idea.jps.exml.ExmlBuilder;
 import net.jangaroo.ide.idea.jps.util.CompilerLoader;
 import net.jangaroo.ide.idea.jps.util.IdeaFileUtils;
 import net.jangaroo.ide.idea.jps.util.JpsCompileLog;
@@ -68,7 +67,6 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
   public static final FileFilter AS_SOURCES_FILTER = createJangarooSourceFileFilter();
   public static final String FILE_INVALIDATION_BUILDER_MESSAGE = "FILE_INVALIDATION";
   private final Logger log = Logger.getInstance(JangarooBuilder.class);
-  private final ExmlBuilder exmlBuilder;
 
   public static FileFilter createSuffixFileFilter(final String suffix) {
     return SystemInfo.isFileSystemCaseSensitive?
@@ -102,13 +100,10 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
 
   public JangarooBuilder() {
     super(Collections.singletonList(JangarooBuildTargetType.INSTANCE));
-    exmlBuilder = new ExmlBuilder();
   }
 
   @Override
   public void build(@NotNull JangarooBuildTarget target, @NotNull DirtyFilesHolder<BuildRootDescriptor, JangarooBuildTarget> dirtyFilesHolder, @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context) throws ProjectBuildException, IOException {
-    // delegate to EXML builder to guarantee correct order:
-    exmlBuilder.build(target, dirtyFilesHolder, outputConsumer, context);
     // now, build ActionScript and MXML files:
     final List<File> filesToCompile = getFilesToCompile(target, AS_SOURCES_FILTER, dirtyFilesHolder);
     if (!filesToCompile.isEmpty()) {

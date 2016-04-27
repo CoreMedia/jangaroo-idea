@@ -433,16 +433,6 @@
   require CDATA #IMPLIED
 >
 <!--
-  Annotation to convert property accessor methods into normal methods.
-  For example, a public function get x():String annotated with [Accessor] is converted into a method named getX.
-  The optional default annotation parameter can be used to determine the name of the accessor. If not given, the
-  name is derived from the property name, first letter upper-case, prefixed with "get" or "set.
--->
-<!ELEMENT Accessor EMPTY>
-<!ATTLIST Accessor
-  _DEFAULT_ CDATA #IMPLIED
->
-<!--
   Annotation for ActionScript classes that Jangaroo should consider public API.
   If the compiler switch "excludeClassByDefault" is used, the compiler will add an [ExcludeClass] annotation to any
   API stub whose source class does not contain a [PublicApi] annotation.
@@ -451,11 +441,7 @@
 -->
 <!ELEMENT PublicApi EMPTY>
 <!--
-  Annotation for a Sencha Ext JS or Touch config class.
-  Specify the target class to be used when instantiating this config object in property "target".
-  Use property "xtype", "ptype", "type", or "gctype" for a component, plugin, layout, grid column, respectively.
-  If the "*type" property is used without a value, the fully qualified config class name is used.
-
+  Annotation for a Sencha Ext JS class that supports config options.
   * The "create" property takes a boolean value and has the following meaning:
     On a class:
        create[=true] this class always has to be instantiated (from a config object) before being used.
@@ -474,11 +460,6 @@
 -->
 <!ELEMENT ExtConfig EMPTY>
 <!ATTLIST ExtConfig
-  target CDATA #REQUIRED
-  xtype CDATA #IMPLIED
-  ptype CDATA #IMPLIED
-  type CDATA #IMPLIED
-  gctype CDATA #IMPLIED
   create CDATA #IMPLIED
   extractXType CDATA #IMPLIED
 >
@@ -498,22 +479,4 @@
 <!ELEMENT ProvideToExtChildren EMPTY>
 <!ATTLIST ProvideToExtChildren
   variable CDATA #IMPLIED
->
-<!--
-  Annotation for a property that can also be set by handing
-  in a name-value configuration object to the constructor.
-  A different name (alias) to use in the constructor can be
-  specified via a string attribute like this:
-    [ConstructorParameter("componentId")]
-    public native function set id(value:String):void;
-  A value that must be set on the configuration object to
-  indicate the type to use to instantiate the object later
-  can be given in the attribute "value", like this:
-    [ConstructorParameter(value="box")]
-    public native function get xtype():String;
--->
-<!ELEMENT ConstructorParameter EMPTY>
-<!ATTLIST ConstructorParameter
-  _DEFAULT_ CDATA #IMPLIED
-  value CDATA #IMPLIED
 >
