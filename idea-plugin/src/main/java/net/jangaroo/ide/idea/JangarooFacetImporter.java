@@ -2,9 +2,6 @@ package net.jangaroo.ide.idea;
 
 import com.intellij.flex.model.bc.LinkageType;
 import com.intellij.flex.model.bc.OutputType;
-import com.intellij.javaee.facet.JavaeeFacet;
-import com.intellij.javaee.ui.packaging.ExplodedWarArtifactType;
-import com.intellij.javaee.ui.packaging.JavaeeFacetResourcesPackagingElement;
 import com.intellij.lang.javascript.flex.FlexModuleType;
 import com.intellij.lang.javascript.flex.library.FlexLibraryType;
 import com.intellij.lang.javascript.flex.projectStructure.FlexBuildConfigurationsExtension;
@@ -25,7 +22,6 @@ import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsPr
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
@@ -38,15 +34,6 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.packaging.artifacts.Artifact;
-import com.intellij.packaging.artifacts.ArtifactManager;
-import com.intellij.packaging.artifacts.ModifiableArtifact;
-import com.intellij.packaging.artifacts.ModifiableArtifactModel;
-import com.intellij.packaging.elements.CompositePackagingElement;
-import com.intellij.packaging.elements.PackagingElement;
-import com.intellij.packaging.elements.PackagingElementResolvingContext;
-import com.intellij.packaging.impl.elements.ArchivePackagingElement;
-import com.intellij.packaging.impl.elements.ModuleOutputPackagingElement;
 import com.intellij.util.PairConsumer;
 import net.jangaroo.ide.idea.jps.JoocConfigurationBean;
 import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
@@ -58,8 +45,6 @@ import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenPlugin;
-import org.jetbrains.idea.maven.project.MavenConsole;
-import org.jetbrains.idea.maven.project.MavenEmbeddersManager;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
@@ -67,8 +52,6 @@ import org.jetbrains.idea.maven.project.MavenProjectsTree;
 import org.jetbrains.idea.maven.project.SupportedRequestType;
 import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenLog;
-import org.jetbrains.idea.maven.utils.MavenProcessCanceledException;
-import org.jetbrains.idea.maven.utils.MavenProgressIndicator;
 import org.jetbrains.idea.maven.utils.MavenUtil;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
@@ -304,10 +287,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         NotificationType.WARNING));
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
-
-    if (isWar) {
-      postTasks.add(new AddJangarooPackagingOutputToExplodedWebArtifactsTask(jangarooFacet));
-    }
   }
 
   private static String jangarooSdkHomePath(String artifactId, String version) {
@@ -426,7 +405,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
               String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
               VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
               if (sourcesJar != null && sourcesJar.exists()) {
-                libraryModifiableModel.addRoot(sourcesJar.findFileByRelativePath(""), OrderRootType.SOURCES);
+                libraryModifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
               }
               libraryModifiableModel.addRoot(jooApiDir, OrderRootType.SOURCES);
               String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
@@ -523,124 +502,4 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     return configurations.length == 0 ? null : configurations[0];
   }
 
-  private static class AddJangarooPackagingOutputToExplodedWebArtifactsTask implements MavenProjectsProcessorTask {
-    private final JangarooFacet jangarooFacet;
-
-    private AddJangarooPackagingOutputToExplodedWebArtifactsTask(JangarooFacet jangarooFacet) {
-      this.jangarooFacet = jangarooFacet;
-    }
-
-    public void perform(final Project project, MavenEmbeddersManager mavenEmbeddersManager, MavenConsole mavenConsole, MavenProgressIndicator mavenProgressIndicator) throws MavenProcessCanceledException {
-      ApplicationManager.getApplication().runReadAction(new Runnable() {
-        public void run() {
-          Module webModule = jangarooFacet.getModule();
-          // for this Jangaroo-enabled Web app, add all Jangaroo-dependent modules' Jangaroo compiler output.
-
-          // find the IDEA exploded Web artifact for this Jangaroo-enabled Web app module:
-          final Artifact artifact = getExplodedWebArtifact(webModule);
-          if (artifact != null) {
-            final ArtifactManager artifactManager = ArtifactManager.getInstance(project);
-
-            // add the remaining modules' Jangaroo compile output to the Web app's root directory:
-            CompositePackagingElement<?> webInfDir = artifact.getRootElement().findCompositeChild("WEB-INF");
-            if (webInfDir != null) {
-              CompositePackagingElement<?> libDir = webInfDir.findCompositeChild("lib");
-              if (libDir != null) {
-                PackagingElementResolvingContext resolvingContext = artifactManager.getResolvingContext();
-                Collection<ArchivePackagingElement> jangarooArchives = findJangarooArchives(resolvingContext, libDir);
-                if (!jangarooArchives.isEmpty()) {
-                  createJangarooPackagingOutputElements(artifact, resolvingContext, jangarooArchives);
-                  libDir.removeChildren(jangarooArchives);
-                  ensureBuildOnMake(artifact, artifactManager);
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    private static void createJangarooPackagingOutputElements(Artifact artifact,
-                                                              PackagingElementResolvingContext resolvingContext,
-                                                              Collection<ArchivePackagingElement> jangarooArchives) {
-      CompositePackagingElement<?> rootBeer = artifact.getRootElement();
-      for (ArchivePackagingElement archivePackagingElement : jangarooArchives) {
-        Module jarModule = getModuleOfArchive(archivePackagingElement, resolvingContext);
-        JangarooFacet jangarooFacet = JangarooFacet.ofModule(jarModule);
-        PackagingElement<?> jangarooPackagingOutputElement =
-          new JangarooPackagingOutputElement(resolvingContext.getProject(), jangarooFacet);
-        rootBeer.addOrFindChild(jangarooPackagingOutputElement);
-      }
-    }
-
-    private static void ensureBuildOnMake(final Artifact artifact, final ArtifactManager artifactManager) {
-      // instruct IDEA to build the Web app on make:
-      if (!artifact.isBuildOnMake()) {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-          public void run() {
-            ApplicationManager.getApplication().runWriteAction(new Runnable() {
-              public void run() {
-                ModifiableArtifactModel modifiableArtifactModel = artifactManager.createModifiableModel();
-                final ModifiableArtifact modifiableArtifact = modifiableArtifactModel.getOrCreateModifiableArtifact(artifact);
-                modifiableArtifact.setBuildOnMake(true);
-                modifiableArtifactModel.commit();
-              }
-            });
-          }
-        });
-      }
-    }
-
-    private static Collection<ArchivePackagingElement> findJangarooArchives(PackagingElementResolvingContext resolvingContext,
-                                                                            CompositePackagingElement<?> directory) {
-      Collection<ArchivePackagingElement> toBeRemovedLibraries = new ArrayList<ArchivePackagingElement>();
-      for (PackagingElement packagingElement : directory.getChildren()) {
-        if (packagingElement instanceof ArchivePackagingElement) {
-          ArchivePackagingElement archivePackagingElement = (ArchivePackagingElement)packagingElement;
-          Module module = getModuleOfArchive(archivePackagingElement, resolvingContext);
-          if (JangarooFacet.ofModule(module) != null) {
-            toBeRemovedLibraries.add(archivePackagingElement);
-          }
-        }
-      }
-      return toBeRemovedLibraries;
-    }
-
-    private static Module getModuleOfArchive(ArchivePackagingElement archivePackagingElement,
-                                             PackagingElementResolvingContext resolvingContext) {
-      List<PackagingElement<?>> archiveChildren = archivePackagingElement.getChildren();
-      if (archiveChildren.size() == 1) {
-        PackagingElement<?> moduleOutputPackagingElement = archiveChildren.get(0);
-        if (moduleOutputPackagingElement instanceof ModuleOutputPackagingElement) {
-          return ((ModuleOutputPackagingElement)moduleOutputPackagingElement).findModule(resolvingContext);
-        }
-      }
-      return null;
-    }
-
-    private static Artifact getExplodedWebArtifact(Module module) {
-      ArtifactManager artifactManager = ArtifactManager.getInstance(module.getProject());
-      for (Artifact artifact : artifactManager.getArtifactsByType(ExplodedWarArtifactType.getInstance())) {
-        Module artifactModule = findModule(artifactManager, artifact);
-        if (module.equals(artifactModule)) {
-          return artifact;
-        }
-      }
-      return null;
-    }
-
-    private static @Nullable Module findModule(@NotNull ArtifactManager artifactManager, @NotNull Artifact artifact) {
-      PackagingElementResolvingContext packagingElementResolvingContext = artifactManager.getResolvingContext();
-      for (PackagingElement<?> packagingElement : artifact.getRootElement().getChildren()) {
-        if (packagingElement instanceof JavaeeFacetResourcesPackagingElement) {
-          JavaeeFacet facet = ((JavaeeFacetResourcesPackagingElement) packagingElement).findFacet(packagingElementResolvingContext);
-          if (facet != null) {
-            return facet.getModule();
-          }
-        }
-      }
-      return null;
-    }
-
-  }
 }

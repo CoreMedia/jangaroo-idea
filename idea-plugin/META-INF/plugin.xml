@@ -5,7 +5,7 @@
   <description>
     A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 15.
   </description>
-  <version>4.0.4</version>
+  <version>4.0.5</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version since-build="IU-143.381.42"/>
@@ -22,8 +22,6 @@
     <sdkType implementation="net.jangaroo.ide.idea.JangarooSdkType"/>
     <compilerFactory implementation="net.jangaroo.ide.idea.JoocCompilerFactory"/>
     <facetType implementation="net.jangaroo.ide.idea.JangarooFacetType"/>
-    <packaging.elementType implementation="net.jangaroo.ide.idea.JangarooPackagingOutputElementType"/>
-    <packaging.sourceItemProvider implementation="net.jangaroo.ide.idea.JangarooPackagingOutputSourceItemProvider"/>
     <compiler.buildTargetScopeProvider implementation="net.jangaroo.ide.idea.JangarooBuildTargetScopeProvider"/>
     <compileServer.plugin classpath="jangaroo-jps-plugin.jar"/>
 
@@ -60,12 +58,6 @@
     <javaScriptDebugAware implementation="net.jangaroo.ide.idea.debugger.JangarooJavaScriptDebugAware"/>
     <fileUrlMapper implementation="net.jangaroo.ide.idea.debugger.JangarooFileUrlMapper"/>
   </extensions>
-
-  <project-components>
-    <component>
-      <implementation-class>net.jangaroo.ide.idea.JangarooProjectComponent</implementation-class>
-    </component>
-  </project-components>
 
   <actions>
     <action id="net.jangaroo.ide.idea.exml.migration.MigrateExtJsAction"

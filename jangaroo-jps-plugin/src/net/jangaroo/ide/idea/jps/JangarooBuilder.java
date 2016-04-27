@@ -30,7 +30,6 @@ import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
-import org.jetbrains.jps.incremental.messages.CustomBuilderMessage;
 import org.jetbrains.jps.model.JpsDummyElement;
 import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
@@ -65,7 +64,6 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
   public static final String BUILDER_NAME = "jooc";
   
   public static final FileFilter AS_SOURCES_FILTER = createJangarooSourceFileFilter();
-  public static final String FILE_INVALIDATION_BUILDER_MESSAGE = "FILE_INVALIDATION";
   private final Logger log = Logger.getInstance(JangarooBuilder.class);
 
   public static FileFilter createSuffixFileFilter(final String suffix) {
@@ -326,7 +324,4 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
     return "Jangaroo Compiler";
   }
 
-  public static void processFileInvalidationMessage(CompileContext context, File file) {
-    context.processMessage(new CustomBuilderMessage(BUILDER_NAME, FILE_INVALIDATION_BUILDER_MESSAGE, file.getPath()));
-  }
 }
