@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class FlexPropertiesLanguageInjector implements LanguageInjector {
 
   private static final Pattern ANNOTATION_PATTERN = Pattern.compile(
-    "^\\s*[A-Z][a-zA-Z0-9]+\\s*\\([^)]*\\)\\s*$"
+    "\\s*[A-Z][a-zA-Z0-9_]*\\(.*"
   );
 
   @Override
