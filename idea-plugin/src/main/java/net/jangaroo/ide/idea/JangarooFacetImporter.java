@@ -427,8 +427,9 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
               String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
               VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
               if (sourcesJar != null && sourcesJar.exists()) {
-                libraryModifiableModel.addRoot(sourcesJar, OrderRootType.SOURCES);
+                libraryModifiableModel.addRoot(sourcesJar.findFileByRelativePath(""), OrderRootType.SOURCES);
               }
+              libraryModifiableModel.addRoot(jooApiDir, OrderRootType.SOURCES);
               String asdocPath = dependency.getPathForExtraArtifact("asdoc", null);
               VirtualFile asdocJar = LocalFileSystem.getInstance().findFileByPath(asdocPath);
               if (asdocJar != null && asdocJar.exists()) {
