@@ -30,7 +30,8 @@ public class JangarooBuildTargetScopeProvider extends BuildTargetScopeProvider {
       if (FlexModuleType.getInstance().equals(ModuleType.get(module))) {
         JangarooFacet jangarooFacet = JangarooFacet.ofModule(module);
         if (jangarooFacet != null) {
-          targetIds.add(FlexCommonUtils.getBuildTargetId(module.getName(), module.getName(), null));
+          targetIds.add(FlexCommonUtils.getBuildTargetId(module.getName(), module.getName(), false));
+          targetIds.add(FlexCommonUtils.getBuildTargetId(module.getName(), module.getName(), true)); // TODO: only if there are any tests!
         }
       }
     }

@@ -183,7 +183,7 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
 
     dirtyFilesHolder.processDirtyFiles(new FileProcessor<BuildRootDescriptor, JangarooBuildTarget>() {
       public boolean apply(JangarooBuildTarget target, File file, BuildRootDescriptor descriptor) throws IOException {
-        if (target.equals(jangarooBuildTarget) && sourcesFilter.accept(file)) {
+        if (target.equals(jangarooBuildTarget) && sourcesFilter.accept(file) && jangarooBuildTarget.isUnderSourceRoot(file)) {
           filesToCompile.add(file);
         }
         return true;

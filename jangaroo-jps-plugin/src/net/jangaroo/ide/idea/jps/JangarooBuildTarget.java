@@ -1,20 +1,14 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by Fernflower decompiler)
-//
-
 package net.jangaroo.ide.idea.jps;
 
 import com.intellij.flex.FlexCommonBundle;
 import com.intellij.flex.FlexCommonUtils;
 import com.intellij.flex.model.JpsFlexProjectLevelCompilerOptionsExtension;
-import com.intellij.flex.model.bc.BuildConfigurationNature;
-import com.intellij.flex.model.bc.JpsAirPackagingOptions;
 import com.intellij.flex.model.bc.JpsFlexBCDependencyEntry;
 import com.intellij.flex.model.bc.JpsFlexBuildConfiguration;
 import com.intellij.flex.model.bc.JpsFlexDependencyEntry;
 import com.intellij.flex.model.bc.JpsFlexModuleOrProjectCompilerOptions;
 import com.intellij.flex.model.bc.JpsLibraryDependencyEntry;
+import com.intellij.flex.model.bc.LinkageType;
 import com.intellij.flex.model.bc.impl.JpsFlexBCState;
 import com.intellij.flex.model.bc.impl.JpsFlexCompilerOptionsImpl;
 import com.intellij.flex.model.run.JpsBCBasedRunnerParameters;
@@ -38,8 +32,10 @@ import org.jetbrains.jps.indices.IgnoredFileIndex;
 import org.jetbrains.jps.indices.ModuleExcludeIndex;
 import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.JpsProject;
+import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.library.JpsLibraryRoot;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
 import org.jetbrains.jps.model.module.JpsTypedModuleSourceRoot;
 import org.jetbrains.jps.model.runConfiguration.JpsRunConfigurationType;
@@ -51,7 +47,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
@@ -59,24 +54,19 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
   private final JpsFlexBuildConfiguration bc;
   @NotNull
   private final String id;
+  private final boolean tests;
 
-  private JangarooBuildTarget(@NotNull JpsFlexBuildConfiguration bc, @NotNull String id) {
+  private JangarooBuildTarget(@NotNull JpsFlexBuildConfiguration bc, @NotNull String id, boolean tests) {
     super(JangarooBuildTargetType.INSTANCE);
     this.bc = bc;
     this.id = id;
+    this.tests = tests;
   }
 
   @NotNull
-  public static JangarooBuildTarget create(@NotNull JpsFlexBuildConfiguration bc, @Nullable Boolean forcedDebugStatus) {
-    String id = FlexCommonUtils.getBuildTargetId(bc.getModule().getName(), bc.getName(), forcedDebugStatus);
-    if (forcedDebugStatus == null) {
-      return new JangarooBuildTarget(bc, id);
-    } else {
-      JpsFlexBuildConfiguration bcCopy = bc.getModule().getProperties().createCopy(bc);
-      String additionalOptions = FlexCommonUtils.removeOptions(bc.getCompilerOptions().getAdditionalOptions(), "debug", "compiler.debug");
-      bcCopy.getCompilerOptions().setAdditionalOptions(additionalOptions + " -debug=" + forcedDebugStatus.toString());
-      return new JangarooBuildTarget(bcCopy, id);
-    }
+  public static JangarooBuildTarget create(@NotNull JpsFlexBuildConfiguration bc, boolean tests) {
+    String id = FlexCommonUtils.getBuildTargetId(bc.getModule().getName(), bc.getName(), tests);
+    return new JangarooBuildTarget(bc, id, tests);
   }
 
   @Nullable
@@ -87,7 +77,7 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
     JpsTypedRunConfiguration runConfig = FlexCommonUtils.findRunConfiguration(project, runConfigType, runConfigName);
     JpsFlexBuildConfiguration bc = runConfig == null ? null : ((JpsBCBasedRunnerParameters)runConfig.getProperties()).getBC(project);
     String id = FlexCommonUtils.getBuildTargetIdForRunConfig(runConfigTypeId, runConfigName);
-    return bc == null ? null : new JangarooBuildTarget(bc, id);
+    return bc == null ? null : new JangarooBuildTarget(bc, id, false);
   }
 
   @NotNull
@@ -96,7 +86,7 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
   }
 
   public boolean isTests() {
-    return false; // TODO
+    return tests;
   }
 
   @NotNull
@@ -111,7 +101,7 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
       if (entry instanceof JpsFlexBCDependencyEntry) {
         JpsFlexBuildConfiguration dependencyBC = ((JpsFlexBCDependencyEntry)entry).getBC();
         if (dependencyBC != null) {
-          result.add(create(dependencyBC, null));
+          result.add(create(dependencyBC, entry.getLinkageType() == LinkageType.Test));
         }
       }
     }
@@ -123,77 +113,35 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
   @NotNull
   public List<BuildRootDescriptor> computeRootDescriptors(JpsModel model, ModuleExcludeIndex index, IgnoredFileIndex ignoredFileIndex, BuildDataPaths dataPaths) {
     ArrayList<BuildRootDescriptor> result = new ArrayList<BuildRootDescriptor>();
-    ArrayList<File> srcRoots = new ArrayList<File>();
-    Iterator nature = bc.getModule().getSourceRoots(JavaSourceRootType.SOURCE).iterator();
 
-    JpsTypedModuleSourceRoot i$;
-    File cssPath;
-    while (nature.hasNext()) {
-      i$ = (JpsTypedModuleSourceRoot)nature.next();
-      cssPath = JpsPathUtil.urlToFile(i$.getUrl());
-      result.add(new JangarooSourceRootDescriptor(this, cssPath));
-      srcRoots.add(cssPath);
+    Iterable<JpsTypedModuleSourceRoot<JavaSourceRootProperties>> moduleSourceRoots = bc.getModule().getSourceRoots(isTests() ? JavaSourceRootType.TEST_SOURCE : JavaSourceRootType.SOURCE);
+    for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : moduleSourceRoots) {
+      File srcRoot = sourceRoot.getFile();
+      result.add(new JangarooSourceRootDescriptor(this, srcRoot));
     }
-
-    if (FlexCommonUtils.isFlexUnitBC(bc)) {
-      nature = bc.getModule().getSourceRoots(JavaSourceRootType.TEST_SOURCE).iterator();
-
-      while (nature.hasNext()) {
-        i$ = (JpsTypedModuleSourceRoot)nature.next();
-        cssPath = JpsPathUtil.urlToFile(i$.getUrl());
-        result.add(new JangarooSourceRootDescriptor(this, cssPath));
-        srcRoots.add(cssPath);
+    if (isTests()) {
+      // add sources to class path, not to source path:
+      Iterable<JpsTypedModuleSourceRoot<JavaSourceRootProperties>> moduleProductionSourceRoots = bc.getModule().getSourceRoots(JavaSourceRootType.SOURCE);
+      for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : moduleProductionSourceRoots) {
+        result.add(new JangarooSourceRootDescriptor(this, sourceRoot.getFile()));
       }
     }
 
-    nature = bc.getDependencies().getEntries().iterator();
-
-    while (nature.hasNext()) {
-      JpsFlexDependencyEntry var13 = (JpsFlexDependencyEntry)nature.next();
-      if (var13 instanceof JpsFlexBCDependencyEntry) {
-        JpsFlexBuildConfiguration var15 = ((JpsFlexBCDependencyEntry)var13).getBC();
-        if (var15 != null) {
-          result.add(new JangarooSourceRootDescriptor(this, new File(var15.getActualOutputFilePath())));
-        }
-      } else if (var13 instanceof JpsLibraryDependencyEntry) {
-        JpsLibrary var16 = ((JpsLibraryDependencyEntry)var13).getLibrary();
-        if (var16 != null) {
-
-          for (String rootUrl : var16.getRootUrls(JpsOrderRootType.COMPILED)) {
-            result.add(new JangarooSourceRootDescriptor(this, JpsPathUtil.urlToFile(rootUrl)));
+    for (JpsFlexDependencyEntry dependencyEntry : bc.getDependencies().getEntries()) {
+      if (dependencyEntry.getLinkageType() != LinkageType.Test || isTests()) {
+        if (dependencyEntry instanceof JpsFlexBCDependencyEntry) {
+          JpsFlexBuildConfiguration buildConfiguration = ((JpsFlexBCDependencyEntry)dependencyEntry).getBC();
+          if (buildConfiguration != null) {
+            result.add(new JangarooSourceRootDescriptor(this, new File(buildConfiguration.getActualOutputFilePath())));
           }
-        }
-      }
-    }
+        } else if (dependencyEntry instanceof JpsLibraryDependencyEntry) {
+          JpsLibrary library = ((JpsLibraryDependencyEntry)dependencyEntry).getLibrary();
+          if (library != null) {
 
-    BuildConfigurationNature var12 = bc.getNature();
-    if (var12.isWebPlatform() && var12.isApp() && bc.isUseHtmlWrapper() && !bc.getWrapperTemplatePath().isEmpty()) {
-      this.addIfNotUnderRoot(result, new File(bc.getWrapperTemplatePath()), srcRoots);
-    }
-
-    if (FlexCommonUtils.canHaveRLMsAndRuntimeStylesheets(bc)) {
-
-      for (String var17 : bc.getCssFilesToCompile()) {
-        if (!var17.isEmpty()) {
-          this.addIfNotUnderRoot(result, new File(var17), srcRoots);
-        }
-      }
-    }
-
-    if (!bc.getCompilerOptions().getAdditionalConfigFilePath().isEmpty()) {
-      this.addIfNotUnderRoot(result, new File(bc.getCompilerOptions().getAdditionalConfigFilePath()), srcRoots);
-    }
-
-    if (var12.isApp()) {
-      if (var12.isDesktopPlatform()) {
-        this.addAirDescriptorPathIfCustom(result, bc.getAirDesktopPackagingOptions(), srcRoots);
-      } else if (var12.isMobilePlatform()) {
-        if (bc.getAndroidPackagingOptions().isEnabled()) {
-          this.addAirDescriptorPathIfCustom(result, bc.getAndroidPackagingOptions(), srcRoots);
-        }
-
-        if (bc.getIosPackagingOptions().isEnabled()) {
-          this.addAirDescriptorPathIfCustom(result, bc.getIosPackagingOptions(), srcRoots);
+            for (JpsLibraryRoot libraryRoot : library.getRoots(JpsOrderRootType.COMPILED)) {
+              result.add(new JangarooSourceRootDescriptor(this, JpsPathUtil.urlToFile(libraryRoot.getUrl())));
+            }
+          }
         }
       }
     }
@@ -201,42 +149,24 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
     return result;
   }
 
-  private void addIfNotUnderRoot(List<BuildRootDescriptor> descriptors, File file, Collection<File> roots) {
-    Iterator i$ = roots.iterator();
-
-    File root;
-    do {
-      if (!i$.hasNext()) {
-        descriptors.add(new JangarooSourceRootDescriptor(this, file));
-        return;
+  public boolean isUnderSourceRoot(File sourceFile) {
+    Iterable<JpsTypedModuleSourceRoot<JavaSourceRootProperties>> sourceRoots = getBC().getModule().getSourceRoots(isTests() ? JavaSourceRootType.TEST_SOURCE : JavaSourceRootType.SOURCE);
+    for (JpsTypedModuleSourceRoot<JavaSourceRootProperties> sourceRoot : sourceRoots) {
+      if (FileUtil.isAncestor(sourceRoot.getFile(), sourceFile, false)) {
+        return true;
       }
-
-      root = (File)i$.next();
-    } while (!FileUtil.isAncestor(root, file, false));
-
-  }
-
-  private void addAirDescriptorPathIfCustom(List<BuildRootDescriptor> descriptors, JpsAirPackagingOptions packagingOptions, Collection<File> srcRoots) {
-    if (!packagingOptions.isUseGeneratedDescriptor() && !packagingOptions.getCustomDescriptorPath().isEmpty()) {
-      this.addIfNotUnderRoot(descriptors, new File(packagingOptions.getCustomDescriptorPath()), srcRoots);
     }
-
+    return false;
   }
 
   @Nullable
   public BuildRootDescriptor findRootDescriptor(String rootId, BuildRootIndex rootIndex) {
-    Iterator i$ = rootIndex.getTargetRoots(this, null).iterator();
-
-    BuildRootDescriptor descriptor;
-    do {
-      if (!i$.hasNext()) {
-        return null;
+    for (BuildRootDescriptor descriptor : rootIndex.getTargetRoots(this, null)) {
+      if (descriptor.getRootId().equals(rootId)) {
+        return descriptor;
       }
-
-      descriptor = (BuildRootDescriptor)i$.next();
-    } while (!descriptor.getRootId().equals(rootId));
-
-    return descriptor;
+    }
+    return null;
   }
 
   @NotNull
@@ -266,7 +196,7 @@ public class JangarooBuildTarget extends BuildTarget<BuildRootDescriptor> {
     if (this == o) {
       return true;
     }
-    if (o != null && this.getClass() == o.getClass()) {
+    if (o != null && getClass() == o.getClass()) {
       JangarooBuildTarget target = (JangarooBuildTarget)o;
       return id.equals(target.id);
     }

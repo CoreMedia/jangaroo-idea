@@ -28,7 +28,8 @@ public class JangarooBuildTargetType extends BuildTargetType<JangarooBuildTarget
     for (JpsTypedModule<JpsFlexBuildConfigurationManager> module : model.getProject().getModules(JpsFlexModuleType.INSTANCE)) {
       List<JpsFlexBuildConfiguration> buildConfigurations = module.getProperties().getBuildConfigurations();
       for (JpsFlexBuildConfiguration bc : buildConfigurations) {
-        result.add(JangarooBuildTarget.create(bc, null));
+        result.add(JangarooBuildTarget.create(bc, false));
+        result.add(JangarooBuildTarget.create(bc, true)); // TODO: only if there are any tests?
       }
     }
     return result;
@@ -56,7 +57,7 @@ public class JangarooBuildTargetType extends BuildTargetType<JangarooBuildTarget
         for (JpsTypedModule<JpsFlexBuildConfigurationManager> module : model.getProject().getModules(JpsFlexModuleType.INSTANCE)) {
           if(module.getName().equals(moduleName)) {
             JpsFlexBuildConfiguration bc = module.getProperties().findConfigurationByName(bcName);
-            return bc != null ? JangarooBuildTarget.create(bc, forcedDebugStatus) : null;
+            return bc != null ? JangarooBuildTarget.create(bc, forcedDebugStatus == null ? false : forcedDebugStatus) : null;
           }
         }
       }
