@@ -389,6 +389,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
             ModifiableFlexBuildConfiguration dependentBC = (ModifiableFlexBuildConfiguration)flexBuildConfigurationManager.getActiveConfiguration();
             if (dependentBC != null) {
               ModifiableBuildConfigurationEntry buildConfigurationEntry = flexEditor.createBcEntry(modifiableDependencies, dependentModule.getName(), dependentBC.getName());
+              buildConfigurationEntry.getDependencyType().setLinkageType("test".equals(dependency.getScope()) ? LinkageType.Test : LinkageType.Merged);
               modifiableDependencies.getModifiableEntries().add(buildConfigurationEntry);
             }
           }
