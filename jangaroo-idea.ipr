@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ArtifactManager">
     <artifact build-on-make="true" name="jangaroo-jps-plugin:jar">
-      <output-path>$USER_HOME$/.IntelliJIdea14/system/plugins-sandbox/plugins/jangaroo-0.9/lib</output-path>
+      <output-path>$USER_HOME$/.IntelliJIdea15/system/plugins-sandbox.flex</output-path>
       <root id="root">
         <element id="archive" name="jangaroo-jps-plugin.jar">
           <element id="module-output" name="jangaroo-jps-plugin" />
@@ -76,8 +76,17 @@
       <profile default="true" name="Default" enabled="false">
         <processorPath useClasspath="true" />
       </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="jangaroo-api" />
+      </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="1.6" />
+    <bytecodeTargetLevel target="1.6">
+      <module name="jangaroo-api" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
   <component name="CopyrightManager" default="" />
   <component name="DependencyValidationManager">
@@ -89,6 +98,7 @@
   </component>
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
     <file url="file://$PROJECT_DIR$/jangaroo-jps-plugin/src/META-INF/services/org.jetbrains.jps.model.serialization.JpsModelSerializerExtension" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
   </component>
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
@@ -121,6 +131,13 @@
     <option name="HEAP_SIZE" />
     <option name="LOCALE" />
     <option name="OPEN_IN_BROWSER" value="true" />
+  </component>
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/jangaroo-api/pom.xml" />
+      </list>
+    </option>
   </component>
   <component name="NullableNotNullManager">
     <option name="myDefaultNullable" value="org.jetbrains.annotations.Nullable" />
@@ -437,7 +454,7 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/idea-plugin/jangaroo-0.9.iml" filepath="$PROJECT_DIR$/idea-plugin/jangaroo-0.9.iml" />
+      <module fileurl="file://$PROJECT_DIR$/idea-plugin/jangaroo-4.iml" filepath="$PROJECT_DIR$/idea-plugin/jangaroo-4.iml" />
       <module fileurl="file://$PROJECT_DIR$/jangaroo-api/jangaroo-api.iml" filepath="$PROJECT_DIR$/jangaroo-api/jangaroo-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/jangaroo-jps-plugin/jangaroo-jps-plugin.iml" filepath="$PROJECT_DIR$/jangaroo-jps-plugin/jangaroo-jps-plugin.iml" />
     </modules>
@@ -445,15 +462,15 @@
   <component name="ProjectResources">
     <default-html-doctype>http://www.w3.org/1999/xhtml</default-html-doctype>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" default="false" assert-keyword="true" jdk-15="true" project-jdk-name="IntelliJ IDEA IU-143.381.42" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" default="false" assert-keyword="true" jdk-15="true" project-jdk-name="IntelliJ IDEA IU-143.1184.17" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="Jangaroo IDEA Plugin" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
-      <module name="jangaroo-0.9" />
-      <option name="VM_PARAMETERS" value="-Xmx2048m -Xms256m -XX:MaxPermSize=512m -ea -Dcompiler.process.debug.port=-1" />
+      <module name="jangaroo-4" />
+      <option name="VM_PARAMETERS" value="-Xmx2048m -Xms256m -XX:MaxPermSize=512m -ea -Dcompiler.process.debug.port=1899" />
       <option name="PROGRAM_PARAMETERS" value="" />
-      <log_file path="$USER_HOME$/.IntelliJIdea15/system/plugins-sandbox/system/log/idea.log" checked="true" skipped="true" show_all="false" alias="IDEA LOG" />
+      <log_file path="$USER_HOME$/.IntelliJIdea15/system/plugins-sandbox.flex/system/log/idea.log" checked="false" skipped="true" show_all="false" alias="IDEA LOG" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="51555" />
         <option name="TRANSPORT" value="0" />
@@ -482,10 +499,10 @@
   <component name="libraryTable">
     <library name="jangaroo-api">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/17.0/guava-17.0.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126.jar!/" />
       </CLASSES>
@@ -591,48 +608,37 @@
         <root url="jar://$MAVEN_REPOSITORY$/junit/junit/4.10/junit-4.10-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Maven: net.jangaroo:exml-compiler-api:2.1.2">
+    <library name="Maven: net.jangaroo:exml-compiler-api:4.0.11">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11.jar!/" />
       </CLASSES>
       <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2-javadoc.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11-javadoc.jar!/" />
       </JAVADOC>
       <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/2.1.2/exml-compiler-api-2.1.2-sources.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Maven: net.jangaroo:jangaroo-compiler-api:2.1.2">
+    <library name="Maven: net.jangaroo:jangaroo-compiler-api:4.0.11">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11.jar!/" />
       </CLASSES>
       <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2-javadoc.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11-javadoc.jar!/" />
       </JAVADOC>
       <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/2.1.2/jangaroo-compiler-api-2.1.2-sources.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Maven: net.jangaroo:jangaroo-utils:2.1.2">
+    <library name="Maven: net.jangaroo:jangaroo-utils:4.0.11">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11.jar!/" />
       </CLASSES>
       <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2-javadoc.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11-javadoc.jar!/" />
       </JAVADOC>
       <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/2.1.2/jangaroo-utils-2.1.2-sources.jar!/" />
-      </SOURCES>
-    </library>
-    <library name="Maven: net.jangaroo:properties-compiler-api:2.1.2">
-      <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2.jar!/" />
-      </CLASSES>
-      <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2-javadoc.jar!/" />
-      </JAVADOC>
-      <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/properties-compiler-api/2.1.2/properties-compiler-api-2.1.2-sources.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11-sources.jar!/" />
       </SOURCES>
     </library>
     <library name="Maven: org.hamcrest:hamcrest-core:1.1">
