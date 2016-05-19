@@ -53,6 +53,7 @@ import org.jetbrains.idea.maven.project.SupportedRequestType;
 import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenLog;
 import org.jetbrains.idea.maven.utils.MavenUtil;
+import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
 
@@ -72,10 +73,9 @@ import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toIdeaUrl;
 public class JangarooFacetImporter extends FacetImporter<JangarooFacet, JangarooFacetConfiguration, JangarooFacetType> {
   public static final String JANGAROO_GROUP_ID = "net.jangaroo";
   static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
-  public static final String EXML_MAVEN_PLUGIN_ARTIFACT_ID = "exml-maven-plugin";
   public static final String JANGAROO_PKG_PACKAGING_TYPE = "jangaroo-pkg";
   public static final String JANGAROO_APP_PACKAGING_TYPE = "jangaroo-app";
-  static final String JANGAROO_DEPENDENCY_TYPE = "jangaroo";
+  private static final String MAVEN_PACKAGING_POM = "pom";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
   public JangarooFacetImporter() {
@@ -110,10 +110,21 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     }
     // any of the two Jangaroo Maven plugins has to be configured explicitly:
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
+    if (MAVEN_PACKAGING_POM.equals(mavenProjectModel.getPackaging())) {
+      // The only pom-based Flash modules we support are those that use jangaroo:extract-remote-packages:
+      if (jangarooMavenPlugin != null) {
+        for (MavenPlugin.Execution execution : jangarooMavenPlugin.getExecutions()) {
+          if (execution.getGoals().contains("extract-remote-packages")) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
     if (jangarooMavenPlugin == null) {
       Notifications.Bus.notify(new Notification("jangaroo", "Jangaroo Facet not created/updated",
-        "Module " + mavenProjectModel.getMavenId() + " uses packaging type 'jangaroo', " +
-        "but no jangaroo-maven-plugin or exml-maven-plugin was found. Try repeating 'Reimport All Maven Projects'.",
+        "Module " + mavenProjectModel.getMavenId() + " uses packaging type '" + mavenProjectModel.getPackaging() + "', " +
+        "but no jangaroo-maven-plugin was found. Try repeating 'Reimport All Maven Projects'.",
         NotificationType.WARNING));
     }
     return jangarooMavenPlugin != null;
@@ -138,15 +149,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
    * @return jangaroo-maven-plugin or exml-maven-plugin
    */
   protected MavenPlugin findJangarooMavenPlugin(MavenProject mavenProjectModel) {
-    MavenPlugin jangarooPlugin = findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
-    if (jangarooPlugin == null) {
-      jangarooPlugin = findExmlMavenPlugin(mavenProjectModel);
-    }
-    return jangarooPlugin;
-  }
-
-  public static MavenPlugin findExmlMavenPlugin(MavenProject mavenProjectModel) {
-    return findDeclaredJangarooPlugin(mavenProjectModel, EXML_MAVEN_PLUGIN_ARTIFACT_ID);
+    return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
   }
 
   @Override
@@ -154,15 +157,15 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     super.getSupportedPackagings(result);
     result.add(JANGAROO_PKG_PACKAGING_TYPE);
     result.add(JANGAROO_APP_PACKAGING_TYPE);
+    result.add(MAVEN_PACKAGING_POM); // for remote packages module!
   }
 
   @Override
   public void getSupportedDependencyTypes(Collection<String> result, SupportedRequestType type) {
     super.getSupportedDependencyTypes(result, type);
-    // for Jangaroo 1:
-    result.add(JANGAROO_DEPENDENCY_TYPE);
     // for Flex modules, "jar" dependencies (to Jangaroo libraries) are not handled automatically:
     result.add("jar");
+    result.add("pom");
   }
 
   @Override
@@ -211,6 +214,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
       commitFlexProjectConfigurationEditor(flexEditor);
     }
 
+    if (MAVEN_PACKAGING_POM.equals(mavenProjectModel.getPackaging())) {
+      // The only pom-based Flash modules we have are remote-packages modules, for which nothing more has to be done here.
+      return;
+    }
+
     JangarooFacetConfiguration jangarooFacetConfiguration = jangarooFacet.getConfiguration();
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
@@ -240,42 +248,34 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
     // "debug" (boolean; true), "debuglevel" ("none", "lines", "source"; "source")
-    boolean isWar = "war".equals(mavenProjectModel.getPackaging());
     boolean isPkg = JANGAROO_PKG_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
     boolean isApp = JANGAROO_APP_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
 
     String outputDirectory = findConfigValue(mavenProjectModel, "outputDirectory");
     if (outputDirectory == null) {
-      outputDirectory = mavenProjectModel.getBuildDirectory() + (isWar ? "/jangaroo-output" : (isPkg ? "/packages/local/package/src" : "/app/app"));
+      outputDirectory = mavenProjectModel.getBuildDirectory() + (isPkg ? "/packages/local/package/src" : "/app/app");
     }
     File outputDir = new File(outputDirectory);
     if (!outputDir.isAbsolute()) {
       outputDir = new File(mavenProjectModel.getDirectory(), outputDirectory);
     }
 
-    String jooClassesRelativePath = "";
     int jangarooMajorVersion = getMajorVersion(jangarooSdkVersion);
-    if (jangarooMajorVersion == 3) {
-      jooClassesRelativePath = "amd/as3";
+    if (jangarooMajorVersion < 4) {
+      return;
     }
-    String jooClassesPath = "";
-    if (jangarooMajorVersion > 1 && jangarooMajorVersion < 4 && !isWar) {
-      jooClassesPath = "META-INF/resources/" + jooClassesRelativePath;
-    }
-    jooConfig.outputDirectory = toIdeaUrl(new File(outputDir, jooClassesPath).getAbsolutePath());
+    jooConfig.outputDirectory = toIdeaUrl(outputDir.getAbsolutePath());
 
     String apiOutputDirectory = getConfigurationValue(mavenProjectModel, "apiOutputDirectory", null);
-    jooConfig.apiOutputDirectory = null; // isWar ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
+    jooConfig.apiOutputDirectory = isApp ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
 
-    String testOutputDirectory = findConfigValue(mavenProjectModel, "testOutputDirectory");
-    if (testOutputDirectory == null) {
-      testOutputDirectory = isWar ? "target/jangaroo-test-output" : mavenProjectModel.getTestOutputDirectory();
-    }
+    String testOutputDirectory = findConfigValue(mavenProjectModel, "testOutputDirectory", mavenProjectModel.getTestOutputDirectory());
+    assert testOutputDirectory != null; // since it has a non-null default!
     File testOutputDir = new File(testOutputDirectory);
     if (!testOutputDir.isAbsolute()) {
       testOutputDir = new File(mavenProjectModel.getDirectory(), testOutputDirectory);
     }
-    jooConfig.testOutputDirectory = toIdeaUrl(new File(testOutputDir, jooClassesRelativePath).getAbsolutePath());
+    jooConfig.testOutputDirectory = toIdeaUrl(testOutputDir.getAbsolutePath());
 
     String publicApiViolationsMode = getConfigurationValue(mavenProjectModel, "publicApiViolations", "warn");
     try {
@@ -297,6 +297,12 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
   @Override
   public void collectSourceRoots(MavenProject mavenProject, PairConsumer<String, JpsModuleSourceRootType<?>> result) {
+    if (MAVEN_PACKAGING_POM.equals(mavenProject.getPackaging())) {
+      // The only pom-based Flash modules we have are remote-packages modules, which contain the Ext framework.
+      // This has to be marked as a resource root folder.
+      result.consume("target/ext/classic", JavaResourceRootType.RESOURCE);
+      return;
+    }
     collectSourceOrTestFolders(mavenProject, JavaSourceRootType.SOURCE, "compile", "src/main/joo", result);
     collectSourceOrTestFolders(mavenProject, JavaSourceRootType.TEST_SOURCE, "testCompile", "src/test/joo", result);
   }
@@ -378,6 +384,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
     modifiableDependencies.getModifiableEntries().clear();
     for (MavenArtifact dependency : mavenProjectModel.getDependencies()) {
+      String packageType = findGoalConfigValue(mavenProjectModel, "package-pkg", "packageType");
+      // leave out provided pom dependencies, i.e. the dependency to remote-packages, but not in a theme:
+      if (MAVEN_PACKAGING_POM.equals(dependency.getType()) && "provided".equals(dependency.getScope()) && !"theme".equals(packageType)) {
+        continue;
+      }
       VirtualFile artifactFile = LocalFileSystem.getInstance().findFileByIoFile(dependency.getFile());
       if (artifactFile != null) {
         VirtualFile artifactJarFile = JarFileSystem.getInstance().getJarRootForLocalFile(artifactFile);
