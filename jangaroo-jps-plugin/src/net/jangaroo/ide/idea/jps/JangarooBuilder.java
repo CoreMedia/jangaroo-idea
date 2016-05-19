@@ -210,7 +210,13 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
     List<JpsFlexDependencyEntry> entries = bc.getDependencies().getEntries();
     for (JpsFlexDependencyEntry entry : entries) {
       if (entry instanceof JpsFlexBCDependencyEntry && (!LinkageType.Test.equals(entry.getLinkageType()) || forTests)) {
-        collectNamespaceConfigurations(namespaceConfigurations, ((JpsFlexBCDependencyEntry)entry).getBC());
+        JpsFlexBCDependencyEntry bcDependencyEntry = (JpsFlexBCDependencyEntry)entry;
+        JpsFlexBuildConfiguration buildConfiguration = bcDependencyEntry.getBC();
+        if (buildConfiguration == null) {
+          log.warn(String.format("Encountered null dependency entry in module %s of type %s.", bc.getModule().getName(), bcDependencyEntry.getLinkageType()));
+        } else {
+          collectNamespaceConfigurations(namespaceConfigurations, buildConfiguration);
+        }
       }
     }
     joocConfig.setNamespaces(namespaceConfigurations);
@@ -288,7 +294,7 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
   }
 
   private static void collectNamespaceConfigurations(List<NamespaceConfiguration> namespaceConfigurations,
-                                                     JpsFlexBuildConfiguration bc) {
+                                                     @NotNull JpsFlexBuildConfiguration bc) {
     String namespaces = bc.getCompilerOptions().getAllOptions().get("compiler.namespaces.namespace");
     if (namespaces != null) {
       String[] uriToManifestMap = namespaces.split("\n");
