@@ -1,13 +1,18 @@
-package ${PACKAGE_NAME}#if (${PACKAGE_NAME} != "") #end{
+#parse("ActionScript File Header.as")
+package ${PACKAGE_NAME}#if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "") #end{
+${Access_modifier} class ${NAME} extends#if (${Superclass} && ${Superclass} != "") ${Superclass}#else ext.Component#end #if (${SuperInterfaces} && ${SuperInterfaces} != "")implements #foreach( $i in ${SuperInterfaces} ) #if ($foreach.count > 1),#end $i #end#end{
+#if (${XTYPE} && ${XTYPE} != "")
+    /**
+     * The xtype alias for this component.
+     */
+    public static const xtype:String = "${XTYPE}";
+#end
+    public function ${NAME}(config:${NAME} = null) {
+        super(config);
+    }
 
-import ext.Ext;
-
-public class ${NAME} extends ${Super_class_name} {
-
-  public function ${NAME}(config:${Config_class_name} = null) {
-    super(${Config_class_name}(Ext.apply({
-      
-    }, config)));
-  }
+    override protected function initComponent():void {
+        super.initComponent();
+    }
 }
 }

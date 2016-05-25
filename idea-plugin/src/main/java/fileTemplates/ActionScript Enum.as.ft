@@ -1,3 +1,4 @@
+#parse("ActionScript File Header.as")
 package ${PACKAGE_NAME}#if (${PACKAGE_NAME} != "") #end{
 
 public class ${NAME} extends Enum {
