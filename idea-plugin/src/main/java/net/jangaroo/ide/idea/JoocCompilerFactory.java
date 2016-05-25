@@ -9,11 +9,11 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Since IDEA 13, compilation is done by "external build" (JPS), so we just use the
- * compiler manager to register compilable file extensions for
+ * compiler manager to register compilable file extensions for <code>jooc</code>:
  * <ul>
- *   <li>as: "jooc"</li>
- *   <li>exml: "exmlc"</li>
- *   <li>properties: "propc"</li>
+ *   <li>as</li>
+ *   <li>mxml</li>
+ *   <li>properties</li>
  * </ul>
  */
 public class JoocCompilerFactory implements CompilerFactory {

@@ -143,10 +143,10 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   }
 
   /**
-   * Find jangaroo-maven-plugin, or, if not present, exml-maven-plugin, which also activates the
+   * Find jangaroo-maven-plugin which also activates the
    * Jangaroo Maven lifecycle and thus the Jangaroo compiler.
    * @param mavenProjectModel IDEA's Maven project model
-   * @return jangaroo-maven-plugin or exml-maven-plugin
+   * @return jangaroo-maven-plugin
    */
   protected MavenPlugin findJangarooMavenPlugin(MavenProject mavenProjectModel) {
     return findDeclaredJangarooPlugin(mavenProjectModel, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);

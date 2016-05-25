@@ -22,11 +22,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   public static final String JANGAROO_SDK_TYPE_ID = "Jangaroo SDK";
   private static final Pattern JANGAROO_COMPILER_API_JAR_PATTERN =
     Pattern.compile("^" + JANGAROO_COMPILER_API_ARTIFACT_ID + "-(([0-9]+(?:\\.[0-9]+)*)(-SNAPSHOT)?)\\.jar$");
-  private static final String[] JANGAROO_COMPILER_ARTIFACT_IDS = new String[]{
-    "jangaroo-compiler",
-    "exml-compiler",
-    "properties-compiler"
-  };
+  private static final String JANGAROO_COMPILER_ARTIFACT_ID = "jangaroo-compiler";
   public static final String[] JANGAROO_3RD_PARTY_JARS = new String[]{
     "edu.princeton.cup:java-cup:10k",
     "commons-configuration:commons-configuration:1.10",
@@ -51,9 +47,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
     if (mavenVersion != null) {
       sdkVersion = mavenVersion;
       File rootDirectory = sdkRootDir.getParentFile().getParentFile().getParentFile().getParentFile();
-      for (String jangarooApiJarArtifact : JANGAROO_COMPILER_ARTIFACT_IDS) {
-        jarPaths.add(getJangarooArtifact(rootDirectory, jangarooApiJarArtifact, mavenVersion).getPath());
-      }
+      jarPaths.add(getJangarooArtifact(rootDirectory, JANGAROO_COMPILER_ARTIFACT_ID, mavenVersion).getPath());
       for (String jangaroo3rdPartyJar : JANGAROO_3RD_PARTY_JARS) {
         String[] parts = jangaroo3rdPartyJar.split(":");
         jarPaths.add(getArtifactFile(rootDirectory, parts[0], parts[1], parts[2], "jar").getPath());
@@ -67,9 +61,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
           sdkVersion = null;
         } else {
           String fileSuffix = sdkVersion + "-jar-with-dependencies";
-          for (String jangarooApiJarArtifact : JANGAROO_COMPILER_ARTIFACT_IDS) {
-            jarPaths.add(getArtifactPath(binDirFile, jangarooApiJarArtifact, fileSuffix));
-          }
+          jarPaths.add(getArtifactPath(binDirFile, JANGAROO_COMPILER_ARTIFACT_ID, fileSuffix));
         }
       }
     }
