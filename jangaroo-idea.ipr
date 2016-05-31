@@ -500,9 +500,9 @@
     <library name="jangaroo-api">
       <CLASSES>
         <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/17.0/guava-17.0.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11.jar!/" />
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.16/jangaroo-compiler-api-4.0.16.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.16/exml-compiler-api-4.0.16.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.16/jangaroo-utils-4.0.16.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/args4j/args4j/2.0.16/args4j-2.0.16.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/com/google/javascript/closure-compiler/v20150126/closure-compiler-v20150126.jar!/" />
       </CLASSES>
@@ -608,37 +608,37 @@
         <root url="jar://$MAVEN_REPOSITORY$/junit/junit/4.10/junit-4.10-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Maven: net.jangaroo:exml-compiler-api:4.0.11">
+    <library name="Maven: net.jangaroo:exml-compiler-api:4.0.16">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.16/exml-compiler-api-4.0.16.jar!/" />
       </CLASSES>
       <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11-javadoc.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.16/exml-compiler-api-4.0.16-javadoc.jar!/" />
       </JAVADOC>
       <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.11/exml-compiler-api-4.0.11-sources.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.16/exml-compiler-api-4.0.16-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Maven: net.jangaroo:jangaroo-compiler-api:4.0.11">
+    <library name="Maven: net.jangaroo:jangaroo-compiler-api:4.0.16">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.16/jangaroo-compiler-api-4.0.16.jar!/" />
       </CLASSES>
       <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11-javadoc.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.16/jangaroo-compiler-api-4.0.16-javadoc.jar!/" />
       </JAVADOC>
       <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.11/jangaroo-compiler-api-4.0.11-sources.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.16/jangaroo-compiler-api-4.0.16-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Maven: net.jangaroo:jangaroo-utils:4.0.11">
+    <library name="Maven: net.jangaroo:jangaroo-utils:4.0.16">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.16/jangaroo-utils-4.0.16.jar!/" />
       </CLASSES>
       <JAVADOC>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11-javadoc.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.16/jangaroo-utils-4.0.16-javadoc.jar!/" />
       </JAVADOC>
       <SOURCES>
-        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.11/jangaroo-utils-4.0.11-sources.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.16/jangaroo-utils-4.0.16-sources.jar!/" />
       </SOURCES>
     </library>
     <library name="Maven: org.hamcrest:hamcrest-core:1.1">
