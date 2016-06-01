@@ -267,7 +267,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     jooConfig.outputDirectory = toIdeaUrl(outputDir.getAbsolutePath());
 
     String apiOutputDirectory = getConfigurationValue(mavenProjectModel, "apiOutputDirectory", null);
-    jooConfig.apiOutputDirectory = isApp ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(outputDir, "META-INF/joo-api").getAbsolutePath());
+    jooConfig.apiOutputDirectory = isApp ? null : toIdeaUrl(apiOutputDirectory != null ? apiOutputDirectory : new File(mavenProjectModel.getBuildDirectory(), "META-INF/joo-api").getAbsolutePath());
 
     String testOutputDirectory = findConfigValue(mavenProjectModel, "testOutputDirectory", mavenProjectModel.getTestOutputDirectory());
     assert testOutputDirectory != null; // since it has a non-null default!
