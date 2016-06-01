@@ -21,7 +21,7 @@ public class JoocCompilerFactory implements CompilerFactory {
   public Compiler[] createCompilers(@NotNull CompilerManager compilerManager) {
     addCompilableFileType(compilerManager, Jooc.AS_SUFFIX_NO_DOT);
     addCompilableFileType(compilerManager, Jooc.MXML_SUFFIX_NO_DOT);
-    // TODO addCompilableFileType(compilerManager, "properties");
+    addCompilableFileType(compilerManager, Jooc.PROPERTIES_SUFFIX_NO_DOT);
     return new Compiler[0]; // already registered the compilers ourselves
   }
 

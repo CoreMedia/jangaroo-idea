@@ -85,13 +85,13 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
       new FileFilter() {
         public boolean accept(File file) {
           String path = file.getPath();
-          return path.endsWith(Jooc.AS_SUFFIX) || path.endsWith(Jooc.MXML_SUFFIX);
+          return path.endsWith(Jooc.AS_SUFFIX) || path.endsWith(Jooc.MXML_SUFFIX) || path.endsWith(Jooc.PROPERTIES_SUFFIX);
         }
       } :
       new FileFilter() {
         public boolean accept(File file) {
           String path = file.getPath();
-          return StringUtil.endsWithIgnoreCase(path, Jooc.AS_SUFFIX) || StringUtil.endsWithIgnoreCase(path, Jooc.MXML_SUFFIX);
+          return StringUtil.endsWithIgnoreCase(path, Jooc.AS_SUFFIX) || StringUtil.endsWithIgnoreCase(path, Jooc.MXML_SUFFIX) || StringUtil.endsWithIgnoreCase(path, Jooc.PROPERTIES_SUFFIX);
         }
       };
   }
