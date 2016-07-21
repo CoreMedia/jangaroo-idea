@@ -4,12 +4,12 @@ class MigrationMapEntry {
 
   private final String oldName;
   private final String newName;
-  private final boolean mappingOfConfigClass;
+  private final MigrationMapEntryType entryType;
 
-  MigrationMapEntry(String oldName, String newName, boolean mappingOfConfigClass) {
+  MigrationMapEntry(String oldName, String newName, MigrationMapEntryType entryType) {
     this.oldName = oldName;
     this.newName = newName;
-    this.mappingOfConfigClass = mappingOfConfigClass;
+    this.entryType = entryType;
   }
 
   public String getOldName() {
@@ -21,18 +21,26 @@ class MigrationMapEntry {
   }
 
   public boolean isMappingOfConfigClass() {
-    return mappingOfConfigClass;
+    return entryType == MigrationMapEntryType.CONFIG_CLASS;
+  }
+
+  public boolean isMappingOfPropertiesClass() {
+    return entryType == MigrationMapEntryType.PROPERTIES_CLASS;
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(oldName);
-    if (mappingOfConfigClass) {
+    if (isMappingOfConfigClass()) {
       sb.append("[ExtConfig]");
     }
-    sb.append("=>");
-    sb.append(newName);
+    if (isMappingOfPropertiesClass()) {
+      sb.append("[ResourceBundle]");
+    } else {
+      sb.append("=>");
+      sb.append(newName);
+    }
     return sb.toString();
   }
 

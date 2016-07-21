@@ -5,14 +5,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 
 /**
- * Invoke migration from Ext AS 3.4 to Ext AS 6.x.
+ * Migrate usages of ActionScript properties classes to ResourceManaer resource bundles.
  */
-public class MigrateExtJsAction extends AnAction {
+public class MigrateExtProperties extends AnAction {
   @Override
   public void actionPerformed(AnActionEvent anActionEvent) {
     Project myProject = getEventProject(anActionEvent);
     if (myProject != null) {
-      new FlexMigrationProcessor(myProject, true, true, false).run();
+      new FlexMigrationProcessor(myProject, false, false, true).run();
     }
   }
 }

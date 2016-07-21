@@ -76,6 +76,12 @@
   </project-components>
 
   <actions>
+    <action id="net.jangaroo.ide.idea.exml.migration.MigrateExtProperties"
+            class="net.jangaroo.ide.idea.exml.migration.MigrateExtProperties"
+            text="Migrate Ext AS Properties"
+            description="Migrate usages of Ext AS properties classes to ResourceBundles">
+      <add-to-group group-id="RefactoringMenu4" anchor="after" relative-to-action="Migrate"/>
+    </action>
     <action id="net.jangaroo.ide.idea.exml.migration.MigrateExtJsAction"
             class="net.jangaroo.ide.idea.exml.migration.MigrateExtJsAction"
             text="Migrate to Ext AS _6"

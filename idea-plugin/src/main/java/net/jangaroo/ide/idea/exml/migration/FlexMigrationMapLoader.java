@@ -16,18 +16,19 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.ProjectScope;
 import com.intellij.util.Query;
-import com.intellij.util.containers.HashMap;
 import net.jangaroo.ide.idea.Utils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import static net.jangaroo.ide.idea.exml.migration.MigrationMapEntryType.CONFIG_CLASS;
+import static net.jangaroo.ide.idea.exml.migration.MigrationMapEntryType.PROPERTIES_CLASS;
+import static net.jangaroo.ide.idea.exml.migration.MigrationMapEntryType.REPLACE;
 
 /**
  * Loads the map to migrate ActionScript.
@@ -36,96 +37,96 @@ public class FlexMigrationMapLoader {
 
   private static final Logger LOG = Logger.getInstance(FlexMigrationMapLoader.class);
 
-  @Nullable
-  static SortedMap<String, MigrationMapEntry> load(Project project, VirtualFile migrationMap) {
-    InputStream is;
-    try {
-      is = migrationMap.getInputStream();
-    } catch (IOException e) {
-      error("Failed to load migration map", e);
-      return null;
-    }
-    Properties properties = new Properties();
-    try {
-      properties.load(is);
-    } catch (IOException e) {
-      error("Failed to load migration map", e);
-      return null;
-    } finally {
-      try {
-        is.close();
-      } catch (IOException e) {
-        // ignore
-      }
-    }
+  private FlexMigrationMapLoader() {
+  }
 
+  @Nullable
+  static SortedMap<String, MigrationMapEntry> load(Project project, VirtualFile migrationMap, boolean migrateApi,
+                                                   boolean migrateConfigClasses, boolean migrateProperties) {
     // use sorted map for reproducible results
     SortedMap<String, MigrationMapEntry> map = new TreeMap<String, MigrationMapEntry>();
-    for (String source : properties.stringPropertyNames()) {
-      map.put(source, new MigrationMapEntry(source, properties.getProperty(source), false));
+
+    if (migrateApi && migrationMap != null) {
+      addEntriesToReplaceApiElements(map, migrationMap);
     }
-    addEntriesReplaceConfigClasses(project, map);
+    if (migrateConfigClasses || migrateProperties) {
+      addEntriesToReplaceGeneratedClasses(project, map, migrateConfigClasses, migrateProperties);
+    }
 
     LOG.info("Migration Map: (" + map.size() + " entries): " + map.values());
     return map;
   }
 
-  private static void error(String message, Exception cause) {
-    String s = cause == null ? message : message +  ": " + cause.toString();
-    Notifications.Bus.notify(new Notification("jangaroo", "Ext AS migration map", s, NotificationType.ERROR));
+  private static void addEntriesToReplaceApiElements(SortedMap<String, MigrationMapEntry> map, VirtualFile migrationMap) {
+    Properties properties = new Properties();
+    InputStream is = null;
+    try {
+      is = migrationMap.getInputStream();
+      properties.load(is);
+    } catch (IOException e) {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ignored) {
+          LOG.debug("Ignored", ignored);
+        }
+      }
+      error("Failed to load migration map", e);
+    }
+    for (String source : properties.stringPropertyNames()) {
+      map.put(source, new MigrationMapEntry(source, properties.getProperty(source), REPLACE));
+    }
   }
 
-  /**
-   * @param project the project
-   * @param migrationMap migration map to add entries to
-   */
-  private static void addEntriesReplaceConfigClasses(Project project, SortedMap<String, MigrationMapEntry> migrationMap) {
-    JSClass javaScriptObjectClass = getJavaScriptObjectClass(project);
-    if (javaScriptObjectClass == null) {
+  private static void addEntriesToReplaceGeneratedClasses(Project project, SortedMap<String, MigrationMapEntry> map,
+                                                          boolean migrateConfigClasses, boolean migrateProperties) {
+    JSClass jsObjectClass = getJavaScriptObjectClass(project);
+    if (jsObjectClass == null) {
       error("joo.JavaScriptObject not found in project libraries", null);
       return;
     }
 
-    Map<String, String> configToTargetClasses = getConfigToTargetClassMap(project, javaScriptObjectClass);
+    GlobalSearchScope scope = ProjectScope.getAllScope(project);
+    Query<JSClass> jsObjectClasses = JSClassSearch.searchClassInheritors(jsObjectClass, true, scope);
 
-    for (Map.Entry<String, String> entry : configToTargetClasses.entrySet()) {
-      String source = entry.getKey();
-      String target = entry.getValue();
-      if (migrationMap.containsKey(source)) {
-        error("Migration map contains config class: " + source, null);
-      } else {
-        if (migrationMap.containsKey(target)) {
-          MigrationMapEntry existingEntry = migrationMap.get(target);
-          target = existingEntry.getNewName();
+    for (JSClass clazz : jsObjectClasses) {
+      String clazzQualifiedName = clazz.getQualifiedName();
+      if (clazzQualifiedName == null) {
+        continue;
+      }
+
+      if (migrateConfigClasses) {
+        JSAttribute configAttribute = getAttribute(clazz, "ExtConfig");
+        if (configAttribute != null) {
+          // replace usages of generated config classes by target classes
+          JSAttributeNameValuePair targetPair = configAttribute.getValueByName("target");
+          if (targetPair != null) {
+            String targetClassName = targetPair.getSimpleValue();
+            MigrationMapEntry existingEntry = map.get(targetClassName);
+            String target = existingEntry == null ? targetClassName : existingEntry.getNewName();
+            map.put(clazzQualifiedName, new MigrationMapEntry(clazzQualifiedName, target, CONFIG_CLASS));
+          }
         }
-        migrationMap.put(source, new MigrationMapEntry(source, target, true));
+      }
+
+      if (migrateProperties && clazzQualifiedName.endsWith("_properties")) {
+        // replace usages of generated properties classes by new ResourceManager bundle lookup
+        JSAttribute propertiesAttribute = getAttribute(clazz, "ResourceBundle");
+        if (propertiesAttribute != null) {
+          map.put(clazzQualifiedName, new MigrationMapEntry(clazzQualifiedName, null, PROPERTIES_CLASS));
+        }
       }
     }
   }
 
-  @NotNull
-  private static Map<String, String> getConfigToTargetClassMap(Project project, JSClass configBaseClass) {
-    GlobalSearchScope scope = ProjectScope.getAllScope(project);
-    Query<JSClass> cfgClasses = JSClassSearch.searchClassInheritors(configBaseClass, true, scope);
+  private static JSAttribute getAttribute(JSClass clazz, String attributeName) {
+    JSAttributeList attributeList = clazz.getAttributeList();
+    return attributeList == null ? null : attributeList.findAttributeByName(attributeName);
+  }
 
-    Map<String, String> configToTargetClasses = new HashMap<String, String>();
-    for (JSClass cfgClass : cfgClasses) {
-      JSAttributeList attributeList = cfgClass.getAttributeList();
-      if (attributeList != null) {
-        JSAttribute[] attributes = attributeList.getAttributes();
-        for (JSAttribute attribute : attributes) {
-          if ("ExtConfig".equals(attribute.getName())) {
-            JSAttributeNameValuePair targetPair = attribute.getValueByName("target");
-            if (targetPair != null) {
-              String targetClassName = targetPair.getSimpleValue();
-              configToTargetClasses.put(cfgClass.getQualifiedName(), targetClassName);
-            }
-            break;
-          }
-        }
-      }
-    }
-    return configToTargetClasses;
+  private static void error(String message, Exception cause) {
+    String s = cause == null ? message : message +  ": " + cause.toString();
+    Notifications.Bus.notify(new Notification("jangaroo", "Ext AS migration map", s, NotificationType.ERROR));
   }
 
   private static JSClass getJavaScriptObjectClass(Project project) {
