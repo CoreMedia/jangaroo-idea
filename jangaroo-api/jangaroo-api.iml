@@ -11,10 +11,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: net.jangaroo:jangaroo-compiler-api:4.0.11" level="project" />
-    <orderEntry type="library" name="Maven: net.jangaroo:jangaroo-utils:4.0.11" level="project" />
+    <orderEntry type="library" name="Maven: net.jangaroo:jangaroo-compiler-api:4.0.17" level="project" />
+    <orderEntry type="library" name="Maven: net.jangaroo:exml-compiler-api:4.0.17" level="project" />
+    <orderEntry type="library" name="Maven: net.jangaroo:jangaroo-utils:4.0.17" level="project" />
     <orderEntry type="library" name="Maven: args4j:args4j:2.0.16" level="project" />
-    <orderEntry type="library" name="Maven: net.jangaroo:exml-compiler-api:4.0.11" level="project" />
     <orderEntry type="library" name="Maven: com.google.javascript:closure-compiler:v20150126" level="project" />
     <orderEntry type="library" name="Maven: com.google.javascript:closure-compiler-externs:v20150126" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava:18.0" level="project" />
