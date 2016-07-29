@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.exml.migration;
 
+import com.intellij.lang.javascript.index.JavaScriptIndex;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttribute;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeNameValuePair;
@@ -7,6 +8,7 @@ import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver;
 import com.intellij.lang.javascript.search.JSClassSearch;
+import com.intellij.navigation.NavigationItem;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
@@ -49,8 +51,11 @@ public class FlexMigrationMapLoader {
     if (migrateApi && migrationMap != null) {
       addEntriesToReplaceApiElements(map, migrationMap);
     }
-    if (migrateConfigClasses || migrateProperties) {
-      addEntriesToReplaceGeneratedClasses(project, map, migrateConfigClasses, migrateProperties);
+    if (migrateConfigClasses) {
+      addEntriesToReplaceConfigClasses(project, map);
+    }
+    if (migrateProperties) {
+      addEntriesToReplacePropertiesClasses(project, map);
     }
 
     LOG.info("Migration Map: (" + map.size() + " entries): " + map.values());
@@ -78,8 +83,7 @@ public class FlexMigrationMapLoader {
     }
   }
 
-  private static void addEntriesToReplaceGeneratedClasses(Project project, SortedMap<String, MigrationMapEntry> map,
-                                                          boolean migrateConfigClasses, boolean migrateProperties) {
+  private static void addEntriesToReplaceConfigClasses(Project project, SortedMap<String, MigrationMapEntry> map) {
     JSClass jsObjectClass = getJavaScriptObjectClass(project);
     if (jsObjectClass == null) {
       error("joo.JavaScriptObject not found in project libraries", null);
@@ -95,25 +99,37 @@ public class FlexMigrationMapLoader {
         continue;
       }
 
-      if (migrateConfigClasses) {
-        JSAttribute configAttribute = getAttribute(clazz, "ExtConfig");
-        if (configAttribute != null) {
-          // replace usages of generated config classes by target classes
-          JSAttributeNameValuePair targetPair = configAttribute.getValueByName("target");
-          if (targetPair != null) {
-            String targetClassName = targetPair.getSimpleValue();
-            MigrationMapEntry existingEntry = map.get(targetClassName);
-            String target = existingEntry == null ? targetClassName : existingEntry.getNewName();
-            map.put(clazzQualifiedName, new MigrationMapEntry(clazzQualifiedName, target, CONFIG_CLASS));
-          }
+      JSAttribute configAttribute = getAttribute(clazz, "ExtConfig");
+      if (configAttribute != null) {
+        // replace usages of generated config classes by target classes
+        JSAttributeNameValuePair targetPair = configAttribute.getValueByName("target");
+        if (targetPair != null) {
+          String targetClassName = targetPair.getSimpleValue();
+          MigrationMapEntry existingEntry = map.get(targetClassName);
+          String target = existingEntry == null ? targetClassName : existingEntry.getNewName();
+          map.put(clazzQualifiedName, new MigrationMapEntry(clazzQualifiedName, target, CONFIG_CLASS));
         }
       }
+    }
+  }
 
-      if (migrateProperties && clazzQualifiedName.endsWith("_properties")) {
-        // replace usages of generated properties classes by new ResourceManager bundle lookup
-        JSAttribute propertiesAttribute = getAttribute(clazz, "ResourceBundle");
-        if (propertiesAttribute != null) {
-          map.put(clazzQualifiedName, new MigrationMapEntry(clazzQualifiedName, null, PROPERTIES_CLASS));
+  private static void addEntriesToReplacePropertiesClasses(Project project, SortedMap<String, MigrationMapEntry> map) {
+    // I really don't know how to do such a simple thing as getting all _properties.as classes efficiently.
+    JavaScriptIndex jsIndex = JavaScriptIndex.getInstance(project);
+    for (String className : jsIndex.getNavigatableClassNames()) {
+      if (className.endsWith("_properties")) {
+        for (NavigationItem navigationItem : jsIndex.getClassByName(className, false)) {
+          if (navigationItem instanceof JSClass) {
+            JSClass clazz = (JSClass)navigationItem;
+            String clazzQualifiedName = clazz.getQualifiedName();
+            if (clazzQualifiedName != null) {
+              // replace usages of generated properties classes by new ResourceManager bundle lookup
+              JSAttribute propertiesAttribute = getAttribute(clazz, "Native");
+              if (propertiesAttribute != null) {
+                map.put(clazzQualifiedName, new MigrationMapEntry(clazzQualifiedName, null, PROPERTIES_CLASS));
+              }
+            }
+          }
         }
       }
     }
