@@ -1,5 +1,6 @@
 package net.jangaroo.ide.idea.exml.migration;
 
+import com.google.common.base.Strings;
 import com.intellij.javascript.flex.mxml.schema.MxmlTagNameReference;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
@@ -9,6 +10,7 @@ import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpression;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSFunctionExpression;
+import com.intellij.lang.javascript.psi.JSIndexedPropertyAccessExpression;
 import com.intellij.lang.javascript.psi.JSNewExpression;
 import com.intellij.lang.javascript.psi.JSObjectLiteralExpression;
 import com.intellij.lang.javascript.psi.JSParameter;
@@ -24,6 +26,7 @@ import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement;
 import com.intellij.lang.javascript.psi.impl.JSChangeUtil;
 import com.intellij.lang.javascript.psi.impl.JSTextReference;
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver;
+import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.lang.javascript.search.JSFunctionsSearch;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
@@ -34,13 +37,18 @@ import com.intellij.openapi.roots.JavaProjectRootsUtil;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiWhiteSpace;
+import com.intellij.psi.TokenType;
+import com.intellij.psi.impl.source.tree.Factory;
+import com.intellij.psi.impl.source.tree.SharedImplUtil;
 import com.intellij.psi.impl.source.xml.XmlAttributeReference;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.ProjectScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.usageView.UsageInfo;
+import com.intellij.util.CharTable;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
 import com.intellij.util.containers.HashSet;
@@ -48,6 +56,7 @@ import net.jangaroo.ide.idea.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 public class FlexMigrationUtil {
@@ -79,15 +88,16 @@ public class FlexMigrationUtil {
     }
   }
 
-  public static UsageInfo[] findClassOrMemberUsages(Project project, String qName) {
+  public static Set<MigrationUsageInfo> findClassOrMemberUsages(Project project, MigrationMapEntry entry) {
+    String qName = entry.getOldName();
     Collection<PsiElement> psiElements = findClassesOrMembers(project, qName);
     if (psiElements.isEmpty()) {
       Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
         "Migration map contains source entry that does not exist in Ext AS 3.4 or project: " + qName,
         NotificationType.WARNING));
-      return new UsageInfo[0];
+      return Collections.emptySet();
     }
-    return findRefs(project, psiElements, true);
+    return findRefs(project, psiElements, entry);
   }
 
   public static PsiElement findClassOrMember(Project project, String qName) {
@@ -132,22 +142,25 @@ public class FlexMigrationUtil {
     return null;
   }
 
-  private static UsageInfo[] findRefs(final Project project, @NotNull final Collection<PsiElement> psiElements,
-                                      boolean findRefsOfSetter) {
-    final Set<UsageInfo> results = new HashSet<UsageInfo>();
+  private static Set<MigrationUsageInfo> findRefs(final Project project,
+                                                  @NotNull final Collection<PsiElement> psiElements,
+                                                  MigrationMapEntry entry) {
+    final Set<MigrationUsageInfo> results = new HashSet<MigrationUsageInfo>();
     GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
     GlobalSearchScope scope = JavaProjectRootsUtil.getScopeWithoutGeneratedSources(projectScope, project);
     for (PsiElement psiElement : psiElements) {
-      addRefs(results, scope, psiElement, findRefsOfSetter);
+      addRefs(results, scope, psiElement, entry, true);
     }
-    return results.toArray(new UsageInfo[results.size()]);
+    return results;
   }
 
-  private static void addRefs(Set<? super UsageInfo> results, GlobalSearchScope scope, PsiElement psiElement, boolean findRefsOfSetter) {
+  private static void addRefs(Set<? super MigrationUsageInfo> results, GlobalSearchScope scope, PsiElement psiElement,
+                              MigrationMapEntry entry, boolean findRefsOfSetter) {
     for (PsiReference usage : ReferencesSearch.search(psiElement, scope, false)) {
       if (!(usage instanceof MxmlTagNameReference) && !(usage instanceof XmlAttributeReference)
         && !usage.getElement().getContainingFile().getName().endsWith(".exml")) {
-        results.add(new UsageInfo(usage));
+
+        results.add(new MigrationUsageInfo(usage, entry));
       }
     }
 
@@ -155,17 +168,17 @@ public class FlexMigrationUtil {
       if (findRefsOfSetter) {
         JSFunction setter = findSetter((JSFunction)psiElement);
         if (setter != null) {
-          addRefs(results, scope, setter, false);
+          addRefs(results, scope, setter, entry, false);
         }
       }
       Query<JSFunction> jsFunctions = JSFunctionsSearch.searchOverridingFunctions((JSFunction)psiElement, true);
       for (JSFunction jsFunction : jsFunctions) {
         if (jsFunction.isValid()) {
           if (jsFunction.getContainingFile().getVirtualFile().isWritable()) {
-            results.add(new UsageInfo(jsFunction));
+            results.add(new MigrationUsageInfo(jsFunction, entry));
           } else {
             // make sure to find usages of overridden functions as well, ReferencesSearch did not return these
-            addRefs(results, scope, jsFunction, false);
+            addRefs(results, scope, jsFunction, entry, false);
           }
         }
       }
@@ -183,7 +196,7 @@ public class FlexMigrationUtil {
   }
 
   public static void doClassMigration(Project project,
-                                      MigrationMapEntry migrationMapEntry, Collection<UsageInfo> usages) {
+                                      MigrationMapEntry migrationMapEntry, Collection<MigrationUsageInfo> usages) {
     String oldQName = migrationMapEntry.getOldName();
     String newQName = migrationMapEntry.getNewName();
     try {
@@ -191,82 +204,91 @@ public class FlexMigrationUtil {
       JSFunction setter = null;
 
       // rename all references
-      for (UsageInfo usage : usages) {
-        if (usage instanceof FlexMigrationProcessor.MigrationUsageInfo) {
-          final FlexMigrationProcessor.MigrationUsageInfo usageInfo = (FlexMigrationProcessor.MigrationUsageInfo)usage;
-          if (Comparing.equal(oldQName, usageInfo.mapEntry.getOldName())) {
-            // resolve the new name from a migration map entry lazily when processing the first usage of the old name
+      for (MigrationUsageInfo usage : usages) {
+        if (Comparing.equal(oldQName, usage.getEntry().getOldName())) {
 
-            if (classOrMember == null && !newQName.isEmpty()) {
-              int paramsIndex = newQName.indexOf('(');
-              String classOrMemberName = paramsIndex >= 0 ? newQName.substring(0, paramsIndex) : newQName;
+          // resolve the new name from a migration map entry lazily when processing the first usage of the old name
+          if (classOrMember == null && !Strings.isNullOrEmpty(newQName)) {
+            int paramsIndex = newQName.indexOf('(');
+            String classOrMemberName = paramsIndex >= 0 ? newQName.substring(0, paramsIndex) : newQName;
 
-              classOrMember = findClassOrMember(project, classOrMemberName);
-              if (classOrMember == null) {
-                Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
-                  "Migration map contains target entry that does not exist in Ext AS 6 or project: "
-                    + classOrMemberName, NotificationType.WARNING));
-                return;
-              }
-              setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
+            classOrMember = findClassOrMember(project, classOrMemberName);
+            if (classOrMember == null) {
+              Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
+                "Migration map contains target entry that does not exist in Ext AS 6 or project: "
+                  + classOrMemberName, NotificationType.WARNING));
+              return;
             }
-
-            PsiElement element = usage.getElement();
-            if (element == null || !element.isValid()) continue;
-            if (element instanceof JSReferenceExpression) {
-              final JSReferenceExpression referenceElement = (JSReferenceExpression)element;
-
-              PsiElement currentClassOrMember = classOrMember;
-              if (setter != null) {
-                PsiElement resolvedElement = referenceElement.resolve();
-                if (resolvedElement instanceof JSFunction &&
-                  ((JSFunction)resolvedElement).getKind() == JSFunction.FunctionKind.SETTER) {
-                  currentClassOrMember = setter;
-                }
-              }
-
-              try {
-                if (currentClassOrMember == null) {
-                  PsiElement current = referenceElement;
-                  while (current instanceof JSElement) {
-                    if (current instanceof JSStatement) {
-                      replaceByComment(project, "EXT6_GONE:" + oldQName, current);
-                      break;
-                    }
-                    current = current.getParent();
-                  }
-                } else {
-                  PsiReference variableReference = getVariableReference(referenceElement);
-                  if (variableReference != null && isStaticFunction(currentClassOrMember)) {
-                    variableReference.bindToElement(currentClassOrMember.getParent());
-                  } else if (referenceElement.getParent() instanceof JSNewExpression && migrationMapEntry.isMappingOfConfigClass()) {
-                    migrateConfigClassConstructorUsage(project, oldQName, referenceElement, currentClassOrMember);
-                  } else {
-                    referenceElement.bindToElement(currentClassOrMember);
-                    setCallParameters(project, referenceElement, newQName);
-                  }
-                }
-              } catch (Throwable t) {
-                String path = referenceElement.isValid()
-                  ? referenceElement.getContainingFile().getVirtualFile().getPath()
-                  : "<INVALID>";
-                LOG.error("Error during migration of " + referenceElement
-                  + " (" + referenceElement.getCanonicalText() + ") in " + path, t);
-              }
-            } else if (classOrMember instanceof JSFunction && element instanceof JSFunction) {
-              adjustOverriddenMethodSignature(project, (JSFunction)classOrMember, (JSFunction)element);
-            } else {
-              bindNonJavaReference(classOrMember, element, usage);
-            }
+            setter = classOrMember instanceof JSFunction ? findSetter((JSFunction)classOrMember) : null;
           }
 
+          PsiElement element = usage.getElement();
+          if (element == null || !element.isValid()) {
+            Notifications.Bus.notify(new Notification("jangaroo", "EXT AS 6 migration",
+              "You must REPEAT the refactoring! An occurrence for " + migrationMapEntry + " could not be changed in "
+                + usage.getFile(), NotificationType.ERROR));
+            continue;
+          }
+          if (element instanceof JSReferenceExpression) {
+            final JSReferenceExpression referenceElement = (JSReferenceExpression)element;
+
+            PsiElement currentClassOrMember = classOrMember;
+            if (setter != null) {
+              PsiElement resolvedElement = referenceElement.resolve();
+              if (resolvedElement instanceof JSFunction &&
+                ((JSFunction)resolvedElement).getKind() == JSFunction.FunctionKind.SETTER) {
+                currentClassOrMember = setter;
+              }
+            }
+
+            try {
+              if (migrationMapEntry.isMappingOfPropertiesClass()) {
+                migratePropertiesReference(project, oldQName, referenceElement, usage.isInExtComponentClass());
+              } else if (currentClassOrMember == null) {
+                PsiElement current = referenceElement;
+                while (current instanceof JSElement) {
+                  if (current instanceof JSStatement) {
+                    replaceByComment(project, "EXT6_GONE:" + oldQName, current);
+                    break;
+                  }
+                  current = current.getParent();
+                }
+              } else {
+                PsiReference variableReference = getVariableReference(referenceElement);
+                if (variableReference != null && isStaticFunction(currentClassOrMember)) {
+                  variableReference.bindToElement(currentClassOrMember.getParent());
+                } else if (referenceElement.getParent() instanceof JSNewExpression && migrationMapEntry.isMappingOfConfigClass()) {
+                  migrateConfigClassConstructorUsage(project, oldQName, referenceElement, currentClassOrMember);
+                } else {
+                  referenceElement.bindToElement(currentClassOrMember);
+                  setCallParameters(project, referenceElement, newQName);
+                }
+              }
+            } catch (Throwable t) {
+              String path = getFilePathForDisplay(referenceElement);
+              LOG.error("Error during migration of " + referenceElement
+                + " (" + referenceElement.getCanonicalText() + ") in " + path, t);
+            }
+          } else if (classOrMember instanceof JSFunction && element instanceof JSFunction) {
+            adjustOverriddenMethodSignature(project, (JSFunction)classOrMember, (JSFunction)element);
+          } else {
+            bindNonJavaReference(classOrMember, element, usage);
+          }
         }
+
       }
     }
     catch (IncorrectOperationException e) {
       // should not happen!
       LOG.error(e);
     }
+  }
+
+  @NotNull
+  private static String getFilePathForDisplay(JSReferenceExpression referenceElement) {
+    return referenceElement.isValid()
+                    ? referenceElement.getContainingFile().getVirtualFile().getPath()
+                    : "<INVALID>";
   }
 
   /**
@@ -294,6 +316,99 @@ public class FlexMigrationUtil {
       ((JSCallExpression)parent).getArgumentList().replace(args);
     } else {
       parent.addAfter(args, element);
+    }
+  }
+
+  private static void migratePropertiesReference(Project project,
+                                                 String oldQName,
+                                                 JSReferenceExpression referenceElement,
+                                                 boolean inExtComponentClass) {
+
+    int propertiesSuffixPos = oldQName.lastIndexOf("_properties");
+    String bundle = propertiesSuffixPos < 1 ? oldQName : oldQName.substring(0, propertiesSuffixPos);
+    boolean useResourceManagerMember = inExtComponentClass && !JSResolveUtil.calculateStaticFromContext(referenceElement);
+    String resourceManager = useResourceManagerMember ? "resourceManager" : "ResourceManager.getInstance()";
+    JSClass bundleUsedInJsClass = JSResolveUtil.getClassOfContext(referenceElement);
+
+    PsiElement parent = referenceElement.getParent();
+    if (parent instanceof JSReferenceExpression && "INSTANCE".equals(((JSReferenceExpression)parent).getReferenceName())) {
+      PsiElement grandParent = parent.getParent();
+      if (grandParent instanceof JSReferenceExpression || grandParent instanceof JSIndexedPropertyAccessExpression) {
+        // e.g. Foo_properties.INSTANCE.bar_title   ==> ResourceManager.getInstance().getString('com.Foo', 'bar_title')
+        //                                                         or resourceManager.getString('com.Foo', 'bar_title')
+        //  or  Foo_properties.INSTANCE[expr]       ==> ResourceManager.getInstance().getString('com.Foo', expr)
+        //                                                         or resourceManager.getString('com.Foo', expr)
+        String key = grandParent instanceof JSReferenceExpression ? ((JSReferenceExpression)grandParent).getReferenceName() : null;
+        String text = String.format("%s.getString('%s', '%s')", resourceManager, bundle, key);
+        PsiElement getStringProto = JSChangeUtil.createExpressionFromText(project, text).getPsi();
+        JSCallExpression getStringCall = (JSCallExpression)grandParent.replace(getStringProto);
+        if (grandParent instanceof JSIndexedPropertyAccessExpression) {
+          // replace #getString's second argument with original expression
+          JSExpression indexExpression = ((JSIndexedPropertyAccessExpression)grandParent).getIndexExpression();
+          getStringCall.getArguments()[1].replace(indexExpression);
+        }
+        if (!useResourceManagerMember) {
+          bindResourceManagerClass(project, getStringCall);
+        }
+      } else {
+        // e.g. Foo_properties.INSTANCE ==> ResourceManager.getInstance().getResourceBundle(null, 'com.Foo').content
+        //                                             or resourceManager.getResourceBundle(null, 'com.Foo').content
+        String text = String.format("%s.getResourceBundle(null, '%s').content", resourceManager, bundle);
+        PsiElement proto = JSChangeUtil.createExpressionFromText(project, text).getPsi();
+        JSReferenceExpression contentPropertyAccess = (JSReferenceExpression)parent.replace(proto);
+        JSCallExpression getResourceBundleCall = (JSCallExpression)contentPropertyAccess.getQualifier();
+        if (!useResourceManagerMember) {
+          bindResourceManagerClass(project, getResourceBundleCall);
+        }
+      }
+    } else if (referenceElement.getPrevSibling() != null && ":".equals(referenceElement.getPrevSibling().getText())) {
+      // e.g. private var BUNDLE:Foo_properties ==> private var BUNDLE:Object
+      referenceElement.replace(JSChangeUtil.createExpressionFromText(project, "Object").getPsi());
+    } else if (parent instanceof JSImportStatement) {
+      // e.g. import com.Foo_properties
+      // will be removed as unused import if "optimize imports" is called afterwards
+      bundleUsedInJsClass = null;
+    } else {
+      // e.g. Foo_properties ==> ResourceManager.getInstance().getResourceBundle(null, 'com.Foo')
+      //                                    or resourceManager.getResourceBundle(null, 'com.Foo')
+      String text = String.format("%s.getResourceBundle(null, '%s')", resourceManager, bundle);
+      PsiElement getResourceBundleProto = JSChangeUtil.createExpressionFromText(project, text).getPsi();
+      JSCallExpression getResourceBundleCall = (JSCallExpression)referenceElement.replace(getResourceBundleProto);
+      if (!useResourceManagerMember) {
+        bindResourceManagerClass(project, getResourceBundleCall);
+      }
+    }
+
+    if (bundleUsedInJsClass != null && !bundleUsedInJsClass.getContainingFile().getName().endsWith(".mxml")) {
+      // add ResourceBundle class annotation if not already present. E.g. [ResourceBundle('com.Foo')]
+      String annotation = "[ResourceBundle('" + bundle + "')]";
+      JSAttributeList attributeList = bundleUsedInJsClass.getAttributeList();
+      if (attributeList != null && !attributeList.getText().contains(annotation)) {
+        PsiElement psi = JSChangeUtil.createExpressionFromText(project, annotation).getPsi();
+        PsiElement newAttribute = attributeList.addBefore(psi, attributeList.getFirstChild());
+
+
+        CharTable charTable = SharedImplUtil.findCharTableByTree(attributeList.getNode());
+        PsiElement newLine = (PsiElement)Factory.createSingleLeafElement(TokenType.WHITE_SPACE, "\n", charTable, PsiManager.getInstance(project));
+        attributeList.addAfter(newLine, newAttribute);
+      }
+    }
+  }
+
+
+  /**
+   * Given a method call expression of the form {@code ResourceManager.getInstance().foo(...)}, bind the
+   * {@code ResourceManager} qualifier expression to the actual ResourceManager class, so that imports are generated
+   * correctly.
+   */
+  private static void bindResourceManagerClass(Project project, JSCallExpression methodCall) {
+    JSReferenceExpression method = (JSReferenceExpression)methodCall.getMethodExpression();
+    JSCallExpression getInstanceCall = (JSCallExpression)method.getFirstChild();
+    JSReferenceExpression getInstanceMethod = (JSReferenceExpression)getInstanceCall.getMethodExpression();
+    JSReferenceExpression qualifier = (JSReferenceExpression)getInstanceMethod.getQualifier();
+    PsiElement extClass = findClassOrMember(project, "mx.resources.ResourceManager");
+    if (qualifier != null && extClass != null) {
+      qualifier.bindToElement(extClass);
     }
   }
 
@@ -361,11 +476,15 @@ public class FlexMigrationUtil {
         parameterList.addBefore(referenceParameter, closingBracket);
       } else {
         // correct type of parameter according to reference parameter, but keep using the same name:
-        // TODO: also correct initializers (optional!) and ...rest parameter!
+        // TODO: also correct ...rest parameter!
         // TODO: better try to map old parameters to new one's, not only based on index but also based on type / name!
         JSType referenceParameterType = referenceParameter.getType();
         if (referenceParameterType != null) {
-          JSFunctionExpression functionExpression = (JSFunctionExpression)JSChangeUtil.createExpressionFromText(project, String.format("function(%s:%s){}", parameter.getName(), referenceParameterType.getResolvedTypeText()), JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
+          String initializerText = referenceParameter.getLiteralOrReferenceInitializerText();
+          String s = initializerText != null
+            ? String.format("function(%s:%s = %s){}", parameter.getName(), referenceParameterType.getResolvedTypeText(), initializerText)
+            : String.format("function(%s:%s){}", parameter.getName(), referenceParameterType.getResolvedTypeText());
+          JSFunctionExpression functionExpression = (JSFunctionExpression)JSChangeUtil.createExpressionFromText(project, s, JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
           JSParameter correctedParameter = functionExpression.getParameters()[0];
           parameter.replace(correctedParameter);
         }
