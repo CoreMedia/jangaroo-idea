@@ -40,6 +40,7 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
   public boolean allowDuplicateLocalVariables = false;
   public String outputPrefix;
   public String outputDirectory = "target/jangaroo-output/joo/classes";
+  public String outputFilePrefix;
   public String apiOutputDirectory = "target/jangaroo-output/META-INF/joo-api";
   public String testOutputDirectory = "target/jangaroo-test-output/joo/classes";
   public boolean showCompilerInfoMessages = false;
@@ -114,6 +115,7 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
       && debugLevel==that.debugLevel
       && (outputPrefix==null ? that.outputPrefix==null : outputPrefix.equals(that.outputPrefix))
       && outputDirectory.equals(that.outputDirectory)
+      && (outputFilePrefix == null ? that.outputFilePrefix == null : outputFilePrefix.equals(that.outputFilePrefix))
       && publicApiViolationsMode == that.publicApiViolationsMode;
   }
 
@@ -125,6 +127,7 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
     }
     result = 31 * result + debugLevel;
     result = 31 * result + outputDirectory.hashCode();
+    result = 31 * result + (outputFilePrefix == null ? 0 : outputFilePrefix.hashCode());
     result = 31 * result + publicApiViolationsMode.hashCode();
     return result;
   }

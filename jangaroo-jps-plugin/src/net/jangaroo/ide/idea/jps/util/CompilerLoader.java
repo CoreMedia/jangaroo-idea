@@ -1,6 +1,7 @@
 package net.jangaroo.ide.idea.jps.util;
 
 import net.jangaroo.jooc.api.Jooc;
+import net.jangaroo.jooc.api.Packager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,6 +21,10 @@ public class CompilerLoader {
 
   public static Jooc loadJooc(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
     return instantiateClass(Jooc.class, "net.jangaroo.jooc.Jooc", jarFileNames);
+  }
+
+  public static Packager loadPackager(List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    return instantiateClass(Packager.class, "net.jangaroo.jooc.PackagerImpl", jarFileNames);
   }
 
   private static <T> T instantiateClass(Class<T> compilerInterface, String mainClassName, List<String> jarFileNames) throws FileNotFoundException, ClassNotFoundException, InstantiationException, IllegalAccessException {

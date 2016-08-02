@@ -14,6 +14,7 @@ import net.jangaroo.ide.idea.jps.util.JpsCompileLog;
 import net.jangaroo.jooc.api.CompilationResult;
 import net.jangaroo.jooc.api.CompileLog;
 import net.jangaroo.jooc.api.Jooc;
+import net.jangaroo.jooc.api.Packager;
 import net.jangaroo.jooc.config.DebugMode;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import net.jangaroo.jooc.config.NamespaceConfiguration;
@@ -46,6 +47,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -145,6 +147,23 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
       return false;
     }
     log.info(String.format("Compilation of module %s completed successfully.", module.getName()));
+
+    try {
+      Packager packager = CompilerLoader.loadPackager(jarPaths);
+      // outputDirectory already is the /src directory, so we use "..", but normalize afterwards:
+      File senchaPackageDirectory = Paths.get(joocConfigurationBean.getOutputDirectory().getPath() + File.separator + "..").normalize().toFile();
+      packager.doPackage(
+        new File(senchaPackageDirectory, "src"),
+        new File(senchaPackageDirectory, "overrides"),
+        new File(senchaPackageDirectory, "locale"),
+        senchaPackageDirectory,
+        joocConfigurationBean.outputFilePrefix
+      );
+    } catch (ClassNotFoundException e) {
+      // Jangaroo SDK without Packager: simply skip this task.
+    } catch (Exception e) {
+      context.processMessage(new CompilerMessage(BUILDER_NAME + "-packager", e));
+    }
     return true;
   }
 
