@@ -499,7 +499,7 @@
   <component name="libraryTable">
     <library name="jangaroo-api">
       <CLASSES>
-        <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/17.0/guava-17.0.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/com/google/guava/guava/18.0/guava-18.0.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-compiler-api/4.0.17/jangaroo-compiler-api-4.0.17.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/exml-compiler-api/4.0.17/exml-compiler-api-4.0.17.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/net/jangaroo/jangaroo-utils/4.0.17/jangaroo-utils-4.0.17.jar!/" />
