@@ -2,15 +2,42 @@
 <idea-plugin url="https://github.com/CoreMedia/jangaroo-idea/wiki" version="2">
   <name>Jangaroo 0.9</name>
   <id>net.jangaroo.idea.0.9</id>
-  <description>
-    A plugin for using the Jangaroo Open Source tools version 0.9 and up in IntelliJ IDEA 14.
+  <description><![CDATA[
+      A plugin for using the <a href="http://www.jangaroo.net/">Jangaroo</a> Open Source tools version 0.9 and up in IntelliJ IDEA 2016.2.
+    ]]>
   </description>
-  <version>0.36-SNAPSHOT</version>
+
+  <change-notes>
+    <![CDATA[
+      2016.2-SNAPSHOT
+      <ul>
+        <li>Compatible with IntelliJ IDEA 2016.2</li>
+        <li>Removed obsolete file templates
+          <ul>
+          <li><i>ActionScript Class</i></li>
+          <li><i>ActionScript Interface</i></li>
+          <li><i>Ext AS Component Config</i></li>
+          </ul>
+        </li>
+        <li>Streamlined icons for EXML and Jangaroo files/facets</li>
+      </ul>
+    ]]>
+  </change-notes>
+
+  <version>2016.2-SNAPSHOT</version>
+
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
-  <idea-version since-build="IU-139.1117"
-                until-build="IU-142.9999"/>
 
+  <!-- Minimum and maximum build of IDEA compatible with the plugin -->
+  <idea-version since-build="IU-162.2032.8"
+                until-build="IU-162.*"/>
+
+  <!-- Resource bundle from which the text of plugin descriptions,
+       action names and etc. will be loaded -->
+  <!--<resource-bundle>messages.JangarooPluginBundle</resource-bundle>-->
+
+  <!-- Dependencies -->
   <depends>JavaScript</depends>
   <depends>JavaScriptDebugger</depends>
   <depends>com.intellij.flex</depends>
@@ -19,6 +46,15 @@
   <depends>com.intellij.javaee</depends>
   <depends>com.intellij.properties</depends>
 
+  <!-- Extensions which the plugin adds to extension points
+       defined by the IDEA core or by other plugins.
+       The "defaultExtensionNs " attribute must be set to the
+       ID of the plugin defining the extension point, or to
+       "com.intellij" if the extension point is defined by the
+       IDEA core. The name of the tag within the <extensions>
+       tag matches the name of the extension point, and the
+       "implementation" class specifies the name of the class
+       added to the extension point. -->
   <extensions defaultExtensionNs="com.intellij">
     <sdkType implementation="net.jangaroo.ide.idea.JangarooSdkType"/>
     <compilerFactory implementation="net.jangaroo.ide.idea.JoocCompilerFactory"/>

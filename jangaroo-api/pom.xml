@@ -13,27 +13,30 @@
     if they do not exist in the local maven repository.
   </description>
 
+  <properties>
+    <jangaroo.version>3.0.1</jangaroo.version>
+  </properties>
 
   <dependencies>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>jangaroo-compiler-api</artifactId>
-      <version>3.0.1</version>
+      <version>${jangaroo.version}</version>
     </dependency>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>exml-compiler-api</artifactId>
-      <version>3.0.1</version>
+      <version>${jangaroo.version}</version>
     </dependency>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>properties-compiler-api</artifactId>
-      <version>3.0.1</version>
+      <version>${jangaroo.version}</version>
     </dependency>
     <dependency>
       <groupId>net.jangaroo</groupId>
       <artifactId>jangaroo-utils</artifactId>
-      <version>3.0.1</version>
+      <version>${jangaroo.version}</version>
     </dependency>
     <dependency>
       <groupId>args4j</groupId>

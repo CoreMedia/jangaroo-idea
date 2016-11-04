@@ -1,7 +1,6 @@
 package net.jangaroo.ide.idea.exml;
 
 import com.intellij.ide.highlighter.XmlFileType;
-import com.intellij.lang.properties.PropertiesFileType;
 import com.intellij.navigation.ChooseByNameContributor;
 import com.intellij.navigation.NavigationItem;
 import com.intellij.openapi.project.Project;

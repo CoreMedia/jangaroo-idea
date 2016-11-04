@@ -1,15 +1,15 @@
 /*
  * Copyright 2009 CoreMedia AG
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0 
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, 
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
- * express or implied. See the License for the specific language 
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package net.jangaroo.ide.idea.exml;
@@ -31,10 +31,10 @@ import javax.swing.*;
  * Jangaroo FacetType.
  */
 public class ExmlFacetType extends FacetType<ExmlFacet, ExmlFacetConfiguration> {
-  
+
   public static final FacetTypeId<ExmlFacet> ID = new FacetTypeId<ExmlFacet>("exml");
   public static final ExmlFacetType INSTANCE = new ExmlFacetType();
-  static final String EXML_FACET_ICON_URL = "/net/jangaroo/ide/idea/EXML-logo-16x16.png";
+  static final String EXML_FACET_ICON_URL = "/icons/exml_icon.png";
 
   public ExmlFacetType() {
     super(ID, "exml", "EXML");

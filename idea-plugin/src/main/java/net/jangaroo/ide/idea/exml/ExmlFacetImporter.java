@@ -5,6 +5,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -18,7 +19,6 @@ import net.jangaroo.ide.idea.jps.exml.ExmlcConfigurationBean;
 import net.jangaroo.utils.CompilerUtils;
 import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.FacetImporter;
-import org.jetbrains.idea.maven.importing.MavenModifiableModelsProvider;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenProject;
@@ -88,7 +88,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
   }
 
   @Override
-  protected void reimportFacet(MavenModifiableModelsProvider modelsProvider, Module module,
+  protected void reimportFacet(IdeModifiableModelsProvider modelsProvider, Module module,
                                MavenRootModelAdapter rootModel, ExmlFacet exmlFacet, MavenProjectsTree mavenTree,
                                MavenProject mavenProjectModel, MavenProjectChanges changes,
                                Map<MavenProject, String> mavenProjectToModuleName, List<MavenProjectsProcessorTask> postTasks) {
@@ -106,7 +106,7 @@ public class ExmlFacetImporter extends FacetImporter<ExmlFacet, ExmlFacetConfigu
     } catch (IllegalArgumentException e) {
       Notifications.Bus.notify(new Notification("Maven", "Invalid Jangaroo EXML Configuration",
         "Illegal value for &lt;validationMode>: '" + validationMode + "' in Maven POM " +
-          mavenProjectModel.getDisplayName() +", falling back to 'off'.",
+          mavenProjectModel.getDisplayName() + ", falling back to 'off'.",
         NotificationType.WARNING));
       exmlConfig.validationMode = ValidationMode.OFF;
     }

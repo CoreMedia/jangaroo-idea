@@ -57,7 +57,7 @@ public class JangarooCompileAction extends AnAction {
             Messages.showErrorDialog(project, "Please configure correct location of Jangaroo Home Directory.\n"
               +"Currently configured path is "+jangarooHomeDirPath, "Jangaroo");
             return;
-          }        
+          }
           // first, trigger save:
           ActionManager.getInstance().getAction("SaveAll").actionPerformed(e);
           compile(project, jangarooHomeDir, compilerOutputPath, files);
@@ -68,7 +68,7 @@ public class JangarooCompileAction extends AnAction {
     // show info that there was nothing to compile:
     Messages.showInfoMessage(project, "Please select ActionScript 3 files under some source root and try again.",
       "Jangaroo");
-    
+
   }
 
   private static String getCompilerOutputPath(Module module) {
@@ -148,7 +148,7 @@ public class JangarooCompileAction extends AnAction {
   private static String ID = "Jangaroo Console";
   private static String TITLE = "Jangaroo Compiler Output";
   private static ConsoleView view = null;
-  static String JANGAROO_ICON_URL = "/net/jangaroo/jooley-16x16.png";
+  static String JANGAROO_ICON_URL = "/icons/jooley_icon.png";
   private static String JANGAROO_LIB_SUBDIR = "lib";
 
   public static void compile(Project project, File jangarooHomeDir, String outputDir, VirtualFile[] sources) {

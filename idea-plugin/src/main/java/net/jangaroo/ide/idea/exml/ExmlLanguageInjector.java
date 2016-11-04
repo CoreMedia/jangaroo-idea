@@ -18,6 +18,8 @@ import com.intellij.idea.IdeaLogger;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.psi.JSFunction;
 import com.intellij.lang.javascript.psi.JSParameter;
+import com.intellij.lang.javascript.psi.JSParameterList;
+import com.intellij.lang.javascript.psi.JSParameterListElement;
 import com.intellij.lang.javascript.psi.JSType;
 import com.intellij.lang.javascript.psi.JSVariable;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -226,7 +228,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
             if (asClass != null) {
               JSFunction asConstructor = asClass.getConstructor();
               if (asConstructor != null) {
-                JSParameter[] parameters = asConstructor.getParameterList().getParameters();
+                JSParameterListElement[] parameters = asConstructor.getParameterList().getParameters();
                 if (parameters.length > 0 & "config".equals(parameters[0].getName())) {
                   JSType configClassCandidate = parameters[0].getType();
                   if (configClassCandidate != null) {
@@ -304,7 +306,8 @@ public class ExmlLanguageInjector implements LanguageInjector {
    */
   @Nullable
   private static String getTypeFromSetAccessor(JSFunction fun) {
-    JSParameter[] jsParameters = fun.getParameters();
+    JSParameterList list = fun.getParameterList();
+    final JSParameter[] jsParameters = list != null ? list.getParameterVariables() : JSParameter.EMPTY_ARRAY;
     JSParameter parameter = jsParameters.length == 1 ? jsParameters[0] : null;
     return parameter != null ? parameter.getTypeString() : null;
   }
