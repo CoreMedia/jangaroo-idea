@@ -5,9 +5,7 @@ import ext.Ext;
 public class ${NAME} extends ${Super_class_name} {
 
   public function ${NAME}(config:${Config_class_name} = null) {
-    super(${Config_class_name}(Ext.apply({
-      
-    }, config)));
+    super(config);
   }
 }
 }
