@@ -15,6 +15,7 @@ import com.intellij.lang.javascript.psi.JSNewExpression;
 import com.intellij.lang.javascript.psi.JSObjectLiteralExpression;
 import com.intellij.lang.javascript.psi.JSParameter;
 import com.intellij.lang.javascript.psi.JSParameterList;
+import com.intellij.lang.javascript.psi.JSParameterListElement;
 import com.intellij.lang.javascript.psi.JSReferenceExpression;
 import com.intellij.lang.javascript.psi.JSStatement;
 import com.intellij.lang.javascript.psi.JSType;
@@ -462,11 +463,11 @@ public class FlexMigrationUtil {
   }
 
   private static void adjustOverriddenMethodSignature(Project project, JSFunction referenceFunction, JSFunction functionToMigrate) {
-    JSParameter[] parameters = functionToMigrate.getParameters();
-    JSParameter[] referenceParameters = referenceFunction.getParameters();
+    JSParameterListElement[] parameters = functionToMigrate.getParameters();
+    JSParameterListElement[] referenceParameters = referenceFunction.getParameters();
     for (int i = 0; i < Math.max(parameters.length, referenceParameters.length); i++) {
-      JSParameter parameter = i < parameters.length ? parameters[i] : null;
-      JSParameter referenceParameter = i < referenceParameters.length ? referenceParameters[i] : null;
+      JSParameterListElement parameter = i < parameters.length ? parameters[i] : null;
+      JSParameterListElement referenceParameter = i < referenceParameters.length ? referenceParameters[i] : null;
       if (referenceParameter == null) {
         assert parameter != null;
         parameter.delete();
@@ -480,12 +481,12 @@ public class FlexMigrationUtil {
         // TODO: better try to map old parameters to new one's, not only based on index but also based on type / name!
         JSType referenceParameterType = referenceParameter.getType();
         if (referenceParameterType != null) {
-          String initializerText = referenceParameter.getLiteralOrReferenceInitializerText();
+          String initializerText = referenceParameter instanceof JSVariable ? ((JSVariable)referenceParameter).getLiteralOrReferenceInitializerText() : null;
           String s = initializerText != null
             ? String.format("function(%s:%s = %s){}", parameter.getName(), referenceParameterType.getResolvedTypeText(), initializerText)
             : String.format("function(%s:%s){}", parameter.getName(), referenceParameterType.getResolvedTypeText());
           JSFunctionExpression functionExpression = (JSFunctionExpression)JSChangeUtil.createExpressionFromText(project, s, JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
-          JSParameter correctedParameter = functionExpression.getParameters()[0];
+          JSParameterListElement correctedParameter = functionExpression.getParameters()[0];
           parameter.replace(correctedParameter);
         }
       }
