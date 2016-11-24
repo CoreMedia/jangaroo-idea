@@ -3,12 +3,12 @@
   <name>Jangaroo 4</name>
   <id>net.jangaroo.idea.4</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 15.
+    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 2016.3+.
   </description>
-  <version>4.0.11</version>
+  <version>4.0.12</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
-  <idea-version since-build="IU-143.381.42"/>
+  <idea-version since-build="IU-163.7743.44"/>
 
   <depends>JavaScript</depends>
   <depends>JavaScriptDebugger</depends>
