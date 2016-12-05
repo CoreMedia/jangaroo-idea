@@ -44,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.importing.FacetImporter;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenArtifact;
+import org.jetbrains.idea.maven.model.MavenId;
 import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
@@ -253,7 +254,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
 
     String outputDirectory = findConfigValue(mavenProjectModel, "outputDirectory");
     if (outputDirectory == null) {
-      outputDirectory = mavenProjectModel.getBuildDirectory() + (isPkg ? "/packages/local/package/src" : "/app/app");
+      outputDirectory = mavenProjectModel.getBuildDirectory() + (isPkg ? "/packages/" + getSenchaPackageName(mavenProjectModel.getMavenId()) + "/src" : "/app/app");
     }
     File outputDir = new File(outputDirectory);
     if (!outputDir.isAbsolute()) {
@@ -289,6 +290,15 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         NotificationType.WARNING));
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
+  }
+
+  private String getSenchaPackageName(MavenId mavenId) {
+    return getSenchaPackageName(mavenId.getGroupId(), mavenId.getArtifactId());
+  }
+
+  // TODO: reuse jangaroo-tools utility method through compiler API?
+  private static String getSenchaPackageName(String groupId, String artifactId) {
+    return groupId + "__" + artifactId;
   }
 
   private static String jangarooSdkHomePath(String artifactId, String version) {
