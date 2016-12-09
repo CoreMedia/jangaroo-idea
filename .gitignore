@@ -3,3 +3,7 @@
 # target dirs
 out
 idea-plugin/*.zip
+
+# Idea user-specific stuff
+.shelf
+*.iws
