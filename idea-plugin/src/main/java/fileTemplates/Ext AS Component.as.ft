@@ -1,13 +1,13 @@
 package ${PACKAGE_NAME}#if (${PACKAGE_NAME} != "") #end{
 
-import ext.Ext;
+import net.jangaroo.ext.Exml;
 
 public class ${NAME} extends ${Super_class_name} {
 
   public function ${NAME}(config:${Config_class_name} = null) {
-    super(${Config_class_name}(Ext.apply({
-      
-    }, config)));
+    var superConfig:${Config_class_name} = new ${Config_class_name}();
+    superConfig. = ;
+    super(${Config_class_name}(Exml.apply(superConfig, config)));
   }
 }
 }
