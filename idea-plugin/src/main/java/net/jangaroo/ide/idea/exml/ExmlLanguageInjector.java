@@ -49,6 +49,8 @@ import net.jangaroo.utils.CompilerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,6 +60,26 @@ import java.util.Set;
  * AS3 language injection in EXML files.
  */
 public class ExmlLanguageInjector implements LanguageInjector {
+
+  private static final Method GET_PARAMETERS;
+
+  static {
+    Method getParameters = null;
+    try {
+      // try IDEA 2016 version: getParameterVariables() returns JSParameter[], while getParameters() has been
+      // changed to return JSParameterListElement[] :-(
+      getParameters = JSFunction.class.getMethod("getParameterVariables");
+    } catch (NoSuchMethodException e) {
+      // it is not there: fall back to IDEA 15 version.
+      try {
+        getParameters = JSFunction.class.getMethod("getParameters");
+      } catch (NoSuchMethodException e1) {
+        IdeaLogger.getInstance(ExmlLanguageInjector.class).error("Jangaroo: Incompatible IDEA version: Neither JSFunction#getParameterVariables() nor #getParameters() has been found.", e1);
+        e1.printStackTrace();
+      }
+    }
+    GET_PARAMETERS = getParameters;
+  }
 
   public void getLanguagesToInject(@NotNull PsiLanguageInjectionHost psiLanguageInjectionHost, @NotNull InjectedLanguagePlaces injectedLanguagePlaces) {
     PsiFile psiFile = psiLanguageInjectionHost.getContainingFile();
@@ -226,7 +248,7 @@ public class ExmlLanguageInjector implements LanguageInjector {
             if (asClass != null) {
               JSFunction asConstructor = asClass.getConstructor();
               if (asConstructor != null) {
-                JSParameter[] parameters = asConstructor.getParameterList().getParameters();
+                JSParameter[] parameters = getParameters(asConstructor);
                 if (parameters.length > 0 & "config".equals(parameters[0].getName())) {
                   JSType configClassCandidate = parameters[0].getType();
                   if (configClassCandidate != null) {
@@ -299,12 +321,26 @@ public class ExmlLanguageInjector implements LanguageInjector {
     }
   }
 
+  @NotNull
+  private static JSParameter[] getParameters(JSFunction fun) {
+    if (GET_PARAMETERS == null) {
+      return new JSParameter[0];
+    }
+    try {
+      return (JSParameter[])GET_PARAMETERS.invoke(fun);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException("Jangaroo: Error while retrieving function parameters.", e);
+    } catch (InvocationTargetException e) {
+      throw new RuntimeException("Jangaroo: Error while retrieving function parameters.", e);
+    }
+  }
+
   /*
    * Do *not* reuse JSResolveUtil, because there are incompatible API changes between IDEA 14.0 and 14.1!
    */
   @Nullable
   private static String getTypeFromSetAccessor(JSFunction fun) {
-    JSParameter[] jsParameters = fun.getParameters();
+    JSParameter[] jsParameters = getParameters(fun);
     JSParameter parameter = jsParameters.length == 1 ? jsParameters[0] : null;
     return parameter != null ? parameter.getTypeString() : null;
   }
