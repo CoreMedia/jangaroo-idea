@@ -13,11 +13,13 @@ import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableDepend
 import com.intellij.lang.javascript.flex.projectStructure.model.ModifiableFlexBuildConfiguration;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.Factory;
 import com.intellij.lang.javascript.flex.projectStructure.model.impl.FlexProjectConfigurationEditor;
+import com.intellij.lang.javascript.flex.sdk.FlexSdkType2;
 import com.intellij.lang.javascript.flex.sdk.FlexSdkUtils;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
@@ -379,18 +381,12 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     configureMxmlNamespaces(mavenProjectModel, buildConfiguration);
 
     ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
-    String flexSdkName = null;
-    for (Sdk flexSdk : FlexSdkUtils.getFlexSdks()) {
-      flexSdkName = flexSdk.getName();
-      if ("FlExtAS".equalsIgnoreCase(flexSdkName)) {
-        break;
-      }
-    }
-    if (flexSdkName == null) {
+    Sdk flExtAsSDK = FlexSdkUtils.createOrGetSdk(FlexSdkType2.getInstance(), PathManager.getPluginsPath() + "/jangaroo-4/FlExtAS");
+    if (flExtAsSDK == null) {
       Notifications.Bus.notify(new Notification("jangaroo", "No Flex SDK",
-        "To use Jangaroo MXML, you have to have the mock Flex SDK FlExtAS installed.", NotificationType.WARNING));
+        "Jangaroo's internal mock Flex SDK 'FlExtAS' could not be found.", NotificationType.ERROR));
     } else {
-      modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flexSdkName));
+      modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flExtAsSDK.getName()));
       modifiableDependencies.setFrameworkLinkage(LinkageType.External);
     }
 
