@@ -381,10 +381,11 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     configureMxmlNamespaces(mavenProjectModel, buildConfiguration);
 
     ModifiableDependencies modifiableDependencies = buildConfiguration.getDependencies();
-    Sdk flExtAsSDK = FlexSdkUtils.createOrGetSdk(FlexSdkType2.getInstance(), PathManager.getPluginsPath() + "/jangaroo-4/FlExtAS");
+    String flExtAsSDKPath = PathManager.getPluginsPath() + "/jangaroo-4/FlExtAs";
+    Sdk flExtAsSDK = FlexSdkUtils.createOrGetSdk(FlexSdkType2.getInstance(), flExtAsSDKPath);
     if (flExtAsSDK == null) {
       Notifications.Bus.notify(new Notification("jangaroo", "No Flex SDK",
-        "Jangaroo's internal mock Flex SDK 'FlExtAS' could not be found.", NotificationType.ERROR));
+        String.format("Jangaroo's internal mock Flex SDK 'FlExtAS' could not be found at %s.", flExtAsSDKPath), NotificationType.ERROR));
     } else {
       modifiableDependencies.setSdkEntry(Factory.createSdkEntry(flExtAsSDK.getName()));
       modifiableDependencies.setFrameworkLinkage(LinkageType.External);
