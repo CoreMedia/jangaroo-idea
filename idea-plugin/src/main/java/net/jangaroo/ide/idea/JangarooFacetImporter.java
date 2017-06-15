@@ -78,6 +78,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   static final String JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID = "jangaroo-maven-plugin";
   public static final String JANGAROO_PKG_PACKAGING_TYPE = "jangaroo-pkg";
   public static final String JANGAROO_APP_PACKAGING_TYPE = "jangaroo-app";
+  public static final String JANGAROO_SWC_PACKAGING_TYPE = "swc";
   private static final String MAVEN_PACKAGING_POM = "pom";
   private static final String DEFAULT_JANGAROO_FACET_NAME = "Jangaroo";
 
@@ -158,6 +159,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   @Override
   public void getSupportedPackagings(Collection<String> result) {
     super.getSupportedPackagings(result);
+    result.add(JANGAROO_SWC_PACKAGING_TYPE);
     result.add(JANGAROO_PKG_PACKAGING_TYPE);
     result.add(JANGAROO_APP_PACKAGING_TYPE);
     result.add(MAVEN_PACKAGING_POM); // for remote packages module!
@@ -169,6 +171,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     // for Flex modules, "jar" dependencies (to Jangaroo libraries) are not handled automatically:
     result.add("jar");
     result.add("pom");
+    result.add("swc");
   }
 
   @Override
@@ -251,7 +254,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     jooConfig.verbose = getBooleanConfigurationValue(mavenProjectModel, "verbose", false);
     jooConfig.enableAssertions = getBooleanConfigurationValue(mavenProjectModel, "enableAssertions", false);
     // "debug" (boolean; true), "debuglevel" ("none", "lines", "source"; "source")
-    boolean isPkg = JANGAROO_PKG_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
+    boolean isPkg = JANGAROO_PKG_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging()) || JANGAROO_SWC_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
     boolean isApp = JANGAROO_APP_PACKAGING_TYPE.equals(mavenProjectModel.getPackaging());
 
     String outputDirectory = findConfigValue(mavenProjectModel, "outputDirectory");
@@ -422,7 +425,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
               library = modelsProvider.getModifiableProjectLibrariesModel().createLibrary(libraryName, FlexLibraryType.FLEX_LIBRARY);
               final LibraryEx.ModifiableModelEx libraryModifiableModel = ((LibraryEx.ModifiableModelEx)library.getModifiableModel());
               libraryModifiableModel.setProperties(FlexLibraryType.FLEX_LIBRARY.createDefaultProperties());
-              libraryModifiableModel.addRoot(artifactJarFile, OrderRootType.CLASSES);
+              libraryModifiableModel.addRoot(artifactFile, OrderRootType.CLASSES);
               String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
               VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
               if (sourcesJar != null && sourcesJar.exists()) {
