@@ -457,11 +457,15 @@
     This is an advanced option to strip the config assigned to this property from its xtype and xclass.
     If a property name is given, the extracted xtype is stored in that property.
     Typical usage: Container#defaults / #defaultType, but this pattern seems to reoccur in Ext.
+
+  * The attribute "mode" determines the default exml:mode when this property is updated via MXML.
+    As exml:mode, it can take the values "append", "prepend", and "replace" (default).
 -->
 <!ELEMENT ExtConfig EMPTY>
 <!ATTLIST ExtConfig
   create CDATA #IMPLIED
   extractXType CDATA #IMPLIED
+  mode CDATA #IMPLIED
 >
 <!--
   Annotation for a class implementing a REST resources.
