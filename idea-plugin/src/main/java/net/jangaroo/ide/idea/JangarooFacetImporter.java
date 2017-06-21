@@ -425,7 +425,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
               library = modelsProvider.getModifiableProjectLibrariesModel().createLibrary(libraryName, FlexLibraryType.FLEX_LIBRARY);
               final LibraryEx.ModifiableModelEx libraryModifiableModel = ((LibraryEx.ModifiableModelEx)library.getModifiableModel());
               libraryModifiableModel.setProperties(FlexLibraryType.FLEX_LIBRARY.createDefaultProperties());
-              libraryModifiableModel.addRoot(artifactFile, OrderRootType.CLASSES);
+              libraryModifiableModel.addRoot(artifactJarFile, OrderRootType.CLASSES);
               String sourcesPath = dependency.getPathForExtraArtifact("sources", null);
               VirtualFile sourcesJar = LocalFileSystem.getInstance().findFileByPath(sourcesPath);
               if (sourcesJar != null && sourcesJar.exists()) {
