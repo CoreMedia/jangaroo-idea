@@ -168,7 +168,13 @@
 >
 <!ELEMENT Transient EMPTY>
 <!ELEMENT Mixin EMPTY>
-
+<!ELEMENT MixinHook EMPTY>
+<!ATTLIST MixinHook
+  before CDATA #IMPLIED
+  after CDATA #IMPLIED
+  on CDATA #IMPLIED
+  extended (extended) #IMPLIED
+>
 <!ELEMENT Mock EMPTY>
 <!ELEMENT Inject EMPTY>
 <!ATTLIST Inject
@@ -463,9 +469,9 @@
 -->
 <!ELEMENT ExtConfig EMPTY>
 <!ATTLIST ExtConfig
-  create CDATA #IMPLIED
+  create (true|false) #IMPLIED
   extractXType CDATA #IMPLIED
-  mode CDATA #IMPLIED
+  mode (append|prepend|replace) #IMPLIED
 >
 <!--
   Annotation for a class implementing a REST resources.
