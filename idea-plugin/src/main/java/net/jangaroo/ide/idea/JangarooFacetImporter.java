@@ -24,6 +24,7 @@ import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsPr
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
@@ -48,8 +49,10 @@ import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenId;
 import org.jetbrains.idea.maven.model.MavenPlugin;
+import org.jetbrains.idea.maven.project.MavenGeneralSettings;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
+import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 import org.jetbrains.idea.maven.project.SupportedRequestType;
@@ -229,7 +232,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
     String jangarooSdkVersion = jangarooMavenPlugin.getVersion();
-    String sdkHomePath = jangarooSdkHomePath(JpsJangarooSdkType.JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
+    String sdkHomePath = jangarooSdkHomePath(module.getProject(), JpsJangarooSdkType.JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
     Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
     if (jangarooSdk == null) {
       if (sdkHomePath == null) {
@@ -306,8 +309,9 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     return groupId + "__" + artifactId;
   }
 
-  private static String jangarooSdkHomePath(String artifactId, String version) {
-    File localRepository = MavenUtil.resolveLocalRepository(null, null, null);
+  private static String jangarooSdkHomePath(Project project, String artifactId, String version) {
+    MavenGeneralSettings mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings();
+    File localRepository = MavenUtil.resolveLocalRepository(mavenSettings.getLocalRepository(), mavenSettings.getMavenHome(), mavenSettings.getUserSettingsFile());
     File jarFile = JpsJangarooSdkType.getJangarooArtifact(localRepository, artifactId, version);
     return jarFile.getParentFile().getAbsolutePath();
   }
