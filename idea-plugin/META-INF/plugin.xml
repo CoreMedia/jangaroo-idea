@@ -32,6 +32,9 @@
 
     <codeInsight.implementMethod language="ECMA Script Level 4"
                                  implementationClass="net.jangaroo.ide.idea.ext.MixinAwareImplementMethodsHandler"/>
+    <codeInsight.implementMethod language="Mxml"
+                                 implementationClass="net.jangaroo.ide.idea.ext.MixinAwareImplementMethodsHandler"
+                                 order="FIRST"/>
 
     <intentionAction>
       <className>net.jangaroo.ide.idea.exml.intentions.ReplaceObjectLiteralByPropertyAssignment</className>
