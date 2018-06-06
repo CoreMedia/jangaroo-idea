@@ -3,9 +3,9 @@
   <name>Jangaroo 4</name>
   <id>net.jangaroo.idea.4</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 2016.3+.
+    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 2018.1+.
   </description>
-  <version>4.0.16</version>
+  <version>4.2018.16</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version
