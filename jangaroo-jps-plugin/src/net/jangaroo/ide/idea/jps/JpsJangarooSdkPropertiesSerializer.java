@@ -12,10 +12,8 @@ import org.jetbrains.jps.model.serialization.library.JpsSdkPropertiesSerializer;
  */
 public class JpsJangarooSdkPropertiesSerializer extends JpsSdkPropertiesSerializer<JpsDummyElement> {
 
-  public static final String JANGAROO_SDK_TYPE_ID = "Jangaroo SDK";
-
-  public JpsJangarooSdkPropertiesSerializer() {
-    super(JANGAROO_SDK_TYPE_ID, JpsJangarooSdkType.INSTANCE);
+  JpsJangarooSdkPropertiesSerializer() {
+    super(JpsJangarooSdkType.JANGAROO_SDK_TYPE_ID, JpsJangarooSdkType.INSTANCE);
   }
 
   @NotNull
