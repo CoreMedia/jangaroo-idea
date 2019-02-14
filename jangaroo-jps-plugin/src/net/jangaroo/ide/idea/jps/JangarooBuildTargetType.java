@@ -4,6 +4,7 @@ import com.intellij.flex.FlexCommonUtils;
 import com.intellij.flex.model.bc.JpsFlexBuildConfiguration;
 import com.intellij.flex.model.bc.JpsFlexBuildConfigurationManager;
 import com.intellij.flex.model.module.JpsFlexModuleType;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Trinity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,6 +18,7 @@ import java.util.List;
 
 public class JangarooBuildTargetType extends BuildTargetType<JangarooBuildTarget> {
   public static final JangarooBuildTargetType INSTANCE = new JangarooBuildTargetType();
+  private static final Logger LOG = Logger.getInstance("#net.jangaroo.ide.idea.jps.JangarooBuildTargetType");
 
   private JangarooBuildTargetType() {
     super("jangaroo");
@@ -50,16 +52,23 @@ public class JangarooBuildTargetType extends BuildTargetType<JangarooBuildTarget
     @Nullable
     public JangarooBuildTarget createTarget(@NotNull String buildTargetId) {
       Trinity trinity = FlexCommonUtils.getModuleAndBCNameAndForcedDebugStatusByBuildTargetId(buildTargetId);
-      if(trinity != null) {
+      if (trinity != null) {
         String moduleName = (String)trinity.first;
         String bcName = (String)trinity.second;
         Boolean forcedDebugStatus = (Boolean)trinity.third;
         for (JpsTypedModule<JpsFlexBuildConfigurationManager> module : model.getProject().getModules(JpsFlexModuleType.INSTANCE)) {
-          if(module.getName().equals(moduleName)) {
+          if (module.getName().equals(moduleName)) {
             JpsFlexBuildConfiguration bc = module.getProperties().findConfigurationByName(bcName);
-            return bc != null ? JangarooBuildTarget.create(bc, forcedDebugStatus == null ? false : forcedDebugStatus) : null;
+            if (bc != null) {
+              return JangarooBuildTarget.create(bc, forcedDebugStatus == null ? false : forcedDebugStatus);
+            } else {
+              LOG.warn("JangarooBuildTargetLoader#createTarget(" + buildTargetId + "): Build configuration " + bcName + " not found in module " + moduleName + ".");
+            }
           }
         }
+        LOG.warn("JangarooBuildTargetLoader#createTarget(" + buildTargetId + "): Module " + moduleName + " not found.");
+      } else {
+        LOG.warn("JangarooBuildTargetLoader#createTarget(" + buildTargetId + "): Trinity not found.");
       }
 
       return null;
