@@ -44,6 +44,7 @@ public class JangarooSdkType extends SdkType {
       if (sdkVersion != null) {
         SdkModificator modificator = sdk.getSdkModificator();
         modificator.setVersionString(sdkVersion);
+        modificator.removeAllRoots();
         for (String jarPath : jarPaths) {
           addJarPath(modificator, jarPath);
         }
@@ -53,7 +54,7 @@ public class JangarooSdkType extends SdkType {
   }
 
   private static void addJarPath(SdkModificator modificator, @NotNull String jarPath) {
-    VirtualFile jar = LocalFileSystem.getInstance().findFileByPath(jarPath);
+    VirtualFile jar = LocalFileSystem.getInstance().refreshAndFindFileByPath(jarPath);
     if (jar != null) {
       VirtualFile jarRoot = JarFileSystem.getInstance().getJarRootForLocalFile(jar);
       if (!Arrays.asList(modificator.getRoots(OrderRootType.CLASSES)).contains(jarRoot)) {
@@ -103,7 +104,7 @@ public class JangarooSdkType extends SdkType {
   @Override
   public String getVersionString(String sdkHome) {
     File sdkRoot = sdkHome != null ? new File(sdkHome) : null;
-    if (sdkRoot != null && sdkRoot.exists()) {
+    if (sdkRoot != null) {
       // check Jangaroo SDK Maven layout: 
       String joocJar = JpsJangarooSdkType.getVersionFromMavenLayout(sdkRoot);
       if (joocJar == null) {
@@ -156,7 +157,7 @@ public class JangarooSdkType extends SdkType {
     return super.getHomeFieldLabel();    //To change body of overridden methods use File | Settings | File Templates.
   }
 
-  public static SdkType getInstance() {
+  public static JangarooSdkType getInstance() {
     return findInstance(JangarooSdkType.class);
   }
 
