@@ -24,7 +24,6 @@ import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsPr
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
@@ -49,16 +48,13 @@ import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
 import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenId;
 import org.jetbrains.idea.maven.model.MavenPlugin;
-import org.jetbrains.idea.maven.project.MavenGeneralSettings;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
-import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 import org.jetbrains.idea.maven.project.SupportedRequestType;
 import org.jetbrains.idea.maven.utils.MavenJDOMUtil;
 import org.jetbrains.idea.maven.utils.MavenLog;
-import org.jetbrains.idea.maven.utils.MavenUtil;
 import org.jetbrains.jps.model.java.JavaResourceRootType;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType;
@@ -232,16 +228,13 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     JoocConfigurationBean jooConfig = jangarooFacetConfiguration.getState();
     MavenPlugin jangarooMavenPlugin = findJangarooMavenPlugin(mavenProjectModel);
     String jangarooSdkVersion = jangarooMavenPlugin.getVersion();
-    String sdkHomePath = jangarooSdkHomePath(module.getProject(), JpsJangarooSdkType.JANGAROO_COMPILER_API_ARTIFACT_ID, jangarooSdkVersion);
-    Sdk jangarooSdk = JangarooSdkUtils.createOrGetSdk(JangarooSdkType.getInstance(), sdkHomePath);
+
+    Sdk jangarooSdk = JangarooSdkUtils.getOrCreateJangarooSdk(module.getProject(), jangarooSdkVersion);
     if (jangarooSdk == null) {
-      if (sdkHomePath == null) {
-        Notifications.Bus.notify(new Notification("Maven", "Jangaroo Version Not Found",
-          "No or illegal version found for Jangaroo SDK in Maven POM " + mavenProjectModel.getDisplayName() +
-            ", no Jangaroo facet created.", NotificationType.WARNING));
-        return;
-      }
-      jooConfig.jangarooSdkName = "Jangaroo SDK " + jangarooSdkVersion;
+      Notifications.Bus.notify(new Notification("Maven", "Jangaroo Version Not Found",
+        "No or illegal version found for Jangaroo SDK in Maven POM " + mavenProjectModel.getDisplayName() +
+          ", no Jangaroo facet created.", NotificationType.WARNING));
+      return;
     } else {
       jooConfig.jangarooSdkName = jangarooSdk.getName();
       if (jangarooSdk.getVersionString() == null) {
@@ -307,13 +300,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
   // TODO: reuse jangaroo-tools utility method through compiler API?
   private static String getSenchaPackageName(String groupId, String artifactId) {
     return groupId + "__" + artifactId;
-  }
-
-  private static String jangarooSdkHomePath(Project project, String artifactId, String version) {
-    MavenGeneralSettings mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings();
-    File localRepository = MavenUtil.resolveLocalRepository(mavenSettings.getLocalRepository(), mavenSettings.getMavenHome(), mavenSettings.getUserSettingsFile());
-    File jarFile = JpsJangarooSdkType.getJangarooArtifact(localRepository, artifactId, version);
-    return jarFile.getParentFile().getAbsolutePath();
   }
 
   @Override
