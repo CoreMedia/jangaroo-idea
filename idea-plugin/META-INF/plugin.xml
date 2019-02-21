@@ -5,6 +5,18 @@
   <description>
     A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 2018.1+.
   </description>
+  <change-notes>
+    <![CDATA[
+    <ul>
+      <li>4.0.17: Fix <a href="https://jangaroo.myjetbrains.com/youtrack/issue/IDEA-59">IDEA-59</a>:
+          Cannot run compiler: FileNotFoundException: commons-lang3-3.2.1.jar.
+          Please "Reimport All Maven Projects" for this fix to take effect.
+          Applies to IDEA 2016.3+.
+      </li>
+      <li>4.2018.17: Same fix as 4.0.17, but for IDEA 2018.1+.
+    </ul>
+    ]]>
+  </change-notes>
   <version>4.2018.17</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
