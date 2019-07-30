@@ -8,12 +8,11 @@
   <change-notes>
     <![CDATA[
     <ul>
-      <li>Fix: Download Jangaroo SDK even when in Maven offline mode</li>
-      <li>Robustness: Meaningful error message when Jangaroo SDK is invalid or missing.</li>
+      <li>Fix: Add FlExtAS SDK missing in 4.2018.18.</li>
     </ul>
     ]]>
   </change-notes>
-  <version>4.2018.18</version>
+  <version>4.2018.19</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version
