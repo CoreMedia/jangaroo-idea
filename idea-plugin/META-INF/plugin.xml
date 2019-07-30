@@ -9,6 +9,7 @@
     <![CDATA[
     <ul>
       <li>Fix: Download Jangaroo SDK even when in Maven offline mode</li>
+      <li>Robustness: Meaningful error message when Jangaroo SDK is invalid or missing.</li>
     </ul>
     ]]>
   </change-notes>

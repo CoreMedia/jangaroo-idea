@@ -121,7 +121,7 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
       return true; // no Jangaroo Facet in this module: skip silently!
     }
     List<String> jarPaths = getJangarooSdkJarPath(joocConfigurationBean, module);
-    if (jarPaths == null) {
+    if (jarPaths == null || jarPaths.isEmpty()) {
       context.processMessage(new CompilerMessage(BUILDER_NAME, BuildMessage.Kind.WARNING,
         String.format("Jangaroo module %s does not have a valid Jangaroo SDK. Compilation skipped.", module.getName())));
       return false;
