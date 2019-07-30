@@ -181,6 +181,10 @@ public class JangarooSdkUtils {
       settings.setRunMavenInBackground(true);
       //mavenRunner.run(parameters, settings, onComplete);
       MavenGeneralSettings mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings();
+      if (mavenSettings.isWorkOffline()) {
+        mavenSettings = mavenSettings.clone();
+        mavenSettings.setWorkOffline(false);
+      }
       return mavenRunner.runBatch(Collections.singletonList(parameters), mavenSettings, settings, version, null);
     } finally {
       try {
