@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
 import java.io.File;
@@ -74,7 +75,7 @@ public class JangarooSdkType extends SdkType {
   }
 
   @Override
-  public String suggestSdkName(String currentSdkName, String sdkHome) {
+  public String suggestSdkName(@Nullable String currentSdkName, String sdkHome) {
     return "Jangaroo SDK " + getVersionString(sdkHome);
   }
 
