@@ -7,11 +7,12 @@
   <change-notes>
     <![CDATA[
     <ul>
-      <li>Fix: Add FlExtAS SDK missing in 4.2018.18.</li>
+      <li>Fix <a href="https://jangaroo.myjetbrains.com/youtrack/issue/IDEA-64">IDEA-64</a>:
+        Downloading Jangaroo Compiler during Maven Import Fails in IDEA 2019.3</li>
     </ul>
     ]]>
   </change-notes>
-  <version>4.2018.19</version>
+  <version>4.2018.20</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version
