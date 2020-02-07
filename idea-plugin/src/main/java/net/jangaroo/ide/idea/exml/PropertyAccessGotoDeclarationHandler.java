@@ -1,6 +1,6 @@
 package net.jangaroo.ide.idea.exml;
 
-import com.intellij.codeInsight.TargetElementUtilBase;
+import com.intellij.codeInsight.TargetElementUtil;
 import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandler;
 import com.intellij.lang.javascript.JavascriptLanguage;
 import com.intellij.lang.javascript.psi.JSFile;
@@ -39,7 +39,7 @@ public class PropertyAccessGotoDeclarationHandler implements GotoDeclarationHand
   public PsiElement[] getGotoDeclarationTargets(PsiElement element, int offset, Editor editor) {
     if (element instanceof LeafPsiElement
       && ((LeafPsiElement)element).getElementType().getLanguage() == JavascriptLanguage.INSTANCE) {
-      PsiReference reference = TargetElementUtilBase.findReference(editor, offset);
+      PsiReference reference = TargetElementUtil.findReference(editor, offset);
       if (reference != null) {
         return getGotoDeclarationTargetsForPropertyAccess(reference.resolve());
       }
