@@ -1,5 +1,4 @@
-<!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
-<idea-plugin url="https://github.com/CoreMedia/jangaroo-idea/wiki" version="2">
+<idea-plugin url="https://github.com/CoreMedia/jangaroo-idea/wiki">
   <name>Jangaroo 4</name>
   <id>net.jangaroo.idea.4</id>
   <description>
@@ -19,11 +18,17 @@
     since-build="IU-181"
   />
 
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.modules.xml</depends>
+  <depends>com.intellij.modules.xdebugger</depends>
+  <depends>com.intellij.modules.idea.ultimate</depends>
   <depends>JavaScript</depends>
   <depends>JavaScriptDebugger</depends>
   <depends>com.intellij.flex</depends>
   <depends>org.jetbrains.idea.maven</depends>
   <depends>org.jetbrains.idea.maven.ext</depends>
+  <depends>com.intellij.modules.java</depends>
   <depends>com.intellij.javaee</depends>
   <depends>com.intellij.properties</depends>
 
