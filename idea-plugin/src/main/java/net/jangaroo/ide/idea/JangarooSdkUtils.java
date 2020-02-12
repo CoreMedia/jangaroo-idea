@@ -24,6 +24,7 @@ import net.jangaroo.ide.idea.jps.JpsJangarooSdkType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.execution.MavenRunConfigurationType;
+import org.jetbrains.idea.maven.execution.MavenRunner;
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
 import org.jetbrains.idea.maven.project.MavenGeneralSettings;
@@ -167,7 +168,7 @@ public class JangarooSdkUtils {
               } else {
                 Notifications.Bus.notify(new Notification("Maven", "Jangaroo compiler download failed",
                   "Jangaroo Compiler " + version + " could not be downloaded into your local Maven repository."
-                    + " Please check 'Messages' window, fix problems and repeat Maven Import.",
+                    + " Please check 'Messages' window, fix problems, delete Jangaroo SDKs and repeat Maven Import.",
                   NotificationType.ERROR));
               }
             }
@@ -198,10 +199,9 @@ public class JangarooSdkUtils {
     envs.put("version", version);
     envs.put("classifier", JpsJangarooSdkType.JAR_WITH_DEPENDENCIES_CLASSIFIER);
     envs.put("transitive", String.valueOf(false));
-    MavenRunnerSettings settings = new MavenRunnerSettings();
+    MavenRunnerSettings settings = MavenRunner.getInstance(project).getSettings().clone();
     settings.setMavenProperties(envs);
     settings.setRunMavenInBackground(true);
-    settings.setJreName(ProjectJdkTable.getInstance().getAllJdks()[0].getName());
     MavenGeneralSettings mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings();
     if (mavenSettings.isWorkOffline()) {
       mavenSettings = mavenSettings.clone();
