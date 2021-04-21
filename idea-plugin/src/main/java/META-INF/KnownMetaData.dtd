@@ -439,6 +439,17 @@
   require CDATA #IMPLIED
 >
 <!--
+  Annotation for ActionScript API classes, package-scope variables or functions whose generated JavaScript
+  equivalent is to be named differently.
+  Usually, the JavaScript / Ext JS name is derived from the fully-qualified ActionScript name. With the
+  annotation, you can specify the desired name es the only annotation parameter: [Rename("com.acme.MyName")]
+  When rename-refactoring an ActionScript class, you may want to add a [Rename] annotation with its
+  old JavaScript name, in order not to break JavaScript code referring to this old fully-qualified name.
+  Also for conversion to TypeScript, [Rename] is very useful to consolidate ActionScript package and class
+  names.
+-->
+<!ELEMENT Rename EMPTY>
+<!--
   Annotation for ActionScript classes that Jangaroo should consider public API.
   If the compiler switch "excludeClassByDefault" is used, the compiler will add an [ExcludeClass] annotation to any
   API stub whose source class does not contain a [PublicApi] annotation.
@@ -490,3 +501,10 @@
 <!ATTLIST ProvideToExtChildren
   variable CDATA #IMPLIED
 >
+<!--
+  Annotation for Ext "private" members, which are
+  technically public, but in Ext.define() placed under
+  the key "privates". To override Ext privates,
+  the overriding member must also be annotated [ExtPrivate].
+-->
+<!ELEMENT ExtPrivate EMPTY>
