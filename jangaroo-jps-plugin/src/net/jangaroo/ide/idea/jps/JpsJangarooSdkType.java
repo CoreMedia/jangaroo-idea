@@ -23,7 +23,7 @@ public class JpsJangarooSdkType extends JpsSdkType<JpsDummyElement> {
   public static final String JANGAROO_COMPILER_ARTIFACT_ID = "jangaroo-compiler";
   public static final String JAR_WITH_DEPENDENCIES_CLASSIFIER = "jar-with-dependencies";
 
-  private static final Pattern MAVEN_VERSION_PATTERN = Pattern.compile("(([0-9]+(?:\\.[0-9]+)*)(-SNAPSHOT)?)");
+  private static final Pattern MAVEN_VERSION_PATTERN = Pattern.compile("(([0-9]+(\\.[0-9]+)*)(-alpha-[0-9]+)?(-SNAPSHOT)?)");
 
   static List<String> getSdkJarPaths(JpsSdk sdk) {
     List<String> jarPaths = new ArrayList<>();
