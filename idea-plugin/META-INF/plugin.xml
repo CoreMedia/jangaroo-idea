@@ -16,7 +16,7 @@
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version
-    since-build="IU-181"
+    since-build="181"
   />
 
   <depends>com.intellij.modules.platform</depends>
