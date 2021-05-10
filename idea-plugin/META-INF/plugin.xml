@@ -2,17 +2,17 @@
   <name>Jangaroo 4</name>
   <id>net.jangaroo.idea.4</id>
   <description>
-    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 2016.3+.
+    A plugin for using the Jangaroo Open Source tools version 4 and up in IntelliJ IDEA 2018.3+.
   </description>
   <change-notes>
     <![CDATA[
     <ul>
-      <li>Fix <a href="https://jangaroo.myjetbrains.com/youtrack/issue/IDEA-64">IDEA-64</a>:
-        Downloading Jangaroo Compiler during Maven Import Fails in IDEA 2019.3</li>
+      <li>Support for [ExtPrivate] annotation and upcoming Jangaroo 4.1 features (updated compiler
+      API, [Rename] annotation).</li>
     </ul>
     ]]>
   </change-notes>
-  <version>4.2018.21</version>
+  <version>4.2018.22</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version
