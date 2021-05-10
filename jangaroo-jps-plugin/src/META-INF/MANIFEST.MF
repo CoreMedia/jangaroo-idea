@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: jangaroo-compiler-api-4.0.48.jar exml-compiler-api-4.0.48.
- jar jangaroo-utils-4.0.48.jar args4j-2.0.16.jar closure-compiler-v201
- 50126.jar guava-18.0.jar
+Class-Path: jangaroo-compiler-api-4.1.0-alpha-3.jar exml-compiler-api-
+ 4.1.0-alpha-3.jar jangaroo-utils-4.1.0-alpha-3.jar args4j-2.0.16.jar 
+ closure-compiler-v20150126.jar guava-18.0.jar
