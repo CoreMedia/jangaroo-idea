@@ -63,6 +63,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -453,6 +454,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
     List<Pair<String, String>> namespacesToManifests = new ArrayList<Pair<String, String>>();
     Element jangarooPluginConfiguration = mavenProjectModel.getPluginConfiguration(JANGAROO_GROUP_ID, JANGAROO_MAVEN_PLUGIN_ARTIFACT_ID);
     if (jangarooPluginConfiguration != null) {
+      Map<String, String> allOptions = new HashMap<String, String>();
       Element namespacesElement = jangarooPluginConfiguration.getChild("namespaces");
       if (namespacesElement != null) {
         for (Element namespaceElement : namespacesElement.getChildren("namespace")) {
@@ -470,9 +472,25 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         }
         String namespaceMapping = formatNamespaceMapping(namespacesToManifests);
         if (namespaceMapping != null) {
-          Map<String, String> allOptions = Collections.singletonMap("compiler.namespaces.namespace", namespaceMapping);
-          buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
+          allOptions.put("compiler.namespaces.namespace", namespaceMapping);
         }
+      }
+      Element extNamespaceElement = jangarooPluginConfiguration.getChild("extNamespace");
+      if (extNamespaceElement != null) {
+        String extNamespace = extNamespaceElement.getTextTrim();
+        if (!".".equals(extNamespace)) {
+          allOptions.put("extNamespace", extNamespace);
+        }
+      }
+      Element extSassNamespaceElement = jangarooPluginConfiguration.getChild("extNamespace");
+      if (extSassNamespaceElement != null) {
+        String extSassNamespace = extSassNamespaceElement.getTextTrim();
+        if (!".".equals(extSassNamespace)) {
+          allOptions.put("extSassNamespace", extSassNamespace);
+        }
+      }
+      if (!allOptions.isEmpty()) {
+        buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
       }
     }
   }
