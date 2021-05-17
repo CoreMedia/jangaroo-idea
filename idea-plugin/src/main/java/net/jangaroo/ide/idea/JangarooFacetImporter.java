@@ -489,9 +489,7 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
           allOptions.put("extSassNamespace", extSassNamespace);
         }
       }
-      if (!allOptions.isEmpty()) {
-        buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
-      }
+      buildConfiguration.getCompilerOptions().setAllOptions(allOptions);
     }
   }
 
