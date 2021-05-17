@@ -15,6 +15,7 @@ import net.jangaroo.jooc.api.CompilationResult;
 import net.jangaroo.jooc.api.CompileLog;
 import net.jangaroo.jooc.api.Jooc;
 import net.jangaroo.jooc.api.Packager;
+import net.jangaroo.jooc.api.Packager2;
 import net.jangaroo.jooc.config.DebugMode;
 import net.jangaroo.jooc.config.JoocConfiguration;
 import net.jangaroo.jooc.config.NamespaceConfiguration;
@@ -152,13 +153,27 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
       Packager packager = CompilerLoader.loadPackager(jarPaths);
       // outputDirectory already is the /src directory, so we use "..", but normalize afterwards:
       File senchaPackageDirectory = Paths.get(joocConfigurationBean.getOutputDirectory().getPath() + File.separator + "..").normalize().toFile();
-      packager.doPackage(
-        new File(senchaPackageDirectory, "src"),
-        new File(senchaPackageDirectory, "overrides"),
-        new File(senchaPackageDirectory, "locale"),
-        senchaPackageDirectory,
-        joocConfigurationBean.outputFilePrefix
-      );
+      File sourceDirectory = new File(senchaPackageDirectory, "src");
+      File overridesDirectory = new File(senchaPackageDirectory, "overrides");
+      File localizedOverridesDirectory = new File(senchaPackageDirectory, "locale");
+      if (packager instanceof Packager2) {
+        ((Packager2) packager).doPackage2(
+          joocConfiguration.getExtNamespace(),
+          sourceDirectory,
+          overridesDirectory,
+          localizedOverridesDirectory,
+          senchaPackageDirectory,
+          joocConfigurationBean.outputFilePrefix
+        );
+      } else {
+        packager.doPackage(
+          sourceDirectory,
+          overridesDirectory,
+          localizedOverridesDirectory,
+          senchaPackageDirectory,
+          joocConfigurationBean.outputFilePrefix
+        );
+      }
     } catch (ClassNotFoundException e) {
       // Jangaroo SDK without Packager: simply skip this task.
     } catch (Exception e) {
