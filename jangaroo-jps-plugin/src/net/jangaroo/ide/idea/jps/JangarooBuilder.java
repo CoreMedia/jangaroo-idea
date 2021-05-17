@@ -64,7 +64,7 @@ import java.util.Set;
 public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, JangarooBuildTarget> {
 
   public static final String BUILDER_NAME = "jooc";
-  
+
   public static final FileFilter AS_SOURCES_FILTER = createJangarooSourceFileFilter();
   private final Logger log = Logger.getInstance(JangarooBuilder.class);
 
@@ -240,6 +240,16 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
     }
     joocConfig.setNamespaces(namespaceConfigurations);
 
+    String extNamespace = bc.getCompilerOptions().getAllOptions().get("extNamespace");
+    if (extNamespace != null) {
+      joocConfig.setExtNamespace(extNamespace);
+    }
+
+    String extSassNamespace = bc.getCompilerOptions().getAllOptions().get("extSassNamespace");
+    if (extSassNamespace != null) {
+      joocConfig.setExtSassNamespace(extSassNamespace);
+    }
+
     return joocConfig;
   }
 
@@ -334,7 +344,7 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
       messageHandler.processMessage(new CompilerMessage(BUILDER_NAME, e));
       return null;
     } catch (Exception e) {
-      // Jangaroo SDK not correctly set up or not compatible with this Jangaroo IDEA plugin: 
+      // Jangaroo SDK not correctly set up or not compatible with this Jangaroo IDEA plugin:
       messageHandler.processMessage(new CompilerMessage(BUILDER_NAME, e));
       return null;
     }
