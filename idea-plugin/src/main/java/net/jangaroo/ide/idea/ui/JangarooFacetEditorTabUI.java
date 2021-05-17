@@ -1,15 +1,15 @@
 /*
  * Copyright 2009 CoreMedia AG
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0 
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, 
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
- * express or implied. See the License for the specific language 
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package net.jangaroo.ide.idea.ui;
@@ -53,6 +53,8 @@ public class JangarooFacetEditorTabUI {
   private JRadioButton publicApiViolationsErrorRadioButton;
   private JRadioButton publicApiViolationsWarnRadioButton;
   private JRadioButton publicApiViolationsAllowRadioButton;
+  private JTextField extNamespaceTextField;
+  private JTextField extSassNamespaceTextField;
 
   private static final FileChooserDescriptor COMPILER_JAR_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
   private static final FileChooserDescriptor OUTPUT_DIRECTORY_CHOOSER_DESCRIPTOR = FileChooserDescriptorFactory.createSingleFolderDescriptor();
@@ -124,6 +126,8 @@ public class JangarooFacetEditorTabUI {
       (   data.publicApiViolationsMode == PublicApiViolationsMode.ERROR ? publicApiViolationsErrorRadioButton
         : data.publicApiViolationsMode == PublicApiViolationsMode.WARN ? publicApiViolationsWarnRadioButton
         : publicApiViolationsAllowRadioButton).getModel(), true);
+    extNamespaceTextField.setText(data.extNamespace);
+    extSassNamespaceTextField.setText(data.extSassNamespace);
   }
 
   public JoocConfigurationBean getData(JoocConfigurationBean data) {
@@ -131,7 +135,7 @@ public class JangarooFacetEditorTabUI {
     data.verbose = verboseCheckBox.isSelected();
     data.enableAssertions = enableAssertionsCheckBox.isSelected();
     ButtonModel debugSelection = whiteSpaceButtonGroup.getSelection();
-    data.debugLevel = 
+    data.debugLevel =
         keepDebugSourceRadioButton. getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_SOURCE
       : keepNewLinesOnlyRadioButton.getModel().equals(debugSelection) ? JoocConfigurationBean.DEBUG_LEVEL_LINES
                                                                       : JoocConfigurationBean.DEBUG_LEVEL_NONE;
@@ -145,6 +149,8 @@ public class JangarooFacetEditorTabUI {
         publicApiViolationsErrorRadioButton.getModel().equals(publicApiViolationsSelection) ? PublicApiViolationsMode.ERROR
       : publicApiViolationsWarnRadioButton .getModel().equals(publicApiViolationsSelection) ? PublicApiViolationsMode.WARN
                                                                                             : PublicApiViolationsMode.ALLOW;
+    data.extNamespace = extNamespaceTextField.getText();
+    data.extSassNamespace = extSassNamespaceTextField.getText();
     return data;
   }
 

@@ -292,6 +292,18 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         NotificationType.WARNING));
       jooConfig.publicApiViolationsMode = PublicApiViolationsMode.WARN;
     }
+
+    String extNamespace = getConfigurationValue(mavenProjectModel, "extNamespace", null);
+    if (".".equals(extNamespace)) {
+      extNamespace = "";
+    }
+    jooConfig.extNamespace = extNamespace;
+
+    String extSassNamespace = getConfigurationValue(mavenProjectModel, "extSassNamespace", null);
+    if (".".equals(extSassNamespace)) {
+      extSassNamespace = "";
+    }
+    jooConfig.extSassNamespace = extSassNamespace != null ? extSassNamespace : extNamespace;
   }
 
   private String getSenchaPackageName(MavenId mavenId) {
@@ -473,20 +485,6 @@ public class JangarooFacetImporter extends FacetImporter<JangarooFacet, Jangaroo
         String namespaceMapping = formatNamespaceMapping(namespacesToManifests);
         if (namespaceMapping != null) {
           allOptions.put("compiler.namespaces.namespace", namespaceMapping);
-        }
-      }
-      Element extNamespaceElement = jangarooPluginConfiguration.getChild("extNamespace");
-      if (extNamespaceElement != null) {
-        String extNamespace = extNamespaceElement.getTextTrim();
-        if (!".".equals(extNamespace)) {
-          allOptions.put("extNamespace", extNamespace);
-        }
-      }
-      Element extSassNamespaceElement = jangarooPluginConfiguration.getChild("extNamespace");
-      if (extSassNamespaceElement != null) {
-        String extSassNamespace = extSassNamespaceElement.getTextTrim();
-        if (!".".equals(extSassNamespace)) {
-          allOptions.put("extSassNamespace", extSassNamespace);
         }
       }
       buildConfiguration.getCompilerOptions().setAllOptions(allOptions);

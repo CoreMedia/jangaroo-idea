@@ -223,6 +223,8 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
     joocConfig.setMergeOutput(false); // no longer supported: joocConfigurationBean.mergeOutput;
     joocConfig.setOutputDirectory(forTests ? joocConfigurationBean.getTestOutputDirectory() : joocConfigurationBean.getOutputDirectory());
     joocConfig.setPublicApiViolationsMode(joocConfigurationBean.publicApiViolationsMode);
+    joocConfig.setExtNamespace(joocConfigurationBean.extNamespace);
+    joocConfig.setExtSassNamespace(joocConfigurationBean.extSassNamespace);
 
     List<NamespaceConfiguration> namespaceConfigurations = new ArrayList<NamespaceConfiguration>();
     collectNamespaceConfigurations(namespaceConfigurations, bc);
@@ -239,16 +241,6 @@ public class JangarooBuilder extends TargetBuilder<BuildRootDescriptor, Jangaroo
       }
     }
     joocConfig.setNamespaces(namespaceConfigurations);
-
-    String extNamespace = bc.getCompilerOptions().getAllOptions().get("extNamespace");
-    if (extNamespace != null) {
-      joocConfig.setExtNamespace(extNamespace);
-    }
-
-    String extSassNamespace = bc.getCompilerOptions().getAllOptions().get("extSassNamespace");
-    if (extSassNamespace != null) {
-      joocConfig.setExtSassNamespace(extSassNamespace);
-    }
 
     return joocConfig;
   }
