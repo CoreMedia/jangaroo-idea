@@ -1,7 +1,9 @@
 # Backups
 *.*~
 # target dirs
+.m2
 out
+target
 idea-plugin/*.zip
 
 # Idea user-specific stuff

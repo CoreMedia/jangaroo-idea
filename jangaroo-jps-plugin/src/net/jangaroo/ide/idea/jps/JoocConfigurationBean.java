@@ -1,15 +1,15 @@
 /*
  * Copyright 2009 CoreMedia AG
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0 
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, 
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
- * express or implied. See the License for the specific language 
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package net.jangaroo.ide.idea.jps;
@@ -26,7 +26,7 @@ import java.io.File;
 import static net.jangaroo.ide.idea.jps.util.IdeaFileUtils.toPath;
 
 /**
- * IDEA serialization adapter of JoocConfiguration. 
+ * IDEA serialization adapter of JoocConfiguration.
  */
 public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean> {
   public static final int DEBUG_LEVEL_NONE = 0;
@@ -45,6 +45,8 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
   public String testOutputDirectory = "target/jangaroo-test-output/joo/classes";
   public boolean showCompilerInfoMessages = false;
   public PublicApiViolationsMode publicApiViolationsMode;
+  public String extNamespace;
+  public String extSassNamespace;
 
   public String jangarooSdk;
 
@@ -116,7 +118,9 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
       && (outputPrefix==null ? that.outputPrefix==null : outputPrefix.equals(that.outputPrefix))
       && outputDirectory.equals(that.outputDirectory)
       && (outputFilePrefix == null ? that.outputFilePrefix == null : outputFilePrefix.equals(that.outputFilePrefix))
-      && publicApiViolationsMode == that.publicApiViolationsMode;
+      && publicApiViolationsMode == that.publicApiViolationsMode
+      && (extNamespace==null ? that.extNamespace==null : extNamespace.equals(that.extNamespace))
+      && (extSassNamespace==null ? that.extSassNamespace==null : extSassNamespace.equals(that.extSassNamespace));
   }
 
   @Override
@@ -129,6 +133,8 @@ public class JoocConfigurationBean extends JpsElementBase<JoocConfigurationBean>
     result = 31 * result + outputDirectory.hashCode();
     result = 31 * result + (outputFilePrefix == null ? 0 : outputFilePrefix.hashCode());
     result = 31 * result + publicApiViolationsMode.hashCode();
+    result = 31 * result + (extNamespace == null ? 0 : extNamespace.hashCode());
+    result = 31 * result + (extSassNamespace == null ? 0 : extSassNamespace.hashCode());
     return result;
   }
 
