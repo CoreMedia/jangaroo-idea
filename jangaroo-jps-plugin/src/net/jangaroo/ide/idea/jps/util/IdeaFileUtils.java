@@ -1,7 +1,7 @@
 package net.jangaroo.ide.idea.jps.util;
 
 import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import java.io.File;
@@ -19,7 +19,7 @@ public class IdeaFileUtils {
     }
     if (ideaUrl.startsWith(IDEA_URL_PREFIX)) {
       try {
-        return new File(new URI(VfsUtil.fixIDEAUrl(ideaUrl))).getPath();
+        return new File(new URI(VfsUtilCore.fixIDEAUrl(ideaUrl))).getPath();
       } catch (Exception e) {
         ideaUrl = ideaUrl.substring(IDEA_URL_PREFIX.length());
       }
