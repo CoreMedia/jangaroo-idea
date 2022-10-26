@@ -109,6 +109,19 @@ public class JangarooSdkUtils {
 
   private static Sdk doCreateSdk(@NotNull final String sdkHomePath) {
     return ApplicationManager.getApplication().runWriteAction(new Computable<Sdk>() {
+      // IDEA 22 version of com.intellij.openapi.util.Computable extends
+      // java.util.function.Supplier and provides a default implementation
+      // for Supplier#get(), simply delegating to Computable#compute().
+      // While this is intended to provide API compatibility, it somehow
+      // does not work, but ends up with a compile error that get() must be
+      // implemented.
+      // Declaring our own delegating version of get(), it seems to work in
+      // both 18.1 and 22.1.
+      // Do *not* add @Override here, as it won't compile against 18.1 then!
+      public Sdk get() {
+        return this.compute();
+      }
+
       @Override
       public Sdk compute() {
         SdkType sdkType = JangarooSdkType.getInstance();
