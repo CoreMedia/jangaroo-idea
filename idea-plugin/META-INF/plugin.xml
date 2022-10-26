@@ -7,12 +7,12 @@
   <change-notes>
     <![CDATA[
     <ul>
-      <li>Support new Jangaroo 4.1 extNamespace and extSassNamespace options correctly,
-      fixed default apiOutputDirectory.</li>
+      <li>Fix <a href="https://jangaroo.myjetbrains.com/youtrack/issue/IDEA-65">IDEA-65</a>,
+        "Incremental build fails with NoClassDefFound VfsUtil in IDEA 2022".</li>
     </ul>
     ]]>
   </change-notes>
-  <version>4.2018.23</version>
+  <version>4.2018.24</version>
   <vendor url="http://www.jangaroo.net"
           email="info@jangaroo.net">Jangaroo</vendor>
   <idea-version
