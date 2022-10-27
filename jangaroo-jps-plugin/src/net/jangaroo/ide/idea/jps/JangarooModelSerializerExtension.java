@@ -24,8 +24,6 @@ public class JangarooModelSerializerExtension extends JpsModelSerializerExtensio
 
   public static final String JANGAROO_FACET_ID = "jangaroo";
   private static final JpsElementChildRole<JoocConfigurationBean> JOOC_CONFIG = JpsElementChildRoleBase.create("Jangaroo Compiler Configuration");
-  // Constant defined in com.intellij.facet.FacetManagerImpl, but we don't want the dependency:
-  private static final String FACET_MANAGER_COMPONENT_NAME = "FacetManager";
 
   @Nullable
   public static JoocConfigurationBean getJoocSettings(@NotNull JpsModule module) {
@@ -57,8 +55,12 @@ public class JangarooModelSerializerExtension extends JpsModelSerializerExtensio
     }
   }
 
+  @Nullable
   private Element findFacetConfiguration(Element rootTag, String facetId) {
-    Element facetManagerElement = JDomSerializationUtil.findComponent(rootTag, FACET_MANAGER_COMPONENT_NAME);
+    Element facetManagerElement = JDomSerializationUtil.findComponent(rootTag, "ExternalFacetManager");
+    if (facetManagerElement == null) {
+      facetManagerElement = JDomSerializationUtil.findComponent(rootTag, "FacetManager"); // old (?) name
+    }
     for (Element facet : JDOMUtil.getChildren(facetManagerElement, JpsFacetSerializer.FACET_TAG)) {
       if (facetId.equals(facet.getAttributeValue(JpsFacetSerializer.TYPE_ATTRIBUTE))) {
         return facet.getChild(JpsFacetSerializer.CONFIGURATION_TAG);
