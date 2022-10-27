@@ -10,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.BuildTargetLoader;
 import org.jetbrains.jps.builders.BuildTargetType;
+import org.jetbrains.jps.model.JpsElement;
 import org.jetbrains.jps.model.JpsModel;
+import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsTypedModule;
 
 import java.util.ArrayList;
@@ -56,13 +58,18 @@ public class JangarooBuildTargetType extends BuildTargetType<JangarooBuildTarget
         String moduleName = (String)trinity.first;
         String bcName = (String)trinity.second;
         Boolean forcedDebugStatus = (Boolean)trinity.third;
-        for (JpsTypedModule<JpsFlexBuildConfigurationManager> module : model.getProject().getModules(JpsFlexModuleType.INSTANCE)) {
+        for (JpsModule module : model.getProject().getModules()) {
           if (module.getName().equals(moduleName)) {
-            JpsFlexBuildConfiguration bc = module.getProperties().findConfigurationByName(bcName);
-            if (bc != null) {
-              return JangarooBuildTarget.create(bc, forcedDebugStatus == null ? false : forcedDebugStatus);
+            JpsElement moduleProperties = module.getProperties();
+            if (moduleProperties instanceof JpsFlexBuildConfigurationManager) {
+              JpsFlexBuildConfiguration bc = ((JpsFlexBuildConfigurationManager)moduleProperties).findConfigurationByName(bcName);
+              if (bc != null) {
+                return JangarooBuildTarget.create(bc, forcedDebugStatus == null ? false : forcedDebugStatus);
+              } else {
+                LOG.warn("JangarooBuildTargetLoader#createTarget(" + buildTargetId + "): Build configuration " + bcName + " not found in module " + moduleName + ".");
+              }
             } else {
-              LOG.warn("JangarooBuildTargetLoader#createTarget(" + buildTargetId + "): Build configuration " + bcName + " not found in module " + moduleName + ".");
+              LOG.warn("JangarooBuildTargetLoader#createTarget(" + buildTargetId + "): Module " + moduleName + " found, but it is not a Flex module, but " + module.getModuleType());
             }
           }
         }
